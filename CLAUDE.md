@@ -7,6 +7,7 @@ This is "geonsaehelper" (전세자금대출 도우미) - a Flutter application t
  
 ## Common Development Commands
 
+
 ### Dependencies and Setup
 ```bash
 flutter pub get                                    # Install dependencies
@@ -92,3 +93,38 @@ Core libraries in use:
 
 ## Project Context
 This is currently a new/empty Flutter project with extensive planning documentation in `docs/docs/`. The project aims to help Korean users navigate HUG rental deposit loan eligibility through a user-friendly mobile interface.
+
+## Planning Documentation
+The `docs/docs/` directory contains comprehensive planning materials:
+
+### Product Requirements & Strategy
+- **PRD_v1.md**: Core product requirements with eligibility assessment flow (10-12 questions), instant results, and AI Q&A system
+- **PRODUCT_BRIEF.md**: Executive summary covering JTBD, target users (20-40s preparing for 전세), MVP scope, and success metrics
+- **INTAKE_FLOW.md**: Detailed conversational questionnaire design with 14 questions covering applicant info (A1-A7), property details (P1-P7), and special eligibility (S1)
+
+### Business Rules & Logic
+- **RULES_HUG_v1.md**: HUG qualification rules engine with three categories:
+  - C1: Instant disqualifiers (무주택 requirement, credit issues, property limits)  
+  - C2: Required confirmations (income, employment, property details)
+  - C3: Conditional warnings (pre-contract status, encumbrances)
+- **RULES_HUG_mapping.yaml**: Internal document mapping for rule thresholds and values
+
+### Design & User Experience
+- **DESIGN_TOKENS.yaml**: Design system tokens including:
+  - Colors: Seed #3B6EF5, semantic colors (success/warning/error)
+  - Typography: 5-level scale (display/headline/title/body/label)
+  - Spacing: [4,8,12,16,24,32], Radius: sm=8, md=12
+- **COMPONENT_SPECS.md**: Flutter widget specifications for IntakeQuestion, ResultCard, and ChatBubble components
+- **UI_BLUEPRINT.yaml**: Detailed screen layouts and interaction patterns
+
+### Key Business Rules
+- **Eligibility Logic**: Any "모름" (don't know) response results in "불가(정보 부족)" status
+- **Result Format**: TL;DR summary + detailed reasons (충족/미충족/확인불가) + next steps + last verification date
+- **Data Policy**: No external links exposed, internal documentation only, temporary local storage
+- **Success Metrics**: ≥70% completion rate, ≤90s average time to result, ≥70% satisfaction
+
+### Additional Documentation
+- **ARCHITECTURE.md**: Technical architecture with feature-based structure and BLoC pattern
+- **COPY_GUIDE.md**: Korean language copy guidelines and messaging tone
+- **QNA_TEMPLATES.md**: AI Q&A response templates for common follow-up questions
+- **MEASUREMENT_PLAN.md**: Analytics and KPI tracking specifications
