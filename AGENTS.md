@@ -98,3 +98,6 @@
 - 카피: `docs/docs/COPY_GUIDE.md`, `docs/docs/RESULT_CARD_COPY.md`
 - 측정: `docs/docs/MEASUREMENT_PLAN.md`
 - 운영/법/광고: `docs/docs/OPERATIONS_RUNBOOK.md`, `docs/docs/LEGAL_CHECKLIST.md`, `docs/docs/ADS_POLICY.md`
+ - 화면 기획(챗봇형): `docs/docs/APP_SCREEN_PLAN.md`
+ - UI/UX 가이드: `docs/docs/UI_UX_GUIDE.md`
+ - 문서 인덱스: `docs/docs/DOCS_INDEX.md`

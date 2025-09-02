@@ -116,11 +116,39 @@ class _ConversationPageState extends State<ConversationPage> {
       return;
     }
 
+    // Disqualifier: 중대한 신용 문제(A7)
+    if (_answers['A7'] == 'credit_severe') {
+      _rows.add(_Row.result(ResultCard(
+        status: RulingStatus.notPossibleDisq,
+        tldr: '아래 결격 사유로 신청이 불가합니다.',
+        reasons: const [
+          ReasonItem(Icons.cancel, '중대한 신용 문제(장기연체/회생/파산/면책)', '미충족'),
+        ],
+        nextSteps: const ['신용 상태 확인 후 재시도 또는 타 상품 검토'],
+        lastVerified: '2025-09-02',
+      )));
+      setState(() {});
+      _appendBotText('필요 시 확인 방법을 안내해 드릴게요.');
+      return;
+    }
+
     // Otherwise, possible with summary reasons
     final reasons = <ReasonItem>[
-      const ReasonItem(Icons.check_circle, '무주택·세대주/세대원 확인', '충족'),
-      ReasonItem(Icons.check_circle, '소득 형태: ${_labelFor(_flow[1], _answers['A3']!)}', '충족'),
-      ReasonItem(Icons.check_circle, '주택 유형: ${_labelFor(_flow[2], _answers['P1']!)}', '충족'),
+      ReasonItem(Icons.check_circle, '가구/세대: ${_labelFor(_q('A1'), _answers['A1']!)}', '충족'),
+      if (_answers.containsKey('A3'))
+        ReasonItem(Icons.check_circle, '소득 형태: ${_labelFor(_q('A3'), _answers['A3']!)}', '충족'),
+      if (_answers.containsKey('A4'))
+        ReasonItem(Icons.check_circle, '소득 구간: ${_labelFor(_q('A4'), _answers['A4']!)}', '충족'),
+      if (_answers.containsKey('P1'))
+        ReasonItem(Icons.check_circle, '주택 유형: ${_labelFor(_q('P1'), _answers['P1']!)}', '충족'),
+      if (_answers.containsKey('P2'))
+        ReasonItem(Icons.check_circle, '전용면적: ${_labelFor(_q('P2'), _answers['P2']!)}', '충족'),
+      if (_answers.containsKey('P3'))
+        ReasonItem(Icons.check_circle, '지역: ${_labelFor(_q('P3'), _answers['P3']!)}', '충족'),
+      if (_answers.containsKey('P4'))
+        ReasonItem(Icons.check_circle, '보증금: ${_labelFor(_q('P4'), _answers['P4']!)}', '충족'),
+      if (_answers['P7'] == 'encumbrance_yes')
+        const ReasonItem(Icons.warning_amber, '근저당 있음 → 등기 확인 필요', '주의'),
     ];
     _rows.add(_Row.result(ResultCard(
       status: RulingStatus.possible,
@@ -141,10 +169,34 @@ class _ConversationPageState extends State<ConversationPage> {
     switch (qid) {
       case 'A1':
         return '세대주 여부';
+      case 'A2':
+        return '혼인/부양 상태';
       case 'A3':
         return '소득 형태';
+      case 'A4':
+        return '소득 구간';
+      case 'A5':
+        return '재직/사업 기간';
+      case 'A6':
+        return '기존 대출/보증';
+      case 'A7':
+        return '신용/연체 이력';
       case 'P1':
         return '주택 유형';
+      case 'P2':
+        return '전용면적';
+      case 'P3':
+        return '지역';
+      case 'P4':
+        return '보증금(또는 보증금+월세)';
+      case 'P5':
+        return '계약 상태';
+      case 'P6':
+        return '입주 예정';
+      case 'P7':
+        return '등기 근저당';
+      case 'S1':
+        return '우대/특례';
       default:
         return qid;
     }
@@ -190,14 +242,23 @@ class _ConversationPageState extends State<ConversationPage> {
                         child: ChatBubble(role: ChatRole.user, content: row.text ?? ''),
                       );
                     case _RowType.intake:
+                      final idx = _flow.indexWhere((e) => e.qid == row.qid);
+                      final total = _flow.length;
                       return Padding(
                         padding: EdgeInsets.only(bottom: spacing.x4),
-                        child: IntakeQuestion(
-                          qid: row.qid!,
-                          label: row.label!,
-                          options: row.choices!,
-                          showUnknown: true,
-                          onChanged: (v) => _onChoiceSelected(row.qid!, v),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('진행 ${idx + 1}/$total', style: Theme.of(context).textTheme.labelMedium),
+                            SizedBox(height: spacing.x1),
+                            IntakeQuestion(
+                              qid: row.qid!,
+                              label: row.label!,
+                              options: row.choices!,
+                              showUnknown: true,
+                              onChanged: (v) => _onChoiceSelected(row.qid!, v),
+                            ),
+                          ],
                         ),
                       );
                     case _RowType.result:
@@ -225,7 +286,7 @@ class _ConversationPageState extends State<ConversationPage> {
     );
   }
 
-  // Question flow (subset for demo)
+  // Question flow (full v1 per INTAKE_FLOW.md)
   static final List<_Question> _flow = [
     _Question(
       qid: 'A1',
@@ -234,6 +295,15 @@ class _ConversationPageState extends State<ConversationPage> {
         Choice(value: 'owner', text: '무주택·세대주'),
         Choice(value: 'member', text: '무주택·세대원'),
         Choice(value: 'onehome', text: '1주택'),
+      ],
+    ),
+    _Question(
+      qid: 'A2',
+      label: '혼인/부양 상태를 선택해 주세요.',
+      choices: const [
+        Choice(value: 'single', text: '미혼'),
+        Choice(value: 'newly', text: '신혼(혼인 7년 이내)'),
+        Choice(value: 'children', text: '자녀 있음'),
       ],
     ),
     _Question(
@@ -246,16 +316,126 @@ class _ConversationPageState extends State<ConversationPage> {
       ],
     ),
     _Question(
+      qid: 'A4',
+      label: '연간 소득 구간을 선택해 주세요.',
+      choices: const [
+        Choice(value: 'inc1', text: '내부 구간 1'),
+        Choice(value: 'inc2', text: '내부 구간 2'),
+        Choice(value: 'inc3', text: '내부 구간 3'),
+        Choice(value: 'inc4', text: '내부 구간 4'),
+      ],
+    ),
+    _Question(
+      qid: 'A5',
+      label: '현재 재직/사업 기간은 얼마나 되나요?',
+      choices: const [
+        Choice(value: 'm0_6', text: '0~6개월'),
+        Choice(value: 'm7_12', text: '7~12개월'),
+        Choice(value: 'm13_24', text: '13~24개월'),
+        Choice(value: 'm24p', text: '24개월 이상'),
+      ],
+    ),
+    _Question(
+      qid: 'A6',
+      label: '보유 중인 대출/보증이 있나요?',
+      choices: const [
+        Choice(value: 'jeonse', text: '전세보증'),
+        Choice(value: 'mtg', text: '주담대'),
+        Choice(value: 'credit', text: '신용'),
+        Choice(value: 'none', text: '없음'),
+      ],
+    ),
+    _Question(
+      qid: 'A7',
+      label: '최근 연체·회생·파산·면책 이력이 있나요?',
+      choices: const [
+        Choice(value: 'credit_ok', text: '문제 없음'),
+        Choice(value: 'credit_recent', text: '최근 연체'),
+        Choice(value: 'credit_severe', text: '장기연체/회생/파산/면책'),
+      ],
+    ),
+    _Question(
       qid: 'P1',
       label: '주택 유형을 선택해 주세요.',
       choices: const [
         Choice(value: 'apt', text: '아파트'),
         Choice(value: 'officetel', text: '오피스텔'),
+        Choice(value: 'multifam', text: '다가구'),
+        Choice(value: 'villa', text: '연립·다세대'),
         Choice(value: 'one_room', text: '원룸'),
         Choice(value: 'etc', text: '기타'),
       ],
     ),
+    _Question(
+      qid: 'P2',
+      label: '전용면적 범위를 선택해 주세요.',
+      choices: const [
+        Choice(value: 'fa_le40', text: '≤ 40㎡'),
+        Choice(value: 'fa_41_60', text: '41–60㎡'),
+        Choice(value: 'fa_61_85', text: '61–85㎡'),
+        Choice(value: 'fa_gt85', text: '85㎡ 초과'),
+      ],
+    ),
+    _Question(
+      qid: 'P3',
+      label: '지역을 선택해 주세요.',
+      choices: const [
+        Choice(value: 'metro', text: '수도권'),
+        Choice(value: 'metrocity', text: '광역시'),
+        Choice(value: 'other', text: '기타'),
+      ],
+    ),
+    _Question(
+      qid: 'P4',
+      label: '전세보증금(또는 보증금+월세)을 알려주세요.',
+      choices: const [
+        Choice(value: 'dep_le1', text: '1억 이하'),
+        Choice(value: 'dep_1_2', text: '1~2억'),
+        Choice(value: 'dep_2_3', text: '2~3억'),
+        Choice(value: 'dep_gt3', text: '3억 이상'),
+      ],
+    ),
+    _Question(
+      qid: 'P5',
+      label: '계약 상태를 알려주세요.',
+      choices: const [
+        Choice(value: 'pre', text: '계약 전'),
+        Choice(value: 'precontract', text: '가계약'),
+        Choice(value: 'contract', text: '본계약'),
+      ],
+    ),
+    _Question(
+      qid: 'P6',
+      label: '입주 예정 시점을 알려주세요.',
+      choices: const [
+        Choice(value: 'w1', text: '1주 내'),
+        Choice(value: 'w2_4', text: '2~4주'),
+        Choice(value: 'm1_3', text: '1~3개월'),
+        Choice(value: 'm3p', text: '3개월+'),
+      ],
+    ),
+    _Question(
+      qid: 'P7',
+      label: '등기상 근저당이 있나요?',
+      choices: const [
+        Choice(value: 'encumbrance_yes', text: '있음'),
+        Choice(value: 'encumbrance_no', text: '없음'),
+      ],
+    ),
+    _Question(
+      qid: 'S1',
+      label: '우대/특례에 해당되나요?',
+      choices: const [
+        Choice(value: 'youth', text: '청년'),
+        Choice(value: 'newly', text: '신혼'),
+        Choice(value: 'multi', text: '다자녀'),
+        Choice(value: 'lowinc', text: '저소득'),
+        Choice(value: 'none', text: '해당 없음'),
+      ],
+    ),
   ];
+
+  static _Question _q(String id) => _flow.firstWhere((e) => e.qid == id);
 }
 
 class _Composer extends StatelessWidget {
@@ -354,4 +534,3 @@ class _Row {
         choices = null,
         resultCard = null;
 }
-

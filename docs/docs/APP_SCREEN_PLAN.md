@@ -2,6 +2,14 @@
 
 마지막 업데이트: 2025-09-02
 
+## 문서 연관성
+- 상위 가이드: UI_UX_GUIDE.md (UI 원칙/계약/A11y/측정 총괄)
+- 제품 요구사항: PRD_v1.md (수용기준/범위)
+- 규칙/정책: RULES_HUG_v1.md, RAG_POLICY.md (판정/인용/최신성 기준)
+- 청사진/토큰: UI_BLUEPRINT.yaml, DESIGN_TOKENS.yaml
+- 컴포넌트/카피: COMPONENT_SPECS.md, COPY_GUIDE.md, RESULT_CARD_COPY.md
+- 인덱스: DOCS_INDEX.md (읽기 순서 및 연관 맵)
+
 ## 목적/요약
 - 목표: 선택형 인테이크를 챗 스레드 안에서 자연스럽게 진행하고, 결과 카드와 후속 Q&A를 동일한 대화 맥락에서 제공.
 - 원칙: 실용 요약(TL;DR → 이유/예외 → 다음 단계), ‘모름’은 즉시 표시 및 불가(정보 부족) 귀결, 내부 문서 기반, 마지막 확인일 노출.
@@ -126,4 +134,3 @@
 - 컴포넌트: COMPONENT_SPECS.md
 - UI 토큰/청사진: DESIGN_TOKENS.yaml, UI_BLUEPRINT.yaml
 - 측정/운영/법/광고: MEASUREMENT_PLAN.md, OPERATIONS_RUNBOOK.md, LEGAL_CHECKLIST.md, ADS_POLICY.md
-
