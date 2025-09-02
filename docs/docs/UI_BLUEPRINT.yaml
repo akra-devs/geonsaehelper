@@ -1,0 +1,92 @@
+version: "v1.0"
+last_updated: "2025-09-02"
+
+tokens:
+  spacing: [4,8,12,16,24,32]
+  radius: 8
+  icon: 24
+  typography: [display, headline, title, body, label]
+
+screens:
+  home:
+    frame: { platform: mobile, size: "360x800" }
+    appbar: { title: "전세자금대출 도우미", actions: [help] }
+    sections:
+      - search: { type: SearchBar, placeholder: "질문을 입력하세요…" }
+      - grid:
+          columns: 2
+          cards:
+            - { id: eligibility, title: "자격(본인·집)", icon: checklist }
+            - { id: limit, title: "한도(개요)", icon: chart }
+            - { id: docs, title: "서류 체크리스트", icon: folder }
+            - { id: process, title: "절차 안내", icon: timeline }
+      - banner: { id: policy_feed, text: "정책 변경 요약 보기", optional: true }
+
+  intake:
+    frame: { platform: mobile, size: "360x800" }
+    header: { title: "예비자격 빠른 판정", progress: { current: 3, total: 10 } }
+    question:
+      component: IntakeQuestion
+      props: { qid: "A1", type: "single", hasUnknown: true, helper: true }
+    nav: { primary: next, secondary: prev }
+
+  result_possible:
+    frame: { platform: mobile, size: "360x800" }
+    card:
+      component: ResultCard
+      props: { status: possible, lastVerified: "YYYY-MM-DD" }
+      slots:
+        tldr: "예비판정 결과, ‘해당’합니다. 체크리스트를 확인하세요."
+        reasons:
+          - { icon: check, text: "무주택·세대주(충족)" }
+          - { icon: check, text: "소득 형태/구간: 근로 / 5천만원대" }
+          - { icon: check, text: "주택 유형/면적: 아파트 / 59㎡" }
+          - { icon: check, text: "지역/보증금: 수도권 / 3억" }
+          - { icon: warn, text: "근저당 있음 → 등기 확인 필요", optional: true }
+        next_steps:
+          - "신분증·가족/혼인관계·소득 증빙 준비"
+          - "임대인 등기부등본/계약서 사본"
+          - "은행 상담 → 심사 → 승인 → 실행"
+    ctas: [docs_checklist, howto_verify, estimate_limit]
+    adslot: optional
+
+  result_info_lack:
+    frame: { platform: mobile, size: "360x800" }
+    card:
+      component: ResultCard
+      props: { status: not_possible_info, lastVerified: "YYYY-MM-DD" }
+      slots:
+        tldr: "정보 부족으로 판정 불가입니다."
+        unknown_list: ["세대주 여부", "보증금 구간", "근저당 유무"]
+        howto:
+          - "세대주: 정부24"
+          - "보증금: 계약서 확인"
+          - "근저당: 등기부등본"
+    cta_primary: retry_after_verify
+
+  result_disqualifier:
+    frame: { platform: mobile, size: "360x800" }
+    card:
+      component: ResultCard
+      props: { status: not_possible_disq, lastVerified: "YYYY-MM-DD" }
+      slots:
+        tldr: "결격 사유로 신청이 불가합니다."
+        reasons: ["무주택 요건 불충족", "보증금 한도 초과"]
+        next: ["조건 변경(보증금 조정) 또는 타 기관 검토"]
+    cta_secondary: similar_cases
+
+  chat:
+    frame: { platform: mobile, size: "360x800" }
+    history:
+      - { role: bot, hasCitations: true }
+      - { role: user }
+    composer:
+      input: { placeholder: "질문을 입력하세요…" }
+      suggestions: [estimate_limit, docs_guide, glossary]
+    adslot: optional
+
+events:  # MEASUREMENT_PLAN과 1:1 매핑
+  intake_answer: { qid: A1 }
+  ruling_shown: { status: not_possible_info }
+  qna_ask: { topic: docs }
+

@@ -1,0 +1,88 @@
+version: "v1.0"
+last_verified: "2025-09-02"
+
+# 내부 규정 문서 매핑 — 값을 고객 내부 문서 기준으로 채워주세요.
+documents:
+  primary:
+    file: "HUG_internal_policy.md"   # 내부 문서 파일명(예시)
+    note: "외부 공개 금지. 섹션/키는 내부 문서 체계를 따름."
+
+sources:
+  household_requirement:
+    doc: primary
+    section: "A.1"           # 예: 무주택/세대주 요건 섹션
+    key: "household_status"
+
+  credit_disqualifiers:
+    doc: primary
+    section: "A.2"           # 예: 신용/연체 관련 결격 섹션
+    flags:
+      - long_delinquency      # 장기연체
+      - rehabilitation        # 개인회생
+      - bankruptcy            # 파산
+      - discharge             # 면책
+
+  property_type_rules:
+    doc: primary
+    section: "B.1"           # 예: 보증 대상 주택 유형/면적
+    allowed_types:
+      - apartment             # 아파트
+      - officetel             # 오피스텔(주거용)
+      - multi_family          # 다가구
+      - row_house             # 연립·다세대
+      - studio                # 원룸
+    disallowed_types:
+      - non_residential       # 비주거(오피스, 상가 등)
+
+  floor_area_thresholds:
+    doc: primary
+    section: "B.1"
+    max_by_type:
+      apartment: "FILL_ME"    # m² 또는 평 기준, 내부 값 입력
+      officetel: "FILL_ME"
+      multi_family: "FILL_ME"
+      row_house: "FILL_ME"
+      studio: "FILL_ME"
+
+  deposit_limits:
+    doc: primary
+    section: "B.2"           # 예: 지역별 전세보증금 한도
+    max_by_region:
+      seoul_metro: "FILL_ME"  # 수도권
+      metro_cities: "FILL_ME" # 광역시
+      others: "FILL_ME"       # 그 외
+
+  pre_contract_policy:
+    doc: primary
+    section: "C.1"           # 예: 계약 전 상태 정책
+    action: "warn"           # warn | allow | disqualify 중 내부 규정대로
+
+  encumbrance_policy:
+    doc: primary
+    section: "C.2"           # 예: 근저당 존재 시 정책
+    action: "warn_or_disqualify"  # warn | disqualify | warn_or_disqualify
+
+required_fields:
+  applicant:
+    - household_status
+    - income_type
+    - income_band
+    - employment_months
+  property:
+    - type
+    - floor_area_band
+    - region
+    - deposit_band
+
+message_overrides:  # 필요 시 RULES_HUG_v1.md 기본 문구 대신 교체
+  ineligible_household: null
+  ineligible_credit: null
+  ineligible_property_type_or_area: null
+  deposit_over_limit: null
+  require_household_status: null
+  require_income_band: null
+  require_employment_months: null
+  require_property_details: null
+  pre_contract_warning: null
+  encumbrance_warning: null
+
