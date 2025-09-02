@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'ui/theme/app_theme.dart';
-import 'ui/demo/demo_gallery.dart';
+import 'features/conversation/ui/conversation_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
       theme: buildAppTheme(Brightness.light),
       darkTheme: buildAppTheme(Brightness.dark),
       themeMode: ThemeMode.system,
-      home: const DemoGallery(),
+      home: const ConversationPage(),
     );
   }
 }
