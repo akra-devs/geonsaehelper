@@ -3,6 +3,11 @@ import '../../../ui/components/chat_bubble.dart';
 import '../../../ui/components/intake_question.dart';
 import '../../../ui/components/result_card.dart';
 import '../../../ui/theme/app_theme.dart';
+import '../../../ui/components/progress_inline.dart';
+import '../../../ui/components/typing_indicator.dart';
+import '../../../ui/components/ad_slot.dart';
+import '../../../common/analytics/analytics.dart';
+import '../../../ui/components/appear.dart';
 
 class ConversationPage extends StatefulWidget {
   const ConversationPage({super.key});
@@ -18,6 +23,9 @@ class _ConversationPageState extends State<ConversationPage> {
   int _step = 0; // index of current question in _flow
   bool _awaitingChoice = true;
 
+  _Phase _phase = _Phase.survey;
+  DateTime _phaseStartedAt = DateTime.now();
+
   static const _unknown = '__unknown__';
 
   @override
@@ -25,7 +33,7 @@ class _ConversationPageState extends State<ConversationPage> {
     super.initState();
     // Kick off with greeting + first question
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _appendBotText('예비자격 빠른 판정을 진행합니다. 각 질문에 답해주세요. 모르면 “모름”을 선택하세요.');
+      _appendBotText('간단 조사를 통해 맞춤 안내를 준비할게요. 이후 예비판정을 진행합니다.');
       _askCurrent();
     });
   }
@@ -52,7 +60,8 @@ class _ConversationPageState extends State<ConversationPage> {
   }
 
   void _askCurrent() {
-    final q = _flow[_step];
+    final list = _phase == _Phase.survey ? _surveyFlow : _flow;
+    final q = list[_step];
     _appendQuestion(q.qid, q.label, q.choices);
   }
 
@@ -62,13 +71,34 @@ class _ConversationPageState extends State<ConversationPage> {
     final label = _labelFor(q, value);
     _appendUserText(label);
     _answers[qid] = value;
+    final isUnknown = value == _unknown;
+    if (_phase == _Phase.intake) {
+      Analytics.instance.intakeAnswer(qid, value, isUnknown);
+    }
     setState(() => _awaitingChoice = false);
 
-    if (_step < _flow.length - 1) {
+    final list = _phase == _Phase.survey ? _surveyFlow : _flow;
+    if (_step < list.length - 1) {
       _step += 1;
       _askCurrent();
     } else {
-      _evaluateAndShow();
+      if (_phase == _Phase.survey) {
+        // Survey done → transition to intake
+        final surveyDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
+        Analytics.instance.quickSurveyComplete(_surveyFlow.length, surveyDuration);
+        _appendBotText('감사합니다. 답변을 반영해 예비판정을 시작할게요.');
+        setState(() {
+          _phase = _Phase.intake;
+          _step = 0;
+          _phaseStartedAt = DateTime.now();
+        });
+        Analytics.instance.intakeStart();
+        _rows.add(_Row.botRich(const TypingIndicator()));
+        setState(() {});
+        Future.delayed(const Duration(milliseconds: 400), _askCurrent);
+      } else {
+        _evaluateAndShow();
+      }
     }
   }
 
@@ -79,7 +109,10 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _evaluateAndShow() {
     // Minimal evaluation logic per RULES_HUG_v1.md
-    final unknowns = _answers.entries.where((e) => e.value == _unknown).map((e) => e.key).toList();
+    final unknowns = _answers.entries
+        .where((e) => e.value == _unknown && !_isSurveyQid(e.key))
+        .map((e) => e.key)
+        .toList();
     if (unknowns.isNotEmpty) {
       final reasons = unknowns
           .map((qid) => ReasonItem(Icons.help_outline, _unknownLabel(qid), '확인불가'))
@@ -95,8 +128,11 @@ class _ConversationPageState extends State<ConversationPage> {
         ],
         lastVerified: '2025-09-02',
       )));
+      final intakeDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
+      Analytics.instance.intakeComplete(_flow.length, intakeDuration, true, 'not_possible_info');
+      Analytics.instance.rulingShown('not_possible_info');
       setState(() {});
-      _appendBotText('궁금한 점을 이어서 질문해 주세요. 내부 문서 기준으로 요약해 드립니다.');
+      _showSuggestionsAndAds();
       return;
     }
 
@@ -111,8 +147,11 @@ class _ConversationPageState extends State<ConversationPage> {
         nextSteps: const ['조건 변경(보증금 조정) 또는 타 기관 검토'],
         lastVerified: '2025-09-02',
       )));
+      final intakeDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
+      Analytics.instance.intakeComplete(_flow.length, intakeDuration, false, 'not_possible_disq');
+      Analytics.instance.rulingShown('not_possible_disq');
       setState(() {});
-      _appendBotText('다른 조건이나 기관 가능성을 확인해 보시겠어요?');
+      _showSuggestionsAndAds();
       return;
     }
 
@@ -161,8 +200,24 @@ class _ConversationPageState extends State<ConversationPage> {
       ],
       lastVerified: '2025-09-02',
     )));
+    final intakeDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
+    Analytics.instance.intakeComplete(_flow.length, intakeDuration, false, 'possible');
+    Analytics.instance.rulingShown('possible');
     setState(() {});
-    _appendBotText('한도/서류/절차 등 무엇이든 질문해 주세요.');
+    _showSuggestionsAndAds();
+  }
+
+  void _showSuggestionsAndAds() {
+    _rows.add(_Row.suggestions(const [
+      _Suggestion('한도 추정하기', '한도는 소득/보증금/지역 등에 따라 달라집니다. 내부 기준으로 개요를 안내드릴게요.'),
+      _Suggestion('서류 체크리스트', '기본 서류는 신분증, 가족·혼인관계, 소득 증빙입니다. 발급처와 순서를 안내해요.'),
+      _Suggestion('확인 방법 보기', '세대주/보증금/근저당 확인 방법을 알려드릴게요.'),
+    ]));
+    _rows.add(_Row.ad(const AdSlot(placement: AdPlacement.resultBottom)));
+    setState(() {
+      _phase = _Phase.qna;
+      _awaitingChoice = false;
+    });
   }
 
   String _unknownLabel(String qid) {
@@ -207,12 +262,14 @@ class _ConversationPageState extends State<ConversationPage> {
     if (text.isEmpty) return;
     _composer.clear();
     _appendUserText(text);
+    Analytics.instance.qnaAsk('free', text.length);
     // Stubbed bot answer following RAG policy tone
     _rows.add(_Row.botRich(const ChatBubble(
       role: ChatRole.bot,
       content: 'TL;DR: 서류는 신분증, 가족·혼인관계, 소득 증빙이 기본입니다. 다음 단계에서 발급처/순서를 안내해 드립니다.',
       citations: [Citation('HUG_internal_policy.md', 'A.1')],
     )));
+    Analytics.instance.qnaAnswer(true, '2025-09-02');
     setState(() {});
   }
 
@@ -232,44 +289,91 @@ class _ConversationPageState extends State<ConversationPage> {
                   final row = _rows[index];
                   switch (row.type) {
                     case _RowType.botText:
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: spacing.x3),
-                        child: ChatBubble(role: ChatRole.bot, content: row.text ?? ''),
+                      return Appear(
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: spacing.x3),
+                          child: ChatBubble(role: ChatRole.bot, content: row.text ?? ''),
+                        ),
                       );
                     case _RowType.userText:
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: spacing.x3),
-                        child: ChatBubble(role: ChatRole.user, content: row.text ?? ''),
+                      return Appear(
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: spacing.x3),
+                          child: ChatBubble(role: ChatRole.user, content: row.text ?? ''),
+                        ),
                       );
                     case _RowType.intake:
-                      final idx = _flow.indexWhere((e) => e.qid == row.qid);
-                      final total = _flow.length;
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: spacing.x4),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('진행 ${idx + 1}/$total', style: Theme.of(context).textTheme.labelMedium),
-                            SizedBox(height: spacing.x1),
-                            IntakeQuestion(
-                              qid: row.qid!,
-                              label: row.label!,
-                              options: row.choices!,
-                              showUnknown: true,
-                              onChanged: (v) => _onChoiceSelected(row.qid!, v),
-                            ),
-                          ],
+                      final isSurvey = _isSurveyQid(row.qid!);
+                      final list = isSurvey ? _surveyFlow : _flow;
+                      final idx = list.indexWhere((e) => e.qid == row.qid);
+                      final total = list.length;
+                      return Appear(
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: spacing.x4),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ProgressInline(current: idx + 1, total: total, showBar: true),
+                              SizedBox(height: spacing.x1),
+                              IntakeQuestion(
+                                qid: row.qid!,
+                                label: row.label!,
+                                options: row.choices!,
+                                showUnknown: true,
+                                onChanged: (v) => _onChoiceSelected(row.qid!, v),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    case _RowType.ad:
+                      return Appear(
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: spacing.x4),
+                          child: row.adWidget!,
+                        ),
+                      );
+                    case _RowType.suggestions:
+                      return Appear(
+                        duration: const Duration(milliseconds: 120),
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: spacing.x3),
+                          child: Wrap(
+                            spacing: spacing.x2,
+                            runSpacing: spacing.x2,
+                            children: [
+                              for (final s in row.suggestions!)
+                                ActionChip(
+                                  avatar: const Icon(Icons.tips_and_updates, size: 18),
+                                  label: Text(s.label),
+                                  onPressed: () {
+                                    _appendUserText(s.label);
+                                    _rows.add(_Row.botRich(ChatBubble(
+                                      role: ChatRole.bot,
+                                      content: s.botReply,
+                                    )));
+                                    Analytics.instance.nextStepClick(s.label);
+                                    setState(() {});
+                                  },
+                                ),
+                            ],
+                          ),
                         ),
                       );
                     case _RowType.result:
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: spacing.x4),
-                        child: row.resultCard!,
+                      return Appear(
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: spacing.x4),
+                          child: row.resultCard!,
+                        ),
                       );
                     case _RowType.botRich:
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: spacing.x3),
-                        child: row.richWidget!,
+                      return Appear(
+                        duration: const Duration(milliseconds: 120),
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: spacing.x3),
+                          child: row.richWidget!,
+                        ),
                       );
                   }
                 },
@@ -436,6 +540,38 @@ class _ConversationPageState extends State<ConversationPage> {
   ];
 
   static _Question _q(String id) => _flow.firstWhere((e) => e.qid == id);
+
+  static final List<_Question> _surveyFlow = [
+    _Question(
+      qid: 'QS1',
+      label: '언제까지 준비가 필요하신가요?',
+      choices: const [
+        Choice(value: 'soon', text: '2주 이내'),
+        Choice(value: 'month1', text: '1개월 이내'),
+        Choice(value: 'flex', text: '유연함'),
+      ],
+    ),
+    _Question(
+      qid: 'QS2',
+      label: '어떤 정보가 가장 궁금하신가요?',
+      choices: const [
+        Choice(value: 'elig', text: '자격'),
+        Choice(value: 'limit', text: '한도'),
+        Choice(value: 'docs', text: '서류/절차'),
+      ],
+    ),
+    _Question(
+      qid: 'QS3',
+      label: '주 관심 지역을 선택해 주세요.',
+      choices: const [
+        Choice(value: 'metro', text: '수도권'),
+        Choice(value: 'metrocity', text: '광역시'),
+        Choice(value: 'other', text: '기타'),
+      ],
+    ),
+  ];
+
+  bool _isSurveyQid(String qid) => qid.startsWith('QS');
 }
 
 class _Composer extends StatelessWidget {
@@ -447,30 +583,46 @@ class _Composer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacing;
+    final cs = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(12);
     return Container(
       padding: EdgeInsets.fromLTRB(spacing.x3, spacing.x2, spacing.x3, spacing.x2),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+        color: cs.surface,
+        border: Border(top: BorderSide(color: cs.outlineVariant)),
       ),
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: controller,
-              enabled: enabled,
-              decoration: InputDecoration(
-                hintText: enabled ? '질문을 입력하세요…' : '선택지에서 답변해 주세요',
-                isDense: true,
-                border: const OutlineInputBorder(),
+            child: Material(
+              elevation: enabled ? 2 : 0,
+              color: cs.surfaceVariant,
+              borderRadius: radius,
+              child: TextField(
+                controller: controller,
+                enabled: enabled,
+                decoration: InputDecoration(
+                  hintText: enabled ? '질문을 입력하세요…' : '선택지에서 답변해 주세요',
+                  isDense: true,
+                  filled: true,
+                  fillColor: cs.surfaceVariant,
+                  contentPadding: EdgeInsets.symmetric(horizontal: spacing.x3, vertical: spacing.x2),
+                  border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+                ),
+                onSubmitted: (_) => onSend(),
               ),
-              onSubmitted: (_) => onSend(),
             ),
           ),
           SizedBox(width: spacing.x2),
-          IconButton(
-            onPressed: enabled ? onSend : null,
-            icon: const Icon(Icons.send),
+          Container(
+            decoration: BoxDecoration(
+              color: enabled ? cs.primary : cs.surfaceVariant,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IconButton(
+              onPressed: enabled ? onSend : null,
+              icon: Icon(Icons.send, color: enabled ? cs.onPrimary : cs.onSurfaceVariant),
+            ),
           ),
         ],
       ),
@@ -485,7 +637,7 @@ class _Question {
   const _Question({required this.qid, required this.label, required this.choices});
 }
 
-enum _RowType { botText, userText, intake, result, botRich }
+enum _RowType { botText, userText, intake, result, botRich, ad, suggestions }
 
 class _Row {
   final _RowType type;
@@ -495,6 +647,8 @@ class _Row {
   final List<Choice>? choices;
   final ResultCard? resultCard;
   final Widget? richWidget;
+  final Widget? adWidget;
+  final List<_Suggestion>? suggestions;
 
   _Row.bot(this.text)
       : type = _RowType.botText,
@@ -502,7 +656,9 @@ class _Row {
         label = null,
         choices = null,
         resultCard = null,
-        richWidget = null;
+        richWidget = null,
+        adWidget = null,
+        suggestions = null;
 
   _Row.user(this.text)
       : type = _RowType.userText,
@@ -510,13 +666,17 @@ class _Row {
         label = null,
         choices = null,
         resultCard = null,
-        richWidget = null;
+        richWidget = null,
+        adWidget = null,
+        suggestions = null;
 
   _Row.intake({required this.qid, required this.label, required this.choices})
       : type = _RowType.intake,
         text = null,
         resultCard = null,
-        richWidget = null;
+        richWidget = null,
+        adWidget = null,
+        suggestions = null;
 
   _Row.result(this.resultCard)
       : type = _RowType.result,
@@ -524,7 +684,9 @@ class _Row {
         qid = null,
         label = null,
         choices = null,
-        richWidget = null;
+        richWidget = null,
+        adWidget = null,
+        suggestions = null;
 
   _Row.botRich(this.richWidget)
       : type = _RowType.botRich,
@@ -532,5 +694,35 @@ class _Row {
         qid = null,
         label = null,
         choices = null,
-        resultCard = null;
+        resultCard = null,
+        adWidget = null,
+        suggestions = null;
+
+  _Row.ad(this.adWidget)
+      : type = _RowType.ad,
+        text = null,
+        qid = null,
+        label = null,
+        choices = null,
+        resultCard = null,
+        richWidget = null,
+        suggestions = null;
+
+  _Row.suggestions(this.suggestions)
+      : type = _RowType.suggestions,
+        text = null,
+        qid = null,
+        label = null,
+        choices = null,
+        resultCard = null,
+        richWidget = null,
+        adWidget = null;
 }
+
+class _Suggestion {
+  final String label;
+  final String botReply;
+  const _Suggestion(this.label, this.botReply);
+}
+
+enum _Phase { survey, intake, qna }
