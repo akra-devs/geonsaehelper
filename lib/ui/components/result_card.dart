@@ -32,11 +32,22 @@ class ResultCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     switch (status) {
       case RulingStatus.possible:
-        return Colors.green;
+        return cs.primary;
       case RulingStatus.notPossibleInfo:
-        return Colors.amber[700] ?? cs.tertiary;
+        return cs.tertiary;
       case RulingStatus.notPossibleDisq:
         return cs.error;
+    }
+  }
+
+  IconData _statusIcon() {
+    switch (status) {
+      case RulingStatus.possible:
+        return Icons.check_circle;
+      case RulingStatus.notPossibleInfo:
+        return Icons.info;
+      case RulingStatus.notPossibleDisq:
+        return Icons.error;
     }
   }
 
@@ -71,22 +82,19 @@ class ResultCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: _statusColor(context),
-                    shape: BoxShape.circle,
-                  ),
-                ),
+                Icon(_statusIcon(), color: _statusColor(context)),
                 SizedBox(width: spacing.x2),
-                Text(_statusLabel(), style: Theme.of(context).textTheme.labelLarge),
+                Text(_statusLabel(), style: Theme.of(context).textTheme.titleSmall?.copyWith(color: _statusColor(context))),
                 const Spacer(),
                 _LastVerifiedBadge(lastVerified: lastVerified),
               ],
             ),
             SizedBox(height: spacing.x3),
-            Text(tldr, key: const Key('ResultCard.TLDR'), style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              tldr,
+              key: const Key('ResultCard.TLDR'),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
             SizedBox(height: spacing.x3),
             if (reasons.isNotEmpty) ...[
               Text('사유', style: Theme.of(context).textTheme.titleSmall),
@@ -94,18 +102,20 @@ class ResultCard extends StatelessWidget {
               Column(
                 key: const Key('ResultCard.Reasons'),
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: reasons
-                    .map((r) => Padding(
-                          padding: EdgeInsets.only(bottom: spacing.x2),
-                          child: Row(
-                            children: [
-                              Icon(r.icon, size: 18),
-                              SizedBox(width: spacing.x2),
-                              Expanded(child: Text(r.text)),
-                            ],
-                          ),
-                        ))
-                    .toList(),
+                children: reasons.map((r) {
+                  final color = _reasonColor(context, r.type);
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: spacing.x2),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(r.icon, size: 18, color: color),
+                        SizedBox(width: spacing.x2),
+                        Expanded(child: Text(r.text, style: Theme.of(context).textTheme.bodyMedium)),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
               SizedBox(height: spacing.x3),
             ],
@@ -122,7 +132,8 @@ class ResultCard extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('• '),
+                          Icon(Icons.chevron_right, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          SizedBox(width: spacing.x1),
                           Expanded(child: Text(s)),
                         ],
                       ),
@@ -135,6 +146,21 @@ class ResultCard extends StatelessWidget {
       ),
     );
   }
+
+  Color _reasonColor(BuildContext context, String type) {
+    final cs = Theme.of(context).colorScheme;
+    switch (type) {
+      case '충족':
+        return cs.primary;
+      case '미충족':
+        return cs.error;
+      case '확인불가':
+      case '주의':
+        return cs.tertiary;
+      default:
+        return cs.onSurfaceVariant;
+    }
+  }
 }
 
 class _LastVerifiedBadge extends StatelessWidget {
@@ -143,14 +169,21 @@ class _LastVerifiedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacing;
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: cs.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text('마지막 확인일 $lastVerified', style: Theme.of(context).textTheme.labelSmall),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.schedule, size: 14),
+          SizedBox(width: spacing.x1),
+          Text('마지막 확인일 $lastVerified', style: Theme.of(context).textTheme.labelSmall),
+        ],
+      ),
     );
   }
 }
-
