@@ -25,6 +25,7 @@ class _ConversationPageState extends State<ConversationPage> {
   final List<_Row> _rows = [];
   final TextEditingController _composer = TextEditingController();
   bool _awaitingChoice = true;
+  final ScrollController _scroll = ScrollController();
 
   static const _unknown = '__unknown__';
 
@@ -43,15 +44,18 @@ class _ConversationPageState extends State<ConversationPage> {
   @override
   void dispose() {
     _composer.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
   void _appendBotText(String text) {
     setState(() => _rows.add(_Row.bot(text)));
+    _scheduleScroll();
   }
 
   void _appendUserText(String text) {
     setState(() => _rows.add(_Row.user(text)));
+    _scheduleScroll();
   }
 
   void _appendQuestion(
@@ -73,6 +77,7 @@ class _ConversationPageState extends State<ConversationPage> {
       ));
       _awaitingChoice = true;
     });
+    _scheduleScroll();
   }
 
   void _onChoiceSelected(BuildContext ctx, String qid, String? value) {
@@ -106,6 +111,23 @@ class _ConversationPageState extends State<ConversationPage> {
     setState(() {
       _awaitingChoice = false;
     });
+    _scheduleScroll();
+  }
+
+  void _scheduleScroll() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // If no scroll controller yet or no clients, ignore.
+      final primary = PrimaryScrollController.maybeOf(context);
+      final controller = _scroll.hasClients ? _scroll : primary;
+      if (controller == null || !controller.hasClients) return;
+      final offset = controller.position.maxScrollExtent;
+      controller.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   void _onSend(BuildContext ctx) {
@@ -123,6 +145,7 @@ class _ConversationPageState extends State<ConversationPage> {
     _rows.add(_Row.botRich(const TypingIndicator()));
     _typingRowIndex = _rows.length - 1;
     setState(() {});
+    _scheduleScroll();
     return _typingRowIndex!;
   }
 
@@ -137,6 +160,7 @@ class _ConversationPageState extends State<ConversationPage> {
       citations: cites,
     ));
     setState(() {});
+    _scheduleScroll();
   }
 
   void _replaceTypingWithError(int typingIndex, String message) {
@@ -145,6 +169,7 @@ class _ConversationPageState extends State<ConversationPage> {
       content: message,
     ));
     setState(() {});
+    _scheduleScroll();
   }
 
   @override
@@ -213,6 +238,7 @@ class _ConversationPageState extends State<ConversationPage> {
                 _showSuggestionsAndAds();
               }
               setState(() => _awaitingChoice = state.awaitingChoice);
+              _scheduleScroll();
             },
           ),
         ],
@@ -223,6 +249,7 @@ class _ConversationPageState extends State<ConversationPage> {
               children: [
             Expanded(
               child: ListView.builder(
+                controller: _scroll,
                 padding: EdgeInsets.all(spacing.x4),
                 itemCount: _rows.length,
                 itemBuilder: (context, index) {
