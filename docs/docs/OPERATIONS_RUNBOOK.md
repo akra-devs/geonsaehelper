@@ -37,5 +37,11 @@ Status: canonical (Operations)
 - RULES_HUG_v1.md / RULES_HUG_mapping.yaml: version, last_verified(단일 소스) 필드, 변경 이력 유지
 - PRODUCT_BRIEF.md/PRD_v1.md: 주요 결정 변경 시 업데이트
 
+## 7) 앱 연동 TODO
+- last_verified 주입: 앱은 RULES_HUG_mapping.yaml.last_verified를 구성 객체로 주입받도록 합니다.
+  - 제안: 빌드 단계에서 YAML→Dart const 변환 스텁 생성(`lib/common/config/rules_meta.dart`).
+  - 대안: 런타임에 assets로 로딩(초기 MVP는 상수 주입 권장).
+- 규칙 엔진 연결: 평가 모듈이 mapping.yaml을 해석하는 어댑터를 통해 경고/결격/필수 필드를 주입받도록 스켈레톤 작성.
+
 ## 변경 이력
 - 2025-09-02: 초기 작성.

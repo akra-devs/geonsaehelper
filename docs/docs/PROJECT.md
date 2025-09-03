@@ -96,6 +96,11 @@
 4) 핵심 UX 흐름·와이어프레임 초안
 5) PRD v1 + 릴리스 마일스톤 정의
 
+## 자동화/연동 TODO
+- [ ] last_verified 자동 주입: RULES_HUG_mapping.yaml → Dart const 생성 스텁(빌드 스크립트) → UI 표기 일원화
+- [ ] 규칙 엔진 스켈레톤: mapping.yaml 해석 어댑터 + 평가 순서(C1→C2→C3) 틀 생성
+- [ ] 문서 규약 준수 체크: CONTRIBUTING_DOCS.md 체크리스트 기반 pre-commit 스크립트(선택)
+
 ## Kickoff 질문(가이드)
 - 타깃 유저·핵심 문제: 누구의 어떤 일을 돕나요?
 - 성공지표: 1차·보조 KPI는? 언제 성공이라 말하나요?

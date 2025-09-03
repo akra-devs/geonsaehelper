@@ -23,6 +23,9 @@ Status: canonical (Information Architecture)
 - Operations: OPERATIONS_RUNBOOK.md, Release: RELEASE_PLAN.md
 - Legal/Ads: LEGAL_CHECKLIST.md, ADS_POLICY.md
 
+## Contributing
+- 문서 작성/유지 규약은 CONTRIBUTING_DOCS.md를 참고하세요.
+
 ## 연관성(요약)
 - PRD_v1.md → 화면/컴포넌트의 수용기준과 콘텐츠 범위 정의
 - RULES_HUG_v1.md → 결과 카드 상태/사유/‘모름’ 처리 규정의 근거
