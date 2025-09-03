@@ -8,13 +8,12 @@ Status: derived (Implementation guide). Canonical: DESIGN_TOKENS.yaml, COMPONENT
 - Figma 없이도 Flutter에서 일관된 UI를 빠르게 구현하도록 표준을 제공합니다.
 - 문서-코드 간 일치: 토큰(YAML) → Dart Theme 확장으로 자동/반자동 매핑.
 
-## 디렉터리 권장
-- `lib/ui/theme/` 테마/토큰 매핑 (AppTheme, ThemeExtensions)
-- `lib/ui/components/` 공용 위젯(ResultCard, IntakeQuestion, ChatBubble 등)
-- `lib/ui/foundation/` 레이아웃·타이포 헬퍼, A11y, Keys
+## 참고: 디렉터리 구조
+- 세부 구조/권장은 ARCHITECTURE.md 및 AGENTS.md(Repository Guidelines)를 참조하세요.
+- 본 문서는 UI 구현 관점만 다루며, 폴더 구조 결정은 아키텍처 문서의 표준을 따릅니다.
 
 ## 디자인 토큰(소스)
-- 파일: `docs/DESIGN_TOKENS.yaml` (색/타입/스페이싱/라운드/쉐도우)
+- 파일: `DESIGN_TOKENS.yaml` (색/타입/스페이싱/라운드/쉐도우)
 - 변환: 수동/스크립트로 Dart `ThemeExtension`에 주입
 
 ## Theme 구성 원칙

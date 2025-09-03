@@ -26,7 +26,7 @@ Status: canonical (RAG Policy)
 - 회색지대: 상충/비문 일치 시 보수적으로 ‘확인불가’.
 
 ## 최신성 규칙
-- 기준: docs/RULES_HUG_mapping.yaml 의 last_verified 사용.
+- 단일 소스: RULES_HUG_mapping.yaml 의 last_verified 사용(앱/UI 표시는 이 값을 그대로 참조).
 - 임계: 30일 초과 시 ‘정보 최신성 확인 필요’ 배지 노출.
 
 ## 텔레메트리(측정 연계)
