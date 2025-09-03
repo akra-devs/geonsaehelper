@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../conversation/data/chat_repository.dart';
-import '../../conversation/data/chat_models.dart' as model;
+import '../../conversation/data/chat_models.dart';
 
 part 'chat_cubit.freezed.dart';
 
@@ -9,7 +9,7 @@ part 'chat_cubit.freezed.dart';
 class ChatState with _$ChatState {
   const factory ChatState.idle() = _Idle;
   const factory ChatState.loading() = _Loading;
-  const factory ChatState.success(model.BotReply reply) = _Success;
+  const factory ChatState.success(BotReply reply) = _Success;
   const factory ChatState.error(String message) = _Error;
 }
 

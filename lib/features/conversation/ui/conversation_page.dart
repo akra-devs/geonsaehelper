@@ -11,7 +11,7 @@ import '../../../ui/components/appear.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../conversation/bloc/chat_cubit.dart';
 import '../../conversation/data/chat_repository.dart';
-import '../../conversation/data/chat_models.dart' as model;
+import '../../conversation/data/chat_models.dart';
 
 class ConversationPage extends StatefulWidget {
   const ConversationPage({super.key});
@@ -288,7 +288,7 @@ class _ConversationPageState extends State<ConversationPage> {
     return _typingRowIndex!;
   }
 
-  void _replaceTypingWithReply(int typingIndex, model.BotReply reply) {
+  void _replaceTypingWithReply(int typingIndex, BotReply reply) {
     // Convert model citations to UI component citations
     final cites = reply.citations
         .map((c) => Citation(c.docId, c.sectionKey))
@@ -446,7 +446,8 @@ class _ConversationPageState extends State<ConversationPage> {
         ),
       ),
     ),
-  );
+      ),
+    );
   }
 
   // Question flow (full v1 per INTAKE_FLOW.md)
