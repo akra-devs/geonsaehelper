@@ -122,10 +122,12 @@ class AdSlot extends StatelessWidget {
 
 ## Buttons/Chips
 - ElevatedButton/OutlinedButton/TextButton을 사용, 스타일은 Theme에서 일괄 지정
-- ChoiceChip: 선택/비선택 대비 확보, 최소 폭 44dp
+- ChoiceChip: 선택/비선택 대비 확보, 최소 터치 타겟 48×48dp 보장(패딩/height로 확보)
+- 잉크 효과 유지: 버튼/칩 상호작용은 표준 머티리얼 위젯 사용(커스텀 제스처로 대체 지양)
 
 ## 리스트/스크롤
 - Reasons/NextSteps는 `ListView.separated` 또는 `Column`+`SizedBox(height: spacing)`
+- 스크롤 중첩 지양: 스크롤러 안에는 Sliver 계열 또는 단일 스크롤만 유지(shrinkWrap 과도 사용 금지)
 
 ## Keys(테스트 식별자)
 - ResultCard: `Key('ResultCard.TLDR')`, `Key('ResultCard.Reasons')`, `Key('ResultCard.Next')`

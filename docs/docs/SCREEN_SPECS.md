@@ -63,10 +63,16 @@ Status: canonical (Screen Specs)
 - 결과 이후: `Composer.enabled=true`, 추천 질문 칩 노출
 - 로딩: `TypingIndicator`(bot), 긴 답변 `SummaryToggle`(TL;DR 먼저 보기)
 - 에러: `ErrorBubble`(bot) + `RetryButton`
+ - 접근성: 모든 터치 타겟 48×48dp 이상, 칩/버튼은 머티리얼 표준 컴포넌트 사용(잉크 효과 보존)
 
 ### 접근성
 - Semantics: ChatBubble(role 라벨), ChoiceChip 라벨/포커스 이동, 배지(마지막 확인일) 읽기
 - 키보드 포커스 순서: 질문→옵션 칩→다음 요소
+ - 방향성: 여백/정렬은 EdgeInsetsDirectional/alignmentDirectional 사용
+
+## 리스트/스크롤 가이드
+- 중첩 스크롤 지양. 필요 시 `CustomScrollView` + Sliver 조합 사용
+- 긴 리스트는 `ListView.builder`/`SliverList` 사용, `shrinkWrap` 과도 사용 금지
 
 ### 이벤트 매핑
 - `intake_start`, `intake_answer{qid, is_unknown}`, `intake_complete{count, has_unknown, status}`

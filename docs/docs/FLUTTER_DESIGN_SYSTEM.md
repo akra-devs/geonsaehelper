@@ -73,9 +73,11 @@ ThemeData buildAppTheme(Brightness brightness) {
 ```
 
 ## 반응형/레이아웃 규칙
-- 8pt 그리드, 기본 패딩 `theme.extension<Spacing>()!.x4` 사용
-- Breakpoints(권장): narrow < 360, base 360–599, wide ≥ 600
-- 위젯: `LayoutBuilder`로 분기, 길어지는 목록은 Sliver 사용
+- 8pt 그리드, 기본 패딩 `context.spacing.x4` 사용(토큰 경유)
+- Breakpoints(Material 3 권장):
+  - compact < 600, medium 600–839, expanded ≥ 840
+  - 참고: 단순 1단/2단/3단 레이아웃 분기에 활용
+- 위젯: `LayoutBuilder`/`MediaQuery.sizeOf(context)`로 분기, 길어지는 목록은 `ListView.builder` 또는 Sliver 사용(중첩 스크롤 지양)
 
 ## 컴포넌트 규약(샘플)
 - 네이밍: `XxxCard`, `XxxTile`, `XxxChip`, `XxxButton`
@@ -83,6 +85,9 @@ ThemeData buildAppTheme(Brightness brightness) {
 - 상태: `enabled/disabled`, `loading`, `error/unknown` 등 enum으로 노출
 - 접근성: `Semantics(label/hint)`, `ExcludeSemantics`로 중복 제거, 키보드 포커스 고려
 - 테스트: `Key('ResultCard.TLDR')` 등 TestKey 표준화
+ - 방향성: 여백은 `EdgeInsetsDirectional` 우선 사용(RTL 대비)
+ - 터치 타겟: 모든 상호작용 요소 최소 48×48dp 보장(Material 가이드)
+ - 잉크 효과: 버튼/탭 요소는 `InkWell`/`InkResponse` 또는 표준 버튼 위젯 사용(`GestureDetector` 단독 지양)
 
 ### IntakeQuestion 사양(요약)
 - props: `qid`, `label`, `options(List<Choice>)`, `onChanged`, `selected`, `showUnknown(bool)`
@@ -95,12 +100,14 @@ ThemeData buildAppTheme(Brightness brightness) {
 - A11y: 색상 외 구분(아이콘/텍스트), 대비 준수
 
 ## 접근성 체크
-- 최소 터치 44×44, 본문 대비 4.5:1 이상
+- 최소 터치 48×48, 본문 대비 4.5:1 이상
 - Dynamic Type 대응: `MediaQuery.textScaler` 반영, `FittedBox` 남용 금지
 - 포커스 순서: 논리적 탭 순서 설정(`FocusTraversalGroup`)
+ - 선택 상태: Chip/토글 등은 `selected` 상태가 보이스오버로 읽히도록 `Semantics(selected: ...)` 또는 기본 위젯 상태 활용
 
 ## 국제화(i18n)
-- 숫자/날짜/통화 `intl` 사용, 텍스트 분리(l10n) — 메시지 키는 COPY_GUIDE 참조
+- `flutter gen-l10n` 사용(앱 전역 l10n), 문자열 하드코딩 지양
+- 숫자/날짜/통화는 `intl` 사용, 메시지 키는 COPY_GUIDE 참조
 
 ## 성능 수칙
 - 가능한 `const` 사용, `ListView.builder`/`SliverList` 활용

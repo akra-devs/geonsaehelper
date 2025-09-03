@@ -12,6 +12,7 @@ Status: canonical (UX Principles)
 - 실용 요약 톤: TL;DR → 이유/예외 → 다음 단계. 외부 링크 미노출, 마지막 확인일 표기.
 - 접근성/A11y: 대비/크기, Semantics 라벨, 터치 타겟 ≥ 44dp.
 - 디자인 토큰 준수: 색/간격/라운드/타이포는 토큰에서만 사용.
+ - 국제화: `flutter gen-l10n` 기반 문자열 분리, 하드코딩 지양
 
 ## IA/네비게이션
 - 기본 진입: Conversation(대화) 화면
@@ -30,6 +31,7 @@ Status: canonical (UX Principles)
 - 빈 상태: 첫 진입 안내 버블 + “시작하기”
 - 에러: 네트워크/서버 오류는 bot bubble로 노출 + 재시도 버튼
 - 긴 답변: “요약 먼저 보기” 토글
+ - 상호작용: 버튼/칩은 최소 48×48dp 터치 타겟 확보, 잉크 효과 유지(Material 버튼/Chip 권장)
 
 ## 진행/완료 흐름
 1) 봇 인사 → A1..A7, P1..P7, S1 순서로 질문(분기 허용)
@@ -46,6 +48,7 @@ Status: canonical (UX Principles)
 ## 디자인 토큰
 - 색/타이포/간격/라운드: DESIGN_TOKENS.yaml 참조
 - 화면 배치/컴포넌트 배치는 UI_BLUEPRINT.yaml 참조
+ - 방향성: 여백은 EdgeInsetsDirectional 우선(RTL 대비)
 
 ## 카피/톤
 - COPY_GUIDE.md, RESULT_CARD_COPY.md를 기준으로 문구 선택
