@@ -8,6 +8,8 @@ import '../../../ui/components/typing_indicator.dart';
 import '../../../ui/components/ad_slot.dart';
 import '../../../common/analytics/analytics.dart';
 import '../../../ui/components/appear.dart';
+import '../../conversation/data/chat_repository.dart';
+import '../../conversation/data/chat_models.dart' as model;
 
 class ConversationPage extends StatefulWidget {
   const ConversationPage({super.key});
@@ -28,6 +30,10 @@ class _ConversationPageState extends State<ConversationPage> {
 
   static const _unknown = '__unknown__';
 
+  // Chat repository (API-backed; falls back to mock if needed)
+  late final ChatRepository _chatRepo;
+  int? _typingRowIndex;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +42,8 @@ class _ConversationPageState extends State<ConversationPage> {
       _appendBotText('간단 조사를 통해 맞춤 안내를 준비할게요. 이후 예비판정을 진행합니다.');
       _askCurrent();
     });
+    // Initialize chat repository (swap to ApiChatRepository when backend is ready)
+    _chatRepo = ApiChatRepository();
   }
 
   @override
@@ -270,13 +278,42 @@ class _ConversationPageState extends State<ConversationPage> {
     _composer.clear();
     _appendUserText(text);
     Analytics.instance.qnaAsk('free', text.length);
-    // Stubbed bot answer following RAG policy tone
-    _rows.add(_Row.botRich(const ChatBubble(
+    // Show typing indicator and request completion from repository
+    final typingIndex = _showTyping();
+    _chatRepo.complete(text).then((reply) {
+      _replaceTypingWithReply(typingIndex, reply);
+      Analytics.instance.qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
+    }).catchError((e) {
+      // Fallback simple error message in bot bubble
+      _replaceTypingWithError(typingIndex, '지금은 답변을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    });
+  }
+
+  int _showTyping() {
+    _rows.add(_Row.botRich(const TypingIndicator()));
+    _typingRowIndex = _rows.length - 1;
+    setState(() {});
+    return _typingRowIndex!;
+  }
+
+  void _replaceTypingWithReply(int typingIndex, model.BotReply reply) {
+    // Convert model citations to UI component citations
+    final cites = reply.citations
+        .map((c) => Citation(c.docId, c.sectionKey))
+        .toList();
+    _rows[typingIndex] = _Row.botRich(ChatBubble(
       role: ChatRole.bot,
-      content: 'TL;DR: 서류는 신분증, 가족·혼인관계, 소득 증빙이 기본입니다. 다음 단계에서 발급처/순서를 안내해 드립니다.',
-      citations: [Citation('HUG_internal_policy.md', 'A.1')],
-    )));
-    Analytics.instance.qnaAnswer(true, '2025-09-02');
+      content: reply.content,
+      citations: cites,
+    ));
+    setState(() {});
+  }
+
+  void _replaceTypingWithError(int typingIndex, String message) {
+    _rows[typingIndex] = _Row.botRich(ChatBubble(
+      role: ChatRole.bot,
+      content: message,
+    ));
     setState(() {});
   }
 
