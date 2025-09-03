@@ -8,6 +8,8 @@ import '../../../ui/components/typing_indicator.dart';
 import '../../../ui/components/ad_slot.dart';
 import '../../../common/analytics/analytics.dart';
 import '../../../ui/components/appear.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../conversation/bloc/chat_cubit.dart';
 import '../../conversation/data/chat_repository.dart';
 import '../../conversation/data/chat_models.dart' as model;
 
@@ -30,8 +32,6 @@ class _ConversationPageState extends State<ConversationPage> {
 
   static const _unknown = '__unknown__';
 
-  // Chat repository (API-backed; falls back to mock if needed)
-  late final ChatRepository _chatRepo;
   int? _typingRowIndex;
 
   @override
@@ -42,8 +42,6 @@ class _ConversationPageState extends State<ConversationPage> {
       _appendBotText('간단 조사를 통해 맞춤 안내를 준비할게요. 이후 예비판정을 진행합니다.');
       _askCurrent();
     });
-    // Initialize chat repository (swap to ApiChatRepository when backend is ready)
-    _chatRepo = ApiChatRepository();
   }
 
   @override
@@ -278,15 +276,9 @@ class _ConversationPageState extends State<ConversationPage> {
     _composer.clear();
     _appendUserText(text);
     Analytics.instance.qnaAsk('free', text.length);
-    // Show typing indicator and request completion from repository
-    final typingIndex = _showTyping();
-    _chatRepo.complete(text).then((reply) {
-      _replaceTypingWithReply(typingIndex, reply);
-      Analytics.instance.qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
-    }).catchError((e) {
-      // Fallback simple error message in bot bubble
-      _replaceTypingWithError(typingIndex, '지금은 답변을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
-    });
+    // Show typing indicator and request completion via Cubit
+    _typingRowIndex = _showTyping();
+    context.read<ChatCubit>().send(text);
   }
 
   int _showTyping() {
@@ -320,11 +312,27 @@ class _ConversationPageState extends State<ConversationPage> {
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacing;
-    return Scaffold(
-      appBar: AppBar(title: const Text('대화형 예비판정')),
-      body: SafeArea(
-        child: Column(
-          children: [
+    return BlocProvider<ChatCubit>(
+      create: (ctx) => ChatCubit(RepositoryProvider.of(ctx)),
+      child: BlocListener<ChatCubit, ChatState>(
+        listener: (context, state) {
+          if (_typingRowIndex != null) {
+            if (state.reply != null) {
+              _replaceTypingWithReply(_typingRowIndex!, state.reply!);
+              Analytics.instance.qnaAnswer(true,
+                  state.reply!.lastVerified.isEmpty ? '2025-09-02' : state.reply!.lastVerified);
+              _typingRowIndex = null;
+            } else if (state.error != null) {
+              _replaceTypingWithError(_typingRowIndex!, state.error!);
+              _typingRowIndex = null;
+            }
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(title: const Text('대화형 예비판정')),
+          body: SafeArea(
+            child: Column(
+              children: [
             Expanded(
               child: ListView.builder(
                 padding: EdgeInsets.all(spacing.x4),
@@ -431,7 +439,8 @@ class _ConversationPageState extends State<ConversationPage> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   // Question flow (full v1 per INTAKE_FLOW.md)
