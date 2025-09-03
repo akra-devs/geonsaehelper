@@ -13,8 +13,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const useApi = bool.fromEnvironment('USE_API_CHAT', defaultValue: false);
     return RepositoryProvider<ChatRepository>(
-      create: (_) => ApiChatRepository(),
+      create: (_) => useApi ? ApiChatRepository() : MockChatRepository(),
       child: MaterialApp(
         title: '전세자금대출 도우미',
         theme: buildAppTheme(Brightness.light),

@@ -1,8 +1,9 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/analytics/analytics.dart';
-import '../../conversation/ui/../../ui/components/result_card.dart';
-import '../../conversation/ui/../../ui/components/intake_question.dart';
+import '../../../ui/components/result_card.dart';
+import '../../../ui/components/intake_question.dart';
 
 enum ConversationPhase { survey, intake, qna }
 
