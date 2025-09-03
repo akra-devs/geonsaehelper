@@ -351,6 +351,7 @@ class _ConversationPageState extends State<ConversationPage> {
                   switch (row.type) {
                     case _RowType.botText:
                       return Appear(
+                        delay: Duration(milliseconds: 40),
                         child: Padding(
                           padding: EdgeInsets.only(bottom: spacing.x3),
                           child: ChatBubble(role: ChatRole.bot, content: row.text ?? ''),
@@ -358,6 +359,7 @@ class _ConversationPageState extends State<ConversationPage> {
                       );
                     case _RowType.userText:
                       return Appear(
+                        delay: Duration(milliseconds: 40),
                         child: Padding(
                           padding: EdgeInsets.only(bottom: spacing.x3),
                           child: ChatBubble(role: ChatRole.user, content: row.text ?? ''),
@@ -365,6 +367,7 @@ class _ConversationPageState extends State<ConversationPage> {
                       );
                     case _RowType.intake:
                       return Appear(
+                        delay: Duration(milliseconds: 60),
                         child: Padding(
                           padding: EdgeInsets.only(bottom: spacing.x4),
                           child: Column(
@@ -385,6 +388,7 @@ class _ConversationPageState extends State<ConversationPage> {
                       );
                     case _RowType.ad:
                       return Appear(
+                        delay: Duration(milliseconds: 80),
                         child: Padding(
                           padding: EdgeInsets.only(bottom: spacing.x4),
                           child: row.adWidget!,
@@ -393,6 +397,7 @@ class _ConversationPageState extends State<ConversationPage> {
                     case _RowType.suggestions:
                       return Appear(
                         duration: const Duration(milliseconds: 120),
+                        delay: Duration(milliseconds: 50),
                         child: Padding(
                           padding: EdgeInsets.only(bottom: spacing.x3),
                           child: Wrap(
@@ -426,6 +431,7 @@ class _ConversationPageState extends State<ConversationPage> {
                       );
                     case _RowType.botRich:
                       return Appear(
+                        delay: Duration(milliseconds: 50),
                         duration: const Duration(milliseconds: 120),
                         child: Padding(
                           padding: EdgeInsets.only(bottom: spacing.x3),
@@ -673,14 +679,19 @@ class _Composer extends StatelessWidget {
             ),
           ),
           SizedBox(width: spacing.x2),
-          Material(
-            color: enabled ? cs.primary : cs.surfaceVariant,
-            elevation: enabled ? 3 : 0,
-            shape: const CircleBorder(),
-            child: IconButton(
-              onPressed: enabled ? onSend : null,
-              icon: Icon(Icons.send, color: enabled ? cs.onPrimary : cs.onSurfaceVariant),
-              tooltip: '보내기',
+          AnimatedScale(
+            scale: enabled ? 1.0 : 0.96,
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            child: Material(
+              color: enabled ? cs.primary : cs.surfaceVariant,
+              elevation: enabled ? 3 : 0,
+              shape: const CircleBorder(),
+              child: IconButton(
+                onPressed: enabled ? onSend : null,
+                icon: Icon(Icons.send, color: enabled ? cs.onPrimary : cs.onSurfaceVariant),
+                tooltip: '보내기',
+              ),
             ),
           ),
         ],
