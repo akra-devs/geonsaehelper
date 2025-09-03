@@ -1,0 +1,3753 @@
+From dd538ff92b6ac3d02b2cacb1374fd850768c06b0 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 10:48:36 +0900
+Subject: [PATCH 01/13] chore(repo): remove stray Zone.Identifier files and
+ clean lib/lib directory
+
+---
+ "lib/lib/main.dart\357\200\272Zone.Identifier"                    | 0
+ .../ui/components/chat_bubble.dart\357\200\272Zone.Identifier"    | 0
+ .../components/intake_question.dart\357\200\272Zone.Identifier"   | 0
+ .../ui/components/result_card.dart\357\200\272Zone.Identifier"    | 0
+ "lib/lib/ui/demo/demo_gallery.dart\357\200\272Zone.Identifier"    | 0
+ "lib/lib/ui/theme/app_theme.dart\357\200\272Zone.Identifier"      | 0
+ 6 files changed, 0 insertions(+), 0 deletions(-)
+ delete mode 100644 "lib/lib/main.dart\357\200\272Zone.Identifier"
+ delete mode 100644 "lib/lib/ui/components/chat_bubble.dart\357\200\272Zone.Identifier"
+ delete mode 100644 "lib/lib/ui/components/intake_question.dart\357\200\272Zone.Identifier"
+ delete mode 100644 "lib/lib/ui/components/result_card.dart\357\200\272Zone.Identifier"
+ delete mode 100644 "lib/lib/ui/demo/demo_gallery.dart\357\200\272Zone.Identifier"
+ delete mode 100644 "lib/lib/ui/theme/app_theme.dart\357\200\272Zone.Identifier"
+
+diff --git "a/lib/lib/main.dart\357\200\272Zone.Identifier" "b/lib/lib/main.dart\357\200\272Zone.Identifier"
+deleted file mode 100644
+index e69de29..0000000
+diff --git "a/lib/lib/ui/components/chat_bubble.dart\357\200\272Zone.Identifier" "b/lib/lib/ui/components/chat_bubble.dart\357\200\272Zone.Identifier"
+deleted file mode 100644
+index e69de29..0000000
+diff --git "a/lib/lib/ui/components/intake_question.dart\357\200\272Zone.Identifier" "b/lib/lib/ui/components/intake_question.dart\357\200\272Zone.Identifier"
+deleted file mode 100644
+index e69de29..0000000
+diff --git "a/lib/lib/ui/components/result_card.dart\357\200\272Zone.Identifier" "b/lib/lib/ui/components/result_card.dart\357\200\272Zone.Identifier"
+deleted file mode 100644
+index e69de29..0000000
+diff --git "a/lib/lib/ui/demo/demo_gallery.dart\357\200\272Zone.Identifier" "b/lib/lib/ui/demo/demo_gallery.dart\357\200\272Zone.Identifier"
+deleted file mode 100644
+index e69de29..0000000
+diff --git "a/lib/lib/ui/theme/app_theme.dart\357\200\272Zone.Identifier" "b/lib/lib/ui/theme/app_theme.dart\357\200\272Zone.Identifier"
+deleted file mode 100644
+index e69de29..0000000
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 5472bfb043974bf5c559a8a6384a0d214fd5caef Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 11:00:58 +0900
+Subject: [PATCH 02/13] fix(conversation): prevent crash when answering survey
+ questions by resolving question from current phase and safely mapping labels
+
+---
+ .../conversation/ui/conversation_page.dart       | 13 ++++++++++---
+ pubspec.lock                                     | 16 ++++++++--------
+ 2 files changed, 18 insertions(+), 11 deletions(-)
+
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 4a0cdb5..6b2f74f 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -67,7 +67,12 @@ class _ConversationPageState extends State<ConversationPage> {
+ 
+   void _onChoiceSelected(String qid, String? value) {
+     if (value == null) return;
+-    final q = _flow.firstWhere((e) => e.qid == qid);
++    // Resolve the question from the current phase's list (survey vs intake)
++    final list = _phase == _Phase.survey ? _surveyFlow : _flow;
++    final q = list.firstWhere(
++      (e) => e.qid == qid,
++      orElse: () => _Question(qid: qid, label: qid, choices: const []),
++    );
+     final label = _labelFor(q, value);
+     _appendUserText(label);
+     _answers[qid] = value;
+@@ -77,7 +82,7 @@ class _ConversationPageState extends State<ConversationPage> {
+     }
+     setState(() => _awaitingChoice = false);
+ 
+-    final list = _phase == _Phase.survey ? _surveyFlow : _flow;
++    // Advance within the current phase
+     if (_step < list.length - 1) {
+       _step += 1;
+       _askCurrent();
+@@ -104,7 +109,9 @@ class _ConversationPageState extends State<ConversationPage> {
+ 
+   String _labelFor(_Question q, String value) {
+     if (value == _unknown) return '모름';
+-    return q.choices.firstWhere((c) => c.value == value).text;
++    // Safe lookup: fall back to raw value if not found
++    final match = q.choices.where((c) => c.value == value);
++    return match.isNotEmpty ? match.first.text : value;
+   }
+ 
+   void _evaluateAndShow() {
+diff --git a/pubspec.lock b/pubspec.lock
+index 6dd85e4..2008e41 100644
+--- a/pubspec.lock
++++ b/pubspec.lock
+@@ -29,10 +29,10 @@ packages:
+     dependency: transitive
+     description:
+       name: async
+-      sha256: d2872f9c19731c2e5f10444b14686eb7cc85c76274bd6c16e1816bff9a3bab63
++      sha256: "758e6d74e971c3e5aceb4110bfd6698efc7f501675bcfe0c775459a8140750eb"
+       url: "https://pub.dev"
+     source: hosted
+-    version: "2.12.0"
++    version: "2.13.0"
+   bloc:
+     dependency: transitive
+     description:
+@@ -189,10 +189,10 @@ packages:
+     dependency: transitive
+     description:
+       name: fake_async
+-      sha256: "6a95e56b2449df2273fd8c45a662d6947ce1ebb7aafe80e550a3f68297f3cacc"
++      sha256: "5368f224a74523e8d2e7399ea1638b37aecfca824a3cc4dfdf77bf1fa905ac44"
+       url: "https://pub.dev"
+     source: hosted
+-    version: "1.3.2"
++    version: "1.3.3"
+   ffi:
+     dependency: transitive
+     description:
+@@ -348,10 +348,10 @@ packages:
+     dependency: transitive
+     description:
+       name: leak_tracker
+-      sha256: c35baad643ba394b40aac41080300150a4f08fd0fd6a10378f8f7c6bc161acec
++      sha256: "6bb818ecbdffe216e81182c2f0714a2e62b593f4a4f13098713ff1685dfb6ab0"
+       url: "https://pub.dev"
+     source: hosted
+-    version: "10.0.8"
++    version: "10.0.9"
+   leak_tracker_flutter_testing:
+     dependency: transitive
+     description:
+@@ -689,10 +689,10 @@ packages:
+     dependency: transitive
+     description:
+       name: vm_service
+-      sha256: "0968250880a6c5fe7edc067ed0a13d4bae1577fe2771dcf3010d52c4a9d3ca14"
++      sha256: ddfa8d30d89985b96407efce8acbdd124701f96741f2d981ca860662f1c0dc02
+       url: "https://pub.dev"
+     source: hosted
+-    version: "14.3.1"
++    version: "15.0.0"
+   watcher:
+     dependency: transitive
+     description:
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 25690379ad2baff10bcf88020258f8553c1ffeda Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 11:34:05 +0900
+Subject: [PATCH 03/13] docs(ia): canonicalize docs, fix IA conflict (tabs),
+ add status headers and update index
+
+---
+ docs/docs/APP_SCREEN_PLAN.md       |  1 +
+ docs/docs/COMPONENT_SPECS.md       |  1 +
+ docs/docs/DOCS_INDEX.md            | 14 ++++++++++++++
+ docs/docs/FLUTTER_DESIGN_SYSTEM.md |  2 +-
+ docs/docs/INTAKE_FLOW.md           |  1 +
+ docs/docs/MEASUREMENT_PLAN.md      |  1 +
+ docs/docs/OPERATIONS_RUNBOOK.md    |  1 +
+ docs/docs/PRD_v1.md                |  1 +
+ docs/docs/PRODUCT_BRIEF.md         |  1 +
+ docs/docs/PRODUCT_PLAN_MVP.md      |  7 ++++---
+ docs/docs/RAG_POLICY.md            |  1 +
+ docs/docs/RULES_HUG_v1.md          |  1 +
+ docs/docs/SCREEN_SPECS.md          |  1 +
+ docs/docs/UI_UX_GUIDE.md           |  6 +++---
+ 14 files changed, 32 insertions(+), 7 deletions(-)
+
+diff --git a/docs/docs/APP_SCREEN_PLAN.md b/docs/docs/APP_SCREEN_PLAN.md
+index d573e89..6eadf36 100644
+--- a/docs/docs/APP_SCREEN_PLAN.md
++++ b/docs/docs/APP_SCREEN_PLAN.md
+@@ -1,4 +1,5 @@
+ # APP_SCREEN_PLAN — 챗봇형(선택형+대화형) 화면 기획
++Status: canonical (Screen Flow)
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+diff --git a/docs/docs/COMPONENT_SPECS.md b/docs/docs/COMPONENT_SPECS.md
+index 1c7d63b..367d2bf 100644
+--- a/docs/docs/COMPONENT_SPECS.md
++++ b/docs/docs/COMPONENT_SPECS.md
+@@ -1,4 +1,5 @@
+ # COMPONENT_SPECS — 공용 위젯 사양(Flutter API 초안)
++Status: canonical (Component APIs)
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+diff --git a/docs/docs/DOCS_INDEX.md b/docs/docs/DOCS_INDEX.md
+index ebaa96a..b984abf 100644
+--- a/docs/docs/DOCS_INDEX.md
++++ b/docs/docs/DOCS_INDEX.md
+@@ -1,4 +1,5 @@
+ # DOCS_INDEX — 문서 인덱스 & 연관성 맵
++Status: canonical (Information Architecture)
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+@@ -9,6 +10,19 @@
+ 4) 측정/운영/법/광고 — MEASUREMENT_PLAN.md, OPERATIONS_RUNBOOK.md, LEGAL_CHECKLIST.md, ADS_POLICY.md
+ 5) 실행 계획 — PRODUCT_PLAN_MVP.md, BACKLOG_EPICS_USER_STORIES.md
+ 
++## Canonical Set
++- Product: PRD_v1.md (PRODUCT_BRIEF.md는 요약본)
++- Intake: INTAKE_FLOW.md
++- Rules: RULES_HUG_v1.md + RULES_HUG_mapping.yaml
++- RAG: RAG_POLICY.md
++- UI Design: DESIGN_TOKENS.yaml, UI_BLUEPRINT.yaml
++- Component APIs: COMPONENT_SPECS.md
++- Screen Flow/Specs: APP_SCREEN_PLAN.md, SCREEN_SPECS.md
++- UX Guide: UI_UX_GUIDE.md, Flutter implementation: FLUTTER_DESIGN_SYSTEM.md
++- Measurement: MEASUREMENT_PLAN.md
++- Operations: OPERATIONS_RUNBOOK.md, Release: RELEASE_PLAN.md
++- Legal/Ads: LEGAL_CHECKLIST.md, ADS_POLICY.md
++
+ ## 연관성(요약)
+ - PRD_v1.md → 화면/컴포넌트의 수용기준과 콘텐츠 범위 정의
+ - RULES_HUG_v1.md → 결과 카드 상태/사유/‘모름’ 처리 규정의 근거
+diff --git a/docs/docs/FLUTTER_DESIGN_SYSTEM.md b/docs/docs/FLUTTER_DESIGN_SYSTEM.md
+index 02649cc..e268a62 100644
+--- a/docs/docs/FLUTTER_DESIGN_SYSTEM.md
++++ b/docs/docs/FLUTTER_DESIGN_SYSTEM.md
+@@ -1,4 +1,5 @@
+ # FLUTTER_DESIGN_SYSTEM — Flutter UI 작성 가이드(실행 지향)
++Status: derived (Implementation guide). Canonical: DESIGN_TOKENS.yaml, COMPONENT_SPECS.md, UI_UX_GUIDE.md
+ 
+ 마지막 업데이트: 2025-09-02
+ 범위: 디자인 토큰 → ThemeData/ThemeExtension 매핑 → 컴포넌트 규약 → 접근성/반응형/테스트.
+@@ -115,4 +116,3 @@ ThemeData buildAppTheme(Brightness brightness) {
+ - DESIGN_TOKENS.yaml → ThemeExtension 매핑 확인
+ - 컴포넌트가 Theme/Extension 토큰만 참조(하드코딩 X)
+ - TestKey 부착, 골든 스냅샷 통과
+-
+diff --git a/docs/docs/INTAKE_FLOW.md b/docs/docs/INTAKE_FLOW.md
+index 108e532..c03cdcc 100644
+--- a/docs/docs/INTAKE_FLOW.md
++++ b/docs/docs/INTAKE_FLOW.md
+@@ -1,4 +1,5 @@
+ # INTAKE_FLOW — 대화형 인테이크 설계(HUG 자격 판정)
++Status: canonical (Intake Script)
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+diff --git a/docs/docs/MEASUREMENT_PLAN.md b/docs/docs/MEASUREMENT_PLAN.md
+index 0128fc8..ff896f8 100644
+--- a/docs/docs/MEASUREMENT_PLAN.md
++++ b/docs/docs/MEASUREMENT_PLAN.md
+@@ -1,4 +1,5 @@
+ # MEASUREMENT_PLAN — 측정/계측 계획
++Status: canonical (Analytics Schema)
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+diff --git a/docs/docs/OPERATIONS_RUNBOOK.md b/docs/docs/OPERATIONS_RUNBOOK.md
+index 967f248..cce501e 100644
+--- a/docs/docs/OPERATIONS_RUNBOOK.md
++++ b/docs/docs/OPERATIONS_RUNBOOK.md
+@@ -1,4 +1,5 @@
+ # OPERATIONS_RUNBOOK — 운영 런북(규정 갱신/정정/핫픽스)
++Status: canonical (Operations)
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+diff --git a/docs/docs/PRD_v1.md b/docs/docs/PRD_v1.md
+index 5df61b6..fe267e5 100644
+--- a/docs/docs/PRD_v1.md
++++ b/docs/docs/PRD_v1.md
+@@ -1,4 +1,5 @@
+ # PRD v1 — 전세자금대출 자격 판별 + AI Q&A (HUG 우선)
++Status: canonical (Product Requirements)
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+diff --git a/docs/docs/PRODUCT_BRIEF.md b/docs/docs/PRODUCT_BRIEF.md
+index 619d03d..953174f 100644
+--- a/docs/docs/PRODUCT_BRIEF.md
++++ b/docs/docs/PRODUCT_BRIEF.md
+@@ -1,4 +1,5 @@
+ # 제품 기획 핵심 요약 및 진행 기록
++Status: derived (Executive summary). Canonical: PRD_v1.md
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+diff --git a/docs/docs/PRODUCT_PLAN_MVP.md b/docs/docs/PRODUCT_PLAN_MVP.md
+index e03f04e..f3ead92 100644
+--- a/docs/docs/PRODUCT_PLAN_MVP.md
++++ b/docs/docs/PRODUCT_PLAN_MVP.md
+@@ -18,10 +18,12 @@
+ - 품질: 결과 만족(👍) ≥ 70%, “사유 보기” ≥ 40%, 정정 요청 ≤ 5%
+ - 리텐션: 후속 Q&A 진입 ≥ 50%, D7 재방문 ≥ 25%
+ 
++Status: canonical (Plan & Roadmap)
++
+ ## 5) 정보 구조(IA)/네비게이션
+ - 기본 진입: Conversation(대화)
+-- 보조 화면: Home(선택), DocsChecklist, History, Settings
+-- 하단 탭 없음, AppBar 액션/CTA 중심
++- 보조 화면: DocsChecklist, History, Settings
++- 하단 탭: 4-탭(시작/체크리스트/히스토리/설정) — 구현과 일치(AppShell 기준)
+ 
+ ## 6) 핵심 플로우
+ - 인테이크 → 결과 카드 인라인 → Q&A → 체크리스트/한도/확인 방법 → 히스토리 저장/재방문
+@@ -77,4 +79,3 @@
+ 
+ ## 16) 참조
+ - PRD_v1.md, PRODUCT_BRIEF.md, INTAKE_FLOW.md, RULES_HUG_v1.md, RULES_HUG_mapping.yaml, RAG_POLICY.md, UI_UX_GUIDE.md, APP_SCREEN_PLAN.md, SCREEN_SPECS.md, UI_BLUEPRINT.yaml, DESIGN_TOKENS.yaml, COMPONENT_SPECS.md, COPY_GUIDE.md, RESULT_CARD_COPY.md, MEASUREMENT_PLAN.md, OPERATIONS_RUNBOOK.md, ADS_POLICY.md, LEGAL_CHECKLIST.md
+-
+diff --git a/docs/docs/RAG_POLICY.md b/docs/docs/RAG_POLICY.md
+index e811cb3..d699975 100644
+--- a/docs/docs/RAG_POLICY.md
++++ b/docs/docs/RAG_POLICY.md
+@@ -1,4 +1,5 @@
+ # RAG_POLICY — 내부 문서 기반 검색/답변 정책
++Status: canonical (RAG Policy)
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+diff --git a/docs/docs/RULES_HUG_v1.md b/docs/docs/RULES_HUG_v1.md
+index 4ae9f27..6804b3a 100644
+--- a/docs/docs/RULES_HUG_v1.md
++++ b/docs/docs/RULES_HUG_v1.md
+@@ -1,4 +1,5 @@
+ # RULES_HUG_v1 — HUG 자격 판정 규칙(초안)
++Status: canonical (Eligibility Rules). Data: RULES_HUG_mapping.yaml
+ 
+ 마지막 업데이트: 2025-09-02
+ 주의: 본 문서는 내부 규정 문서(섹션/키) 기준으로 작성됩니다. 구체 임계값·예외는 내부 문서 값으로만 채웁니다(외부 링크 미사용).
+diff --git a/docs/docs/SCREEN_SPECS.md b/docs/docs/SCREEN_SPECS.md
+index d689e72..2a7ef07 100644
+--- a/docs/docs/SCREEN_SPECS.md
++++ b/docs/docs/SCREEN_SPECS.md
+@@ -1,4 +1,5 @@
+ # SCREEN_SPECS — 화면별 컴포넌트 트리/프롭/상태 사양
++Status: canonical (Screen Specs)
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+diff --git a/docs/docs/UI_UX_GUIDE.md b/docs/docs/UI_UX_GUIDE.md
+index d9d498b..105abc5 100644
+--- a/docs/docs/UI_UX_GUIDE.md
++++ b/docs/docs/UI_UX_GUIDE.md
+@@ -1,4 +1,5 @@
+ # UI_UX_GUIDE — UI/UX 우선 설계 가이드
++Status: canonical (UX Principles)
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+@@ -14,8 +15,8 @@
+ 
+ ## IA/네비게이션
+ - 기본 진입: Conversation(대화) 화면
+-- 보조: History(히스토리), DocsChecklist(체크리스트), Settings(설정)
+-- 하단 탭 생략, AppBar 액션/CTA로 이동
++- 보조: DocsChecklist(체크리스트), History(히스토리), Settings(설정)
++- 하단 탭: 4-탭(시작/체크리스트/히스토리/설정). AppBar 액션/CTA는 보조 이동
+ 
+ ## 화면 구성 요소
+ - ChatBubble(role: user|bot, citations[]): 인용 칩은 문서ID/섹션키, 링크 미노출
+@@ -60,4 +61,3 @@
+ - 컴포넌트 사양: COMPONENT_SPECS.md
+ - 카피/톤: COPY_GUIDE.md, RESULT_CARD_COPY.md
+ - 제품 요구사항: PRD_v1.md
+-
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 6183cbe91d177b81f74525a902007e4ef167190b Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 13:43:24 +0900
+Subject: [PATCH 04/13] docs(ia): condense PRODUCT_BRIEF, move dir guidance to
+ ARCHITECTURE, standardize last_verified single-source and update policies
+
+---
+ docs/docs/FLUTTER_DESIGN_SYSTEM.md |   9 ++-
+ docs/docs/OPERATIONS_RUNBOOK.md    |   4 +-
+ docs/docs/PRD_v1.md                |   2 +-
+ docs/docs/PRODUCT_BRIEF.md         | 100 ++++++++---------------------
+ docs/docs/RAG_POLICY.md            |   2 +-
+ 5 files changed, 33 insertions(+), 84 deletions(-)
+
+diff --git a/docs/docs/FLUTTER_DESIGN_SYSTEM.md b/docs/docs/FLUTTER_DESIGN_SYSTEM.md
+index e268a62..068bbb5 100644
+--- a/docs/docs/FLUTTER_DESIGN_SYSTEM.md
++++ b/docs/docs/FLUTTER_DESIGN_SYSTEM.md
+@@ -8,13 +8,12 @@ Status: derived (Implementation guide). Canonical: DESIGN_TOKENS.yaml, COMPONENT
+ - Figma 없이도 Flutter에서 일관된 UI를 빠르게 구현하도록 표준을 제공합니다.
+ - 문서-코드 간 일치: 토큰(YAML) → Dart Theme 확장으로 자동/반자동 매핑.
+ 
+-## 디렉터리 권장
+-- `lib/ui/theme/` 테마/토큰 매핑 (AppTheme, ThemeExtensions)
+-- `lib/ui/components/` 공용 위젯(ResultCard, IntakeQuestion, ChatBubble 등)
+-- `lib/ui/foundation/` 레이아웃·타이포 헬퍼, A11y, Keys
++## 참고: 디렉터리 구조
++- 세부 구조/권장은 ARCHITECTURE.md 및 AGENTS.md(Repository Guidelines)를 참조하세요.
++- 본 문서는 UI 구현 관점만 다루며, 폴더 구조 결정은 아키텍처 문서의 표준을 따릅니다.
+ 
+ ## 디자인 토큰(소스)
+-- 파일: `docs/DESIGN_TOKENS.yaml` (색/타입/스페이싱/라운드/쉐도우)
++- 파일: `DESIGN_TOKENS.yaml` (색/타입/스페이싱/라운드/쉐도우)
+ - 변환: 수동/스크립트로 Dart `ThemeExtension`에 주입
+ 
+ ## Theme 구성 원칙
+diff --git a/docs/docs/OPERATIONS_RUNBOOK.md b/docs/docs/OPERATIONS_RUNBOOK.md
+index cce501e..d946110 100644
+--- a/docs/docs/OPERATIONS_RUNBOOK.md
++++ b/docs/docs/OPERATIONS_RUNBOOK.md
+@@ -7,7 +7,7 @@ Status: canonical (Operations)
+ 1. 소스 확인: 내부 문서 개정(개정일/버전) 수신
+ 2. 매핑 업데이트: docs/RULES_HUG_mapping.yaml 섹션/임계값 수정
+ 3. 검토: 변경 포인트 요약 → 카피 영향 점검(COPY_GUIDE, RESULT_CARD_COPY)
+-4. last_verified 갱신: PRODUCT_BRIEF.md/관련 문서 일괄 업데이트
++4. last_verified 갱신: 단일 소스는 RULES_HUG_mapping.yaml.last_verified. 다른 문서는 갱신 알림만(문서 메타 ‘마지막 업데이트’와 구분)
+ 5. QA: 시나리오 20개 회귀 테스트 → 승인
+ 
+ ## 2) 긴급 핫픽스(정책 변경/오류)
+@@ -34,7 +34,7 @@ Status: canonical (Operations)
+ - 광고 정책 준수(ADS_POLICY)
+ 
+ ## 6) 문서 버전 관리
+-- RULES_HUG_v1.md / RULES_HUG_mapping.yaml: version 필드, 변경 이력 유지
++- RULES_HUG_v1.md / RULES_HUG_mapping.yaml: version, last_verified(단일 소스) 필드, 변경 이력 유지
+ - PRODUCT_BRIEF.md/PRD_v1.md: 주요 결정 변경 시 업데이트
+ 
+ ## 변경 이력
+diff --git a/docs/docs/PRD_v1.md b/docs/docs/PRD_v1.md
+index fe267e5..a5cccca 100644
+--- a/docs/docs/PRD_v1.md
++++ b/docs/docs/PRD_v1.md
+@@ -26,7 +26,7 @@ Status: canonical (Product Requirements)
+ - RQ1 판정 플로우: 10~12문 기본(분기 최대 14). 각 질문은 옵션에 ‘모름’ 포함.
+ - RQ2 판정 결과: 가능 / 불가(정보 부족 포함). TL;DR 2–3줄, 사유 목록(충족/미충족/확인불가), 다음 단계(체크리스트·확인 방법), 마지막 확인일.
+ - RQ3 Q&A: 자유 질문에 실용 요약으로 답변. 내부 문서 기준, 외부 링크 미노출.
+-- RQ4 신뢰·고지: 금융자문 아님 고지, 불확실 시 ‘확인불가’ 명시.
++- RQ4 신뢰·고지: 금융자문 아님 고지, 불확실 시 ‘확인불가’ 명시. last_verified는 RULES_HUG_mapping.yaml의 값을 단일 소스로 사용.
+ - RQ5 기록성: 판정 결과와 사용 응답을 로컬에 임시 저장(히스토리·재시도).
+ 
+ ## 비범위(이번 제외)
+diff --git a/docs/docs/PRODUCT_BRIEF.md b/docs/docs/PRODUCT_BRIEF.md
+index 953174f..9897e46 100644
+--- a/docs/docs/PRODUCT_BRIEF.md
++++ b/docs/docs/PRODUCT_BRIEF.md
+@@ -3,78 +3,28 @@ Status: derived (Executive summary). Canonical: PRD_v1.md
+ 
+ 마지막 업데이트: 2025-09-02
+ 
+-## 1) 제품 한줄 소개
+-전세자금대출(HUG 우선)의 자격(본인·목적물) 가능 여부를 대화형 질문으로 빠르게 판정하고, 이후 궁금한 사항을 AI 챗봇으로 이어서 답변하는 앱.
+-
+-## 2) 문제 · 타깃 · JTBD
+-- 문제: 전세대출 자격 요건이 복잡하고 흩어져 있어 스스로 판단이 어렵다.
+-- 타깃: 전세/이사/갱신/갈아타기를 준비하는 20–40대(전국, 주택 유형 전범위).
+-- JTBD: “내 상황과 집이 조건에 맞는지 즉시 알고, 다음에 무엇을 준비할지 명확히 하고 싶다.”
+-
+-## 3) 확정 범위/정책(의사결정 요약)
+-- 기관 범위: HUG를 우선 적용(HF/SGI는 후속 도입).
+-- 목적물/지역: 전 범위(아파트/오피스텔/다가구/원룸 등, 전국).
+-- 판정 원칙: 어떤 질문이든 확인 불가한 항목이 있으면 최종 판정은 “불가(정보 부족)”로 처리. UI에는 해당 항목에 “확인불가” 라벨을 명시.
+-- 응답 톤: 실용 요약 중심(TL;DR → 이유/예외 → 다음 단계).
+-- 출처/근거: 외부 링크 비노출. 내부 문서 기반으로 답변(마지막 확인일은 노출).
+-- 수익화: 광고 모델 기반 무료 제공(초기 베타 단계).
+-
+-## 4) MVP 기능
+-- 자격 예비판정: 대화형 질문(10~12문 기본, 상황 분기 최대 14)으로 ‘가능/불가(정보 부족 포함)’ 결과 제공.
+-- 결과 카드: TL;DR 3줄 + 사유(충족/미충족/확인불가 항목별) + 다음 단계(준비물·확인 방법) + 마지막 확인일.
+-- AI Q&A: 한도/서류/절차/용어 등 후속 질문을 이어서 답변.
+-- ‘모름’ 처리: 즉시 경고(불가로 귀결)와 함께 확인 방법 안내 버튼 제공.
+-
+-## 5) 대화형 인테이크(문항 초안)
+-- 신청자: 무주택/세대주, 혼인/부양, 소득 형태·구간, 재직/사업 기간, 기존 대출/보증, 연체/신용 문제(자가신고/모름).
+-- 목적물: 주택 유형, 전용면적, 지역, 보증금(또는 보증금+월세), 계약 상태·입주 예정, 등기상 근저당 유무(모름 허용).
+-- 우대/특례: 청년/신혼/다자녀/저소득 등 해당 여부.
+-
+-## 6) 판정 로직(개요)
+-- 규칙 우선순위: 결격 사유(즉시 불가) → 필수 충족 요건 → 조건 확인 필요 항목.
+-- 불확실 관리: 단 하나라도 ‘확인불가’가 있으면 최종 결과는 ‘불가(정보 부족)’. 해당 항목에는 확인 방법을 안내.
+-- 메시지: 사용자가 이해하기 쉬운 사유 요약(규정 문구 축약)과 다음 단계 제시.
+-
+-## 7) 결과 카드 포맷(예시)
+-- 판정: 가능 / 불가(정보 부족 포함)
+-- TL;DR: 2–3줄 요약
+-- 사유: 충족/미충족/확인불가 항목 목록
+-- 다음 단계: 준비물 체크리스트 + 확인 방법(등기/확정일자 등)
+-- 메타: 마지막 확인일(YYYY-MM-DD), 내부 규정 버전
+-
+-## 8) 챗봇 플로우(요약)
+-- 홈: “예비자격 빠른 판정” 시작 → 진행 바 표시
+-- 판정: 결과 카드 노출 → 후속 제안(한도 추정/서류 안내/유사 사례)
+-- Q&A: 자유 질의 응답, 실용 요약 톤 유지(내부 문서 근거 기반)
+-
+-## 9) KPI(초안)
+-- 퍼널: 판정 완주율, 판정까지 평균 시간
+-- 품질: 만족도(👍), “사유 보기” 클릭률, 정정 요청률
+-- 리텐션: 후속 Q&A 진입률, D1/D7 재방문
+-
+-## 10) 리스크 · 대응
+-- 정보 부족으로 인한 ‘불가’ 빈도 상승: 확인 방법을 즉시 제시해 재시도 유도.
+-- 최신성: 내부 문서 갱신 루틴 운영, 화면에 마지막 확인일 상시 표기.
+-- 범위 확장 리스크: HUG로 안정화 후 HF/SGI 순차 적용(규칙 모듈화).
+-
+-## 11) 로드맵(요약)
+-- 알파(2주): HUG 핵심 규칙 v1, 인테이크/결정 트리, 결과 카드, Q&A 기본.
+-- 베타(4주): 특례·예외 확대, 문구 품질 개선, 광고 슬롯 도입, KPI·피드백 수집.
+-- GA: 빈도 높은 질문 강화, 온보딩/카피 개선, 안정화.
+-
+-## 12) 다음 단계(Action Items)
+-- PRD v1 작성: 자격 규칙 범주·결격 사유·메시지 사전.
+-- 인테이크 스크립트 v1: 문항·분기·모름 대응·확인 방법 문안.
+-- 규칙 엔진 스펙: 우선순위/평가 순서/메시지 매핑/버전 관리.
+-- 결과 카드 컴포넌트 사양: TL;DR/사유/다음 단계/메타.
+-- 광고 배치 가이드: 결과 하단 비간섭형 우선.
+-
+-## 13) 진행 기록(요약)
+-- 1차 합의: “자격(본인·목적물) 판별 + AI Q&A”로 초점 설정.
+-- 정책 확정: HUG 우선, 전 범위 대상, ‘확인불가=불가’, 실용 요약 톤, 외부 링크 미사용, 마지막 확인일 노출, 광고 모델.
+-- 산출물: PROJECT.md(기획 TODO) 정리, 본 문서(PRODUCT_BRIEF.md)로 핵심 요약 고정.
+-
+-## 14) 변경 이력
+-- 2025-09-02: 초기 버전 작성(핵심 결정과 프로세스 기록).
+-
+-> 비고: 개발 아키텍처/구현 세부는 별도 ARCHITECTURE.md에서 다룹니다(기획 문서와 분리).
++## 한줄 소개
++전세자금대출(HUG 우선) 자격(본인·목적물)을 빠르게 판정하고, 이후 한도/서류/절차를 AI 챗봇으로 안내하는 앱.
++
++## 핵심 요약
++- 문제/타깃/JTBD: 복잡한 자격 요건을 20–40대 실수 없이 빠르게 확인. “내 상황·집이 조건에 맞는지 즉시 알고, 다음 준비를 명확히.”
++- 정책: 내부 문서만 근거, 외부 링크 미노출. ‘모름’ 하나라도 포함 시 최종 ‘불가(정보 부족)’. 마지막 확인일(last_verified) 노출.
++- 범위: HUG 우선(전국/주택 유형 전반). HF/SGI는 후속.
++- 수익화: 비간섭형 광고(결과/챗 하단, ‘광고’ 라벨).
++
++## MVP 스냅샷
++- 인테이크(10~12문, 분기 최대 14, ‘모름’ 포함) → 결과 카드(TL;DR/사유/다음 단계/last_verified) → Q&A.
++- 추천: 한도 추정/서류 체크리스트/확인 방법.
++
++## KPI(핵심)
++- 완주율 ≥ 70%, 최초 판정 ≤ 90초, Q&A 진입 ≥ 50%, 만족도(👍) ≥ 70%.
++
++## 참고 문서
++- 요구사항: PRD_v1.md
++- 인테이크: INTAKE_FLOW.md
++- 규칙/매핑: RULES_HUG_v1.md, RULES_HUG_mapping.yaml
++- UX/화면: UI_UX_GUIDE.md, APP_SCREEN_PLAN.md, SCREEN_SPECS.md
++- 컴포넌트/토큰: COMPONENT_SPECS.md, UI_BLUEPRINT.yaml, DESIGN_TOKENS.yaml
++- 측정/운영/법·광고: MEASUREMENT_PLAN.md, OPERATIONS_RUNBOOK.md, LEGAL_CHECKLIST.md, ADS_POLICY.md
++
++> 상세 스펙·수용기준·엣지케이스는 PRD_v1.md에서 유지하며, 본 문서는 의사결정·핵심 범위만 요약합니다.
+diff --git a/docs/docs/RAG_POLICY.md b/docs/docs/RAG_POLICY.md
+index d699975..799668a 100644
+--- a/docs/docs/RAG_POLICY.md
++++ b/docs/docs/RAG_POLICY.md
+@@ -26,7 +26,7 @@ Status: canonical (RAG Policy)
+ - 회색지대: 상충/비문 일치 시 보수적으로 ‘확인불가’.
+ 
+ ## 최신성 규칙
+-- 기준: docs/RULES_HUG_mapping.yaml 의 last_verified 사용.
++- 단일 소스: RULES_HUG_mapping.yaml 의 last_verified 사용(앱/UI 표시는 이 값을 그대로 참조).
+ - 임계: 30일 초과 시 ‘정보 최신성 확인 필요’ 배지 노출.
+ 
+ ## 텔레메트리(측정 연계)
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 3aeb0c8eb5b56e5b29e9c0226b16a562eb1c173c Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 13:46:20 +0900
+Subject: [PATCH 05/13] docs(docs): add CONTRIBUTING_DOCS, index link, and app
+ integration TODOs; refine PROJECT automation tasks
+
+---
+ docs/docs/CONTRIBUTING_DOCS.md  | 33 +++++++++++++++++++++++++++++++++
+ docs/docs/DOCS_INDEX.md         |  3 +++
+ docs/docs/OPERATIONS_RUNBOOK.md |  6 ++++++
+ docs/docs/PROJECT.md            |  5 +++++
+ 4 files changed, 47 insertions(+)
+ create mode 100644 docs/docs/CONTRIBUTING_DOCS.md
+
+diff --git a/docs/docs/CONTRIBUTING_DOCS.md b/docs/docs/CONTRIBUTING_DOCS.md
+new file mode 100644
+index 0000000..db04b85
+--- /dev/null
++++ b/docs/docs/CONTRIBUTING_DOCS.md
+@@ -0,0 +1,33 @@
++# CONTRIBUTING_DOCS — 문서 작성/유지 규약
++Status: canonical (Docs Conventions)
++
++마지막 업데이트: 2025-09-03
++
++## Canonical vs. Derived
++- canonical: 사실/요구사항의 단일 출처. 파생 문서가 내용을 재정의하지 않습니다.
++- derived: 요약/가이드/예시. 상세·정합성은 항상 canonical을 우선합니다.
++
++## 단일 소스 규칙
++- last_verified: RULES_HUG_mapping.yaml의 값을 단일 소스로 사용합니다.
++- 규칙/임계값: RULES_HUG_mapping.yaml → RULES_HUG_v1.md 순으로 참조합니다.
++
++## 참조 표기
++- docs 내부 문서 간에는 파일명만 기재합니다(예: DESIGN_TOKENS.yaml).
++- 루트 README 등 외부 진입점에서는 경로를 포함합니다(예: docs/docs/PRD_v1.md).
++- 외부 링크/검색은 금지합니다(RAG_POLICY).
++
++## 변경 원칙
++- 중복/상충 발견 시: canonical에만 내용을 유지하고, derived에는 요약/링크만 남깁니다.
++- Status 헤더 유지: 문서 상단에 Status를 표기합니다.
++- 네비게이션: 하단 4-탭(시작/체크리스트/히스토리/설정)을 기준으로 문서를 일관되게 기술합니다.
++
++## 커밋 규칙(문서)
++- Conventional Commits: docs(scope): summary
++- 예: docs(ia): update index, mark canonical; docs(rules): refresh last_verified
++
++## 점검 체크리스트
++- [ ] Status 헤더 존재(canonical/derived)
++- [ ] last_verified 참조가 단일 소스 규칙과 일치
++- [ ] 파일명/경로 표기가 본 규약과 일치
++- [ ] 중복/상충 문구 제거 또는 canonical로 집약
++
+diff --git a/docs/docs/DOCS_INDEX.md b/docs/docs/DOCS_INDEX.md
+index b984abf..59979f9 100644
+--- a/docs/docs/DOCS_INDEX.md
++++ b/docs/docs/DOCS_INDEX.md
+@@ -23,6 +23,9 @@ Status: canonical (Information Architecture)
+ - Operations: OPERATIONS_RUNBOOK.md, Release: RELEASE_PLAN.md
+ - Legal/Ads: LEGAL_CHECKLIST.md, ADS_POLICY.md
+ 
++## Contributing
++- 문서 작성/유지 규약은 CONTRIBUTING_DOCS.md를 참고하세요.
++
+ ## 연관성(요약)
+ - PRD_v1.md → 화면/컴포넌트의 수용기준과 콘텐츠 범위 정의
+ - RULES_HUG_v1.md → 결과 카드 상태/사유/‘모름’ 처리 규정의 근거
+diff --git a/docs/docs/OPERATIONS_RUNBOOK.md b/docs/docs/OPERATIONS_RUNBOOK.md
+index d946110..358ffbe 100644
+--- a/docs/docs/OPERATIONS_RUNBOOK.md
++++ b/docs/docs/OPERATIONS_RUNBOOK.md
+@@ -37,5 +37,11 @@ Status: canonical (Operations)
+ - RULES_HUG_v1.md / RULES_HUG_mapping.yaml: version, last_verified(단일 소스) 필드, 변경 이력 유지
+ - PRODUCT_BRIEF.md/PRD_v1.md: 주요 결정 변경 시 업데이트
+ 
++## 7) 앱 연동 TODO
++- last_verified 주입: 앱은 RULES_HUG_mapping.yaml.last_verified를 구성 객체로 주입받도록 합니다.
++  - 제안: 빌드 단계에서 YAML→Dart const 변환 스텁 생성(`lib/common/config/rules_meta.dart`).
++  - 대안: 런타임에 assets로 로딩(초기 MVP는 상수 주입 권장).
++- 규칙 엔진 연결: 평가 모듈이 mapping.yaml을 해석하는 어댑터를 통해 경고/결격/필수 필드를 주입받도록 스켈레톤 작성.
++
+ ## 변경 이력
+ - 2025-09-02: 초기 작성.
+diff --git a/docs/docs/PROJECT.md b/docs/docs/PROJECT.md
+index 7a1355f..77645e7 100644
+--- a/docs/docs/PROJECT.md
++++ b/docs/docs/PROJECT.md
+@@ -96,6 +96,11 @@
+ 4) 핵심 UX 흐름·와이어프레임 초안
+ 5) PRD v1 + 릴리스 마일스톤 정의
+ 
++## 자동화/연동 TODO
++- [ ] last_verified 자동 주입: RULES_HUG_mapping.yaml → Dart const 생성 스텁(빌드 스크립트) → UI 표기 일원화
++- [ ] 규칙 엔진 스켈레톤: mapping.yaml 해석 어댑터 + 평가 순서(C1→C2→C3) 틀 생성
++- [ ] 문서 규약 준수 체크: CONTRIBUTING_DOCS.md 체크리스트 기반 pre-commit 스크립트(선택)
++
+ ## Kickoff 질문(가이드)
+ - 타깃 유저·핵심 문제: 누구의 어떤 일을 돕나요?
+ - 성공지표: 1차·보조 KPI는? 언제 성공이라 말하나요?
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 7939113ad369783e38478ab720132f99df1dc608 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 14:01:18 +0900
+Subject: [PATCH 06/13] docs(ui): correct Flutter UI guidance (M3 breakpoints,
+ 48dp touch targets, directional padding, ink effects, nested scroll guidance)
+
+---
+ docs/docs/COMPONENT_SPECS.md       |  4 +++-
+ docs/docs/FLUTTER_DESIGN_SYSTEM.md | 17 ++++++++++++-----
+ docs/docs/SCREEN_SPECS.md          |  6 ++++++
+ docs/docs/UI_UX_GUIDE.md           |  3 +++
+ 4 files changed, 24 insertions(+), 6 deletions(-)
+
+diff --git a/docs/docs/COMPONENT_SPECS.md b/docs/docs/COMPONENT_SPECS.md
+index 367d2bf..f38bee6 100644
+--- a/docs/docs/COMPONENT_SPECS.md
++++ b/docs/docs/COMPONENT_SPECS.md
+@@ -122,10 +122,12 @@ class AdSlot extends StatelessWidget {
+ 
+ ## Buttons/Chips
+ - ElevatedButton/OutlinedButton/TextButton을 사용, 스타일은 Theme에서 일괄 지정
+-- ChoiceChip: 선택/비선택 대비 확보, 최소 폭 44dp
++- ChoiceChip: 선택/비선택 대비 확보, 최소 터치 타겟 48×48dp 보장(패딩/height로 확보)
++- 잉크 효과 유지: 버튼/칩 상호작용은 표준 머티리얼 위젯 사용(커스텀 제스처로 대체 지양)
+ 
+ ## 리스트/스크롤
+ - Reasons/NextSteps는 `ListView.separated` 또는 `Column`+`SizedBox(height: spacing)`
++- 스크롤 중첩 지양: 스크롤러 안에는 Sliver 계열 또는 단일 스크롤만 유지(shrinkWrap 과도 사용 금지)
+ 
+ ## Keys(테스트 식별자)
+ - ResultCard: `Key('ResultCard.TLDR')`, `Key('ResultCard.Reasons')`, `Key('ResultCard.Next')`
+diff --git a/docs/docs/FLUTTER_DESIGN_SYSTEM.md b/docs/docs/FLUTTER_DESIGN_SYSTEM.md
+index 068bbb5..e60d795 100644
+--- a/docs/docs/FLUTTER_DESIGN_SYSTEM.md
++++ b/docs/docs/FLUTTER_DESIGN_SYSTEM.md
+@@ -73,9 +73,11 @@ ThemeData buildAppTheme(Brightness brightness) {
+ ```
+ 
+ ## 반응형/레이아웃 규칙
+-- 8pt 그리드, 기본 패딩 `theme.extension<Spacing>()!.x4` 사용
+-- Breakpoints(권장): narrow < 360, base 360–599, wide ≥ 600
+-- 위젯: `LayoutBuilder`로 분기, 길어지는 목록은 Sliver 사용
++- 8pt 그리드, 기본 패딩 `context.spacing.x4` 사용(토큰 경유)
++- Breakpoints(Material 3 권장):
++  - compact < 600, medium 600–839, expanded ≥ 840
++  - 참고: 단순 1단/2단/3단 레이아웃 분기에 활용
++- 위젯: `LayoutBuilder`/`MediaQuery.sizeOf(context)`로 분기, 길어지는 목록은 `ListView.builder` 또는 Sliver 사용(중첩 스크롤 지양)
+ 
+ ## 컴포넌트 규약(샘플)
+ - 네이밍: `XxxCard`, `XxxTile`, `XxxChip`, `XxxButton`
+@@ -83,6 +85,9 @@ ThemeData buildAppTheme(Brightness brightness) {
+ - 상태: `enabled/disabled`, `loading`, `error/unknown` 등 enum으로 노출
+ - 접근성: `Semantics(label/hint)`, `ExcludeSemantics`로 중복 제거, 키보드 포커스 고려
+ - 테스트: `Key('ResultCard.TLDR')` 등 TestKey 표준화
++ - 방향성: 여백은 `EdgeInsetsDirectional` 우선 사용(RTL 대비)
++ - 터치 타겟: 모든 상호작용 요소 최소 48×48dp 보장(Material 가이드)
++ - 잉크 효과: 버튼/탭 요소는 `InkWell`/`InkResponse` 또는 표준 버튼 위젯 사용(`GestureDetector` 단독 지양)
+ 
+ ### IntakeQuestion 사양(요약)
+ - props: `qid`, `label`, `options(List<Choice>)`, `onChanged`, `selected`, `showUnknown(bool)`
+@@ -95,12 +100,14 @@ ThemeData buildAppTheme(Brightness brightness) {
+ - A11y: 색상 외 구분(아이콘/텍스트), 대비 준수
+ 
+ ## 접근성 체크
+-- 최소 터치 44×44, 본문 대비 4.5:1 이상
++- 최소 터치 48×48, 본문 대비 4.5:1 이상
+ - Dynamic Type 대응: `MediaQuery.textScaler` 반영, `FittedBox` 남용 금지
+ - 포커스 순서: 논리적 탭 순서 설정(`FocusTraversalGroup`)
++ - 선택 상태: Chip/토글 등은 `selected` 상태가 보이스오버로 읽히도록 `Semantics(selected: ...)` 또는 기본 위젯 상태 활용
+ 
+ ## 국제화(i18n)
+-- 숫자/날짜/통화 `intl` 사용, 텍스트 분리(l10n) — 메시지 키는 COPY_GUIDE 참조
++- `flutter gen-l10n` 사용(앱 전역 l10n), 문자열 하드코딩 지양
++- 숫자/날짜/통화는 `intl` 사용, 메시지 키는 COPY_GUIDE 참조
+ 
+ ## 성능 수칙
+ - 가능한 `const` 사용, `ListView.builder`/`SliverList` 활용
+diff --git a/docs/docs/SCREEN_SPECS.md b/docs/docs/SCREEN_SPECS.md
+index 2a7ef07..aa56d81 100644
+--- a/docs/docs/SCREEN_SPECS.md
++++ b/docs/docs/SCREEN_SPECS.md
+@@ -63,10 +63,16 @@ Status: canonical (Screen Specs)
+ - 결과 이후: `Composer.enabled=true`, 추천 질문 칩 노출
+ - 로딩: `TypingIndicator`(bot), 긴 답변 `SummaryToggle`(TL;DR 먼저 보기)
+ - 에러: `ErrorBubble`(bot) + `RetryButton`
++ - 접근성: 모든 터치 타겟 48×48dp 이상, 칩/버튼은 머티리얼 표준 컴포넌트 사용(잉크 효과 보존)
+ 
+ ### 접근성
+ - Semantics: ChatBubble(role 라벨), ChoiceChip 라벨/포커스 이동, 배지(마지막 확인일) 읽기
+ - 키보드 포커스 순서: 질문→옵션 칩→다음 요소
++ - 방향성: 여백/정렬은 EdgeInsetsDirectional/alignmentDirectional 사용
++
++## 리스트/스크롤 가이드
++- 중첩 스크롤 지양. 필요 시 `CustomScrollView` + Sliver 조합 사용
++- 긴 리스트는 `ListView.builder`/`SliverList` 사용, `shrinkWrap` 과도 사용 금지
+ 
+ ### 이벤트 매핑
+ - `intake_start`, `intake_answer{qid, is_unknown}`, `intake_complete{count, has_unknown, status}`
+diff --git a/docs/docs/UI_UX_GUIDE.md b/docs/docs/UI_UX_GUIDE.md
+index 105abc5..9e0a458 100644
+--- a/docs/docs/UI_UX_GUIDE.md
++++ b/docs/docs/UI_UX_GUIDE.md
+@@ -12,6 +12,7 @@ Status: canonical (UX Principles)
+ - 실용 요약 톤: TL;DR → 이유/예외 → 다음 단계. 외부 링크 미노출, 마지막 확인일 표기.
+ - 접근성/A11y: 대비/크기, Semantics 라벨, 터치 타겟 ≥ 44dp.
+ - 디자인 토큰 준수: 색/간격/라운드/타이포는 토큰에서만 사용.
++ - 국제화: `flutter gen-l10n` 기반 문자열 분리, 하드코딩 지양
+ 
+ ## IA/네비게이션
+ - 기본 진입: Conversation(대화) 화면
+@@ -30,6 +31,7 @@ Status: canonical (UX Principles)
+ - 빈 상태: 첫 진입 안내 버블 + “시작하기”
+ - 에러: 네트워크/서버 오류는 bot bubble로 노출 + 재시도 버튼
+ - 긴 답변: “요약 먼저 보기” 토글
++ - 상호작용: 버튼/칩은 최소 48×48dp 터치 타겟 확보, 잉크 효과 유지(Material 버튼/Chip 권장)
+ 
+ ## 진행/완료 흐름
+ 1) 봇 인사 → A1..A7, P1..P7, S1 순서로 질문(분기 허용)
+@@ -46,6 +48,7 @@ Status: canonical (UX Principles)
+ ## 디자인 토큰
+ - 색/타이포/간격/라운드: DESIGN_TOKENS.yaml 참조
+ - 화면 배치/컴포넌트 배치는 UI_BLUEPRINT.yaml 참조
++ - 방향성: 여백은 EdgeInsetsDirectional 우선(RTL 대비)
+ 
+ ## 카피/톤
+ - COPY_GUIDE.md, RESULT_CARD_COPY.md를 기준으로 문구 선택
+-- 
+2.39.5 (Apple Git-154)
+
+
+From ca4cd548662f21a814185c28d5e7f3789678ef6a Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 15:09:36 +0900
+Subject: [PATCH 07/13] feat(conversation): add ChatRepository (API + mock) and
+ wire ConversationPage to call backend for bot replies; add http dep
+
+---
+ .../conversation/data/chat_models.dart        | 36 +++++++++
+ .../conversation/data/chat_repository.dart    | 73 +++++++++++++++++++
+ .../conversation/ui/conversation_page.dart    | 49 +++++++++++--
+ pubspec.yaml                                  |  3 +
+ 4 files changed, 155 insertions(+), 6 deletions(-)
+ create mode 100644 lib/features/conversation/data/chat_models.dart
+ create mode 100644 lib/features/conversation/data/chat_repository.dart
+
+diff --git a/lib/features/conversation/data/chat_models.dart b/lib/features/conversation/data/chat_models.dart
+new file mode 100644
+index 0000000..a08e2de
+--- /dev/null
++++ b/lib/features/conversation/data/chat_models.dart
+@@ -0,0 +1,36 @@
++import 'package:flutter/material.dart';
++
++@immutable
++class ChatCitation {
++  final String docId;
++  final String sectionKey;
++  const ChatCitation({required this.docId, required this.sectionKey});
++}
++
++@immutable
++class BotReply {
++  final String content;
++  final List<ChatCitation> citations;
++  final String lastVerified; // YYYY-MM-DD
++  const BotReply({required this.content, required this.citations, required this.lastVerified});
++
++  factory BotReply.fromJson(Map<String, dynamic> json) {
++    final cites = (json['citations'] as List<dynamic>? ?? const [])
++        .whereType<Map<String, dynamic>>()
++        .map((e) => ChatCitation(docId: e['docId'] ?? '', sectionKey: e['section'] ?? e['sectionKey'] ?? ''))
++        .toList();
++    return BotReply(
++      content: json['content'] ?? '',
++      citations: cites,
++      lastVerified: json['lastVerified'] ?? '',
++    );
++  }
++}
++
++class ChatError implements Exception {
++  final String message;
++  ChatError(this.message);
++  @override
++  String toString() => 'ChatError: $message';
++}
++
+diff --git a/lib/features/conversation/data/chat_repository.dart b/lib/features/conversation/data/chat_repository.dart
+new file mode 100644
+index 0000000..a8704bc
+--- /dev/null
++++ b/lib/features/conversation/data/chat_repository.dart
+@@ -0,0 +1,73 @@
++import 'dart:convert';
++import 'package:http/http.dart' as http;
++import 'chat_models.dart';
++
++abstract class ChatRepository {
++  Future<void> ensureSession();
++  Future<BotReply> complete(String userText);
++}
++
++class ApiChatRepository implements ChatRepository {
++  final String baseUrl; // e.g., http://localhost:8080/api
++  final http.Client _client;
++  String? _sessionId;
++
++  ApiChatRepository({String? baseUrl, http.Client? client})
++      : baseUrl = baseUrl ?? const String.fromEnvironment('CHAT_API_BASE', defaultValue: 'http://localhost:8080/api'),
++        _client = client ?? http.Client();
++
++  @override
++  Future<void> ensureSession() async {
++    if (_sessionId != null) return;
++    final r = await _client.post(Uri.parse('$baseUrl/chat/session'));
++    if (r.statusCode ~/ 100 != 2) {
++      throw ChatError('session create failed (${r.statusCode})');
++    }
++    final body = jsonDecode(r.body) as Map<String, dynamic>;
++    _sessionId = body['sessionId']?.toString();
++    if (_sessionId == null || _sessionId!.isEmpty) {
++      throw ChatError('invalid session id');
++    }
++  }
++
++  @override
++  Future<BotReply> complete(String userText) async {
++    await ensureSession();
++    // Optional: send message to history endpoint (if server expects)
++    await _client.post(
++      Uri.parse('$baseUrl/chat/messages'),
++      headers: {'Content-Type': 'application/json'},
++      body: jsonEncode({'sessionId': _sessionId, 'role': 'user', 'content': userText}),
++    );
++
++    final r = await _client.post(
++      Uri.parse('$baseUrl/chat/complete'),
++      headers: {'Content-Type': 'application/json'},
++      body: jsonEncode({'sessionId': _sessionId, 'prompt': userText}),
++    );
++    if (r.statusCode ~/ 100 != 2) {
++      throw ChatError('complete failed (${r.statusCode})');
++    }
++    final body = jsonDecode(r.body) as Map<String, dynamic>;
++    return BotReply.fromJson(body);
++  }
++}
++
++/// Mock fallback for local/dev when API server is not available.
++class MockChatRepository implements ChatRepository {
++  final String lastVerified;
++  MockChatRepository({this.lastVerified = '2025-09-02'});
++  @override
++  Future<void> ensureSession() async {}
++
++  @override
++  Future<BotReply> complete(String userText) async {
++    await Future.delayed(const Duration(milliseconds: 400));
++    return BotReply(
++      content: 'TL;DR: 서류는 신분증, 가족·혼인관계, 소득 증빙이 기본입니다. 다음 단계에서 발급처/순서를 안내해 드립니다.',
++      citations: const [ChatCitation(docId: 'HUG_internal_policy.md', sectionKey: 'A.1')],
++      lastVerified: lastVerified,
++    );
++  }
++}
++
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 6b2f74f..b3a0afd 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -8,6 +8,8 @@ import '../../../ui/components/typing_indicator.dart';
+ import '../../../ui/components/ad_slot.dart';
+ import '../../../common/analytics/analytics.dart';
+ import '../../../ui/components/appear.dart';
++import '../../conversation/data/chat_repository.dart';
++import '../../conversation/data/chat_models.dart' as model;
+ 
+ class ConversationPage extends StatefulWidget {
+   const ConversationPage({super.key});
+@@ -28,6 +30,10 @@ class _ConversationPageState extends State<ConversationPage> {
+ 
+   static const _unknown = '__unknown__';
+ 
++  // Chat repository (API-backed; falls back to mock if needed)
++  late final ChatRepository _chatRepo;
++  int? _typingRowIndex;
++
+   @override
+   void initState() {
+     super.initState();
+@@ -36,6 +42,8 @@ class _ConversationPageState extends State<ConversationPage> {
+       _appendBotText('간단 조사를 통해 맞춤 안내를 준비할게요. 이후 예비판정을 진행합니다.');
+       _askCurrent();
+     });
++    // Initialize chat repository (swap to ApiChatRepository when backend is ready)
++    _chatRepo = ApiChatRepository();
+   }
+ 
+   @override
+@@ -270,13 +278,42 @@ class _ConversationPageState extends State<ConversationPage> {
+     _composer.clear();
+     _appendUserText(text);
+     Analytics.instance.qnaAsk('free', text.length);
+-    // Stubbed bot answer following RAG policy tone
+-    _rows.add(_Row.botRich(const ChatBubble(
++    // Show typing indicator and request completion from repository
++    final typingIndex = _showTyping();
++    _chatRepo.complete(text).then((reply) {
++      _replaceTypingWithReply(typingIndex, reply);
++      Analytics.instance.qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
++    }).catchError((e) {
++      // Fallback simple error message in bot bubble
++      _replaceTypingWithError(typingIndex, '지금은 답변을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
++    });
++  }
++
++  int _showTyping() {
++    _rows.add(_Row.botRich(const TypingIndicator()));
++    _typingRowIndex = _rows.length - 1;
++    setState(() {});
++    return _typingRowIndex!;
++  }
++
++  void _replaceTypingWithReply(int typingIndex, model.BotReply reply) {
++    // Convert model citations to UI component citations
++    final cites = reply.citations
++        .map((c) => Citation(c.docId, c.sectionKey))
++        .toList();
++    _rows[typingIndex] = _Row.botRich(ChatBubble(
+       role: ChatRole.bot,
+-      content: 'TL;DR: 서류는 신분증, 가족·혼인관계, 소득 증빙이 기본입니다. 다음 단계에서 발급처/순서를 안내해 드립니다.',
+-      citations: [Citation('HUG_internal_policy.md', 'A.1')],
+-    )));
+-    Analytics.instance.qnaAnswer(true, '2025-09-02');
++      content: reply.content,
++      citations: cites,
++    ));
++    setState(() {});
++  }
++
++  void _replaceTypingWithError(int typingIndex, String message) {
++    _rows[typingIndex] = _Row.botRich(ChatBubble(
++      role: ChatRole.bot,
++      content: message,
++    ));
+     setState(() {});
+   }
+ 
+diff --git a/pubspec.yaml b/pubspec.yaml
+index 2448ed6..41697e8 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -47,6 +47,9 @@ dependencies:
+   
+   # Local storage
+   shared_preferences: ^2.3.2
++  
++  # HTTP client (API)
++  http: ^1.2.2
+ 
+ dev_dependencies:
+   flutter_test:
+-- 
+2.39.5 (Apple Git-154)
+
+
+From ac0d25c6f0a2a393249e9b7b9d3e6b0e6442213f Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 15:21:09 +0900
+Subject: [PATCH 08/13] feat(conversation): introduce ChatCubit and DI via
+ RepositoryProvider; wire ConversationPage to Bloc (typing->reply/error)
+
+---
+ .../conversation/bloc/chat_cubit.dart         | 32 +++++++++++++
+ .../conversation/ui/conversation_page.dart    | 47 +++++++++++--------
+ lib/main.dart                                 | 17 ++++---
+ 3 files changed, 71 insertions(+), 25 deletions(-)
+ create mode 100644 lib/features/conversation/bloc/chat_cubit.dart
+
+diff --git a/lib/features/conversation/bloc/chat_cubit.dart b/lib/features/conversation/bloc/chat_cubit.dart
+new file mode 100644
+index 0000000..c00f390
+--- /dev/null
++++ b/lib/features/conversation/bloc/chat_cubit.dart
+@@ -0,0 +1,32 @@
++import 'package:flutter/foundation.dart';
++import 'package:flutter_bloc/flutter_bloc.dart';
++import '../../conversation/data/chat_repository.dart';
++import '../../conversation/data/chat_models.dart' as model;
++
++@immutable
++class ChatState {
++  final bool loading;
++  final model.BotReply? reply;
++  final String? error;
++  const ChatState({this.loading = false, this.reply, this.error});
++
++  ChatState copyWith({bool? loading, model.BotReply? reply, String? error}) =>
++      ChatState(loading: loading ?? this.loading, reply: reply, error: error);
++}
++
++class ChatCubit extends Cubit<ChatState> {
++  final ChatRepository repo;
++  ChatCubit(this.repo) : super(const ChatState());
++
++  Future<void> send(String text) async {
++    emit(state.copyWith(loading: true, reply: null, error: null));
++    try {
++      await repo.ensureSession();
++      final r = await repo.complete(text);
++      emit(ChatState(loading: false, reply: r));
++    } catch (e) {
++      emit(ChatState(loading: false, error: '네트워크 오류가 발생했습니다. 다시 시도해 주세요.'));
++    }
++  }
++}
++
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index b3a0afd..5b24243 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -8,6 +8,8 @@ import '../../../ui/components/typing_indicator.dart';
+ import '../../../ui/components/ad_slot.dart';
+ import '../../../common/analytics/analytics.dart';
+ import '../../../ui/components/appear.dart';
++import 'package:flutter_bloc/flutter_bloc.dart';
++import '../../conversation/bloc/chat_cubit.dart';
+ import '../../conversation/data/chat_repository.dart';
+ import '../../conversation/data/chat_models.dart' as model;
+ 
+@@ -30,8 +32,6 @@ class _ConversationPageState extends State<ConversationPage> {
+ 
+   static const _unknown = '__unknown__';
+ 
+-  // Chat repository (API-backed; falls back to mock if needed)
+-  late final ChatRepository _chatRepo;
+   int? _typingRowIndex;
+ 
+   @override
+@@ -42,8 +42,6 @@ class _ConversationPageState extends State<ConversationPage> {
+       _appendBotText('간단 조사를 통해 맞춤 안내를 준비할게요. 이후 예비판정을 진행합니다.');
+       _askCurrent();
+     });
+-    // Initialize chat repository (swap to ApiChatRepository when backend is ready)
+-    _chatRepo = ApiChatRepository();
+   }
+ 
+   @override
+@@ -278,15 +276,9 @@ class _ConversationPageState extends State<ConversationPage> {
+     _composer.clear();
+     _appendUserText(text);
+     Analytics.instance.qnaAsk('free', text.length);
+-    // Show typing indicator and request completion from repository
+-    final typingIndex = _showTyping();
+-    _chatRepo.complete(text).then((reply) {
+-      _replaceTypingWithReply(typingIndex, reply);
+-      Analytics.instance.qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
+-    }).catchError((e) {
+-      // Fallback simple error message in bot bubble
+-      _replaceTypingWithError(typingIndex, '지금은 답변을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+-    });
++    // Show typing indicator and request completion via Cubit
++    _typingRowIndex = _showTyping();
++    context.read<ChatCubit>().send(text);
+   }
+ 
+   int _showTyping() {
+@@ -320,11 +312,27 @@ class _ConversationPageState extends State<ConversationPage> {
+   @override
+   Widget build(BuildContext context) {
+     final spacing = context.spacing;
+-    return Scaffold(
+-      appBar: AppBar(title: const Text('대화형 예비판정')),
+-      body: SafeArea(
+-        child: Column(
+-          children: [
++    return BlocProvider<ChatCubit>(
++      create: (ctx) => ChatCubit(RepositoryProvider.of(ctx)),
++      child: BlocListener<ChatCubit, ChatState>(
++        listener: (context, state) {
++          if (_typingRowIndex != null) {
++            if (state.reply != null) {
++              _replaceTypingWithReply(_typingRowIndex!, state.reply!);
++              Analytics.instance.qnaAnswer(true,
++                  state.reply!.lastVerified.isEmpty ? '2025-09-02' : state.reply!.lastVerified);
++              _typingRowIndex = null;
++            } else if (state.error != null) {
++              _replaceTypingWithError(_typingRowIndex!, state.error!);
++              _typingRowIndex = null;
++            }
++          }
++        },
++        child: Scaffold(
++          appBar: AppBar(title: const Text('대화형 예비판정')),
++          body: SafeArea(
++            child: Column(
++              children: [
+             Expanded(
+               child: ListView.builder(
+                 padding: EdgeInsets.all(spacing.x4),
+@@ -431,7 +439,8 @@ class _ConversationPageState extends State<ConversationPage> {
+           ],
+         ),
+       ),
+-    );
++    ),
++  );
+   }
+ 
+   // Question flow (full v1 per INTAKE_FLOW.md)
+diff --git a/lib/main.dart b/lib/main.dart
+index 897b6d7..fe4a04e 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -1,6 +1,8 @@
+ import 'package:flutter/material.dart';
+ import 'ui/theme/app_theme.dart';
+ import 'features/shell/ui/app_shell.dart';
++import 'features/conversation/data/chat_repository.dart';
++import 'package:flutter_bloc/flutter_bloc.dart';
+ 
+ void main() {
+   runApp(const MyApp());
+@@ -11,12 +13,15 @@ class MyApp extends StatelessWidget {
+ 
+   @override
+   Widget build(BuildContext context) {
+-    return MaterialApp(
+-      title: '전세자금대출 도우미',
+-      theme: buildAppTheme(Brightness.light),
+-      darkTheme: buildAppTheme(Brightness.dark),
+-      themeMode: ThemeMode.system,
+-      home: const AppShell(),
++    return RepositoryProvider<ChatRepository>(
++      create: (_) => ApiChatRepository(),
++      child: MaterialApp(
++        title: '전세자금대출 도우미',
++        theme: buildAppTheme(Brightness.light),
++        darkTheme: buildAppTheme(Brightness.dark),
++        themeMode: ThemeMode.system,
++        home: const AppShell(),
++      ),
+     );
+   }
+ }
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 46827cfd8bc2b1ee12a6f3aae18426897cb15504 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 15:28:43 +0900
+Subject: [PATCH 09/13] refactor(conversation): apply Freezed to chat models
+ and ChatState; add json_serializable and generation hooks (run build_runner)
+
+---
+ .../conversation/bloc/chat_cubit.dart         | 26 ++++++------
+ .../conversation/data/chat_models.dart        | 40 ++++++++-----------
+ .../conversation/data/chat_repository.dart    | 23 +++++++++--
+ .../conversation/ui/conversation_page.dart    | 28 ++++++++-----
+ 4 files changed, 65 insertions(+), 52 deletions(-)
+
+diff --git a/lib/features/conversation/bloc/chat_cubit.dart b/lib/features/conversation/bloc/chat_cubit.dart
+index c00f390..1171c3e 100644
+--- a/lib/features/conversation/bloc/chat_cubit.dart
++++ b/lib/features/conversation/bloc/chat_cubit.dart
+@@ -1,32 +1,30 @@
+-import 'package:flutter/foundation.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
++import 'package:freezed_annotation/freezed_annotation.dart';
+ import '../../conversation/data/chat_repository.dart';
+ import '../../conversation/data/chat_models.dart' as model;
+ 
+-@immutable
+-class ChatState {
+-  final bool loading;
+-  final model.BotReply? reply;
+-  final String? error;
+-  const ChatState({this.loading = false, this.reply, this.error});
++part 'chat_cubit.freezed.dart';
+ 
+-  ChatState copyWith({bool? loading, model.BotReply? reply, String? error}) =>
+-      ChatState(loading: loading ?? this.loading, reply: reply, error: error);
++@freezed
++class ChatState with _$ChatState {
++  const factory ChatState.idle() = _Idle;
++  const factory ChatState.loading() = _Loading;
++  const factory ChatState.success(model.BotReply reply) = _Success;
++  const factory ChatState.error(String message) = _Error;
+ }
+ 
+ class ChatCubit extends Cubit<ChatState> {
+   final ChatRepository repo;
+-  ChatCubit(this.repo) : super(const ChatState());
++  ChatCubit(this.repo) : super(const ChatState.idle());
+ 
+   Future<void> send(String text) async {
+-    emit(state.copyWith(loading: true, reply: null, error: null));
++    emit(const ChatState.loading());
+     try {
+       await repo.ensureSession();
+       final r = await repo.complete(text);
+-      emit(ChatState(loading: false, reply: r));
++      emit(ChatState.success(r));
+     } catch (e) {
+-      emit(ChatState(loading: false, error: '네트워크 오류가 발생했습니다. 다시 시도해 주세요.'));
++      emit(const ChatState.error('네트워크 오류가 발생했습니다. 다시 시도해 주세요.'));
+     }
+   }
+ }
+-
+diff --git a/lib/features/conversation/data/chat_models.dart b/lib/features/conversation/data/chat_models.dart
+index a08e2de..9d0cd82 100644
+--- a/lib/features/conversation/data/chat_models.dart
++++ b/lib/features/conversation/data/chat_models.dart
+@@ -1,30 +1,23 @@
+-import 'package:flutter/material.dart';
++import 'package:freezed_annotation/freezed_annotation.dart';
+ 
+-@immutable
+-class ChatCitation {
+-  final String docId;
+-  final String sectionKey;
+-  const ChatCitation({required this.docId, required this.sectionKey});
++part 'chat_models.freezed.dart';
++part 'chat_models.g.dart';
++
++@freezed
++class ChatCitation with _$ChatCitation {
++  const factory ChatCitation({required String docId, required String sectionKey}) = _ChatCitation;
++  factory ChatCitation.fromJson(Map<String, dynamic> json) => _$ChatCitationFromJson(json);
+ }
+ 
+-@immutable
+-class BotReply {
+-  final String content;
+-  final List<ChatCitation> citations;
+-  final String lastVerified; // YYYY-MM-DD
+-  const BotReply({required this.content, required this.citations, required this.lastVerified});
++@freezed
++class BotReply with _$BotReply {
++  const factory BotReply({
++    required String content,
++    @Default(<ChatCitation>[]) List<ChatCitation> citations,
++    required String lastVerified, // YYYY-MM-DD
++  }) = _BotReply;
+ 
+-  factory BotReply.fromJson(Map<String, dynamic> json) {
+-    final cites = (json['citations'] as List<dynamic>? ?? const [])
+-        .whereType<Map<String, dynamic>>()
+-        .map((e) => ChatCitation(docId: e['docId'] ?? '', sectionKey: e['section'] ?? e['sectionKey'] ?? ''))
+-        .toList();
+-    return BotReply(
+-      content: json['content'] ?? '',
+-      citations: cites,
+-      lastVerified: json['lastVerified'] ?? '',
+-    );
+-  }
++  factory BotReply.fromJson(Map<String, dynamic> json) => _$BotReplyFromJson(json);
+ }
+ 
+ class ChatError implements Exception {
+@@ -33,4 +26,3 @@ class ChatError implements Exception {
+   @override
+   String toString() => 'ChatError: $message';
+ }
+-
+diff --git a/lib/features/conversation/data/chat_repository.dart b/lib/features/conversation/data/chat_repository.dart
+index a8704bc..4135c55 100644
+--- a/lib/features/conversation/data/chat_repository.dart
++++ b/lib/features/conversation/data/chat_repository.dart
+@@ -48,8 +48,9 @@ class ApiChatRepository implements ChatRepository {
+     if (r.statusCode ~/ 100 != 2) {
+       throw ChatError('complete failed (${r.statusCode})');
+     }
+-    final body = jsonDecode(r.body) as Map<String, dynamic>;
+-    return BotReply.fromJson(body);
++    final raw = jsonDecode(r.body) as Map<String, dynamic>;
++    final norm = _normalizeReplyJson(raw);
++    return BotReply.fromJson(norm);
+   }
+ }
+ 
+@@ -64,10 +65,26 @@ class MockChatRepository implements ChatRepository {
+   Future<BotReply> complete(String userText) async {
+     await Future.delayed(const Duration(milliseconds: 400));
+     return BotReply(
+-      content: 'TL;DR: 서류는 신분증, 가족·혼인관계, 소득 증빙이 기본입니다. 다음 단계에서 발급처/순서를 안내해 드립니다.',
++      content:
++          'TL;DR: 서류는 신분증, 가족·혼인관계, 소득 증빙이 기본입니다. 다음 단계에서 발급처/순서를 안내해 드립니다.',
+       citations: const [ChatCitation(docId: 'HUG_internal_policy.md', sectionKey: 'A.1')],
+       lastVerified: lastVerified,
+     );
+   }
+ }
+ 
++Map<String, dynamic> _normalizeReplyJson(Map<String, dynamic> json) {
++  final out = Map<String, dynamic>.from(json);
++  final citations = (out['citations'] as List<dynamic>? ?? const [])
++      .whereType<Map<String, dynamic>>()
++      .map((e) {
++    final m = Map<String, dynamic>.from(e);
++    // Accept either 'section' or 'sectionKey'
++    if (!m.containsKey('sectionKey') && m.containsKey('section')) {
++      m['sectionKey'] = m['section'];
++    }
++    return m;
++  }).toList();
++  out['citations'] = citations;
++  return out;
++}
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 5b24243..46c27f1 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -316,17 +316,23 @@ class _ConversationPageState extends State<ConversationPage> {
+       create: (ctx) => ChatCubit(RepositoryProvider.of(ctx)),
+       child: BlocListener<ChatCubit, ChatState>(
+         listener: (context, state) {
+-          if (_typingRowIndex != null) {
+-            if (state.reply != null) {
+-              _replaceTypingWithReply(_typingRowIndex!, state.reply!);
+-              Analytics.instance.qnaAnswer(true,
+-                  state.reply!.lastVerified.isEmpty ? '2025-09-02' : state.reply!.lastVerified);
+-              _typingRowIndex = null;
+-            } else if (state.error != null) {
+-              _replaceTypingWithError(_typingRowIndex!, state.error!);
+-              _typingRowIndex = null;
+-            }
+-          }
++          state.maybeWhen(
++            success: (reply) {
++              if (_typingRowIndex != null) {
++                _replaceTypingWithReply(_typingRowIndex!, reply);
++                Analytics.instance
++                    .qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
++                _typingRowIndex = null;
++              }
++            },
++            error: (msg) {
++              if (_typingRowIndex != null) {
++                _replaceTypingWithError(_typingRowIndex!, msg);
++                _typingRowIndex = null;
++              }
++            },
++            orElse: () {},
++          );
+         },
+         child: Scaffold(
+           appBar: AppBar(title: const Text('대화형 예비판정')),
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 21258d524bcd2d94d85132d12cb0d5a65d191247 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 16:07:42 +0900
+Subject: [PATCH 10/13] fix(build): import Freezed models without prefix to
+ expose  to ChatState generator; adjust UI imports accordingly
+
+---
+ .../conversation/bloc/chat_cubit.dart         |   4 +-
+ .../conversation/bloc/chat_cubit.freezed.dart | 640 ++++++++++++++++++
+ .../data/chat_models.freezed.dart             | 412 +++++++++++
+ .../conversation/data/chat_models.g.dart      |  37 +
+ .../conversation/ui/conversation_page.dart    |   7 +-
+ pubspec.lock                                  |   2 +-
+ 6 files changed, 1096 insertions(+), 6 deletions(-)
+ create mode 100644 lib/features/conversation/bloc/chat_cubit.freezed.dart
+ create mode 100644 lib/features/conversation/data/chat_models.freezed.dart
+ create mode 100644 lib/features/conversation/data/chat_models.g.dart
+
+diff --git a/lib/features/conversation/bloc/chat_cubit.dart b/lib/features/conversation/bloc/chat_cubit.dart
+index 1171c3e..f6de4a8 100644
+--- a/lib/features/conversation/bloc/chat_cubit.dart
++++ b/lib/features/conversation/bloc/chat_cubit.dart
+@@ -1,7 +1,7 @@
+ import 'package:flutter_bloc/flutter_bloc.dart';
+ import 'package:freezed_annotation/freezed_annotation.dart';
+ import '../../conversation/data/chat_repository.dart';
+-import '../../conversation/data/chat_models.dart' as model;
++import '../../conversation/data/chat_models.dart';
+ 
+ part 'chat_cubit.freezed.dart';
+ 
+@@ -9,7 +9,7 @@ part 'chat_cubit.freezed.dart';
+ class ChatState with _$ChatState {
+   const factory ChatState.idle() = _Idle;
+   const factory ChatState.loading() = _Loading;
+-  const factory ChatState.success(model.BotReply reply) = _Success;
++  const factory ChatState.success(BotReply reply) = _Success;
+   const factory ChatState.error(String message) = _Error;
+ }
+ 
+diff --git a/lib/features/conversation/bloc/chat_cubit.freezed.dart b/lib/features/conversation/bloc/chat_cubit.freezed.dart
+new file mode 100644
+index 0000000..8d3dd0a
+--- /dev/null
++++ b/lib/features/conversation/bloc/chat_cubit.freezed.dart
+@@ -0,0 +1,640 @@
++// coverage:ignore-file
++// GENERATED CODE - DO NOT MODIFY BY HAND
++// ignore_for_file: type=lint
++// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
++
++part of 'chat_cubit.dart';
++
++// **************************************************************************
++// FreezedGenerator
++// **************************************************************************
++
++T _$identity<T>(T value) => value;
++
++final _privateConstructorUsedError = UnsupportedError(
++  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
++);
++
++/// @nodoc
++mixin _$ChatState {
++  @optionalTypeArgs
++  TResult when<TResult extends Object?>({
++    required TResult Function() idle,
++    required TResult Function() loading,
++    required TResult Function(BotReply reply) success,
++    required TResult Function(String message) error,
++  }) => throw _privateConstructorUsedError;
++  @optionalTypeArgs
++  TResult? whenOrNull<TResult extends Object?>({
++    TResult? Function()? idle,
++    TResult? Function()? loading,
++    TResult? Function(BotReply reply)? success,
++    TResult? Function(String message)? error,
++  }) => throw _privateConstructorUsedError;
++  @optionalTypeArgs
++  TResult maybeWhen<TResult extends Object?>({
++    TResult Function()? idle,
++    TResult Function()? loading,
++    TResult Function(BotReply reply)? success,
++    TResult Function(String message)? error,
++    required TResult orElse(),
++  }) => throw _privateConstructorUsedError;
++  @optionalTypeArgs
++  TResult map<TResult extends Object?>({
++    required TResult Function(_Idle value) idle,
++    required TResult Function(_Loading value) loading,
++    required TResult Function(_Success value) success,
++    required TResult Function(_Error value) error,
++  }) => throw _privateConstructorUsedError;
++  @optionalTypeArgs
++  TResult? mapOrNull<TResult extends Object?>({
++    TResult? Function(_Idle value)? idle,
++    TResult? Function(_Loading value)? loading,
++    TResult? Function(_Success value)? success,
++    TResult? Function(_Error value)? error,
++  }) => throw _privateConstructorUsedError;
++  @optionalTypeArgs
++  TResult maybeMap<TResult extends Object?>({
++    TResult Function(_Idle value)? idle,
++    TResult Function(_Loading value)? loading,
++    TResult Function(_Success value)? success,
++    TResult Function(_Error value)? error,
++    required TResult orElse(),
++  }) => throw _privateConstructorUsedError;
++}
++
++/// @nodoc
++abstract class $ChatStateCopyWith<$Res> {
++  factory $ChatStateCopyWith(ChatState value, $Res Function(ChatState) then) =
++      _$ChatStateCopyWithImpl<$Res, ChatState>;
++}
++
++/// @nodoc
++class _$ChatStateCopyWithImpl<$Res, $Val extends ChatState>
++    implements $ChatStateCopyWith<$Res> {
++  _$ChatStateCopyWithImpl(this._value, this._then);
++
++  // ignore: unused_field
++  final $Val _value;
++  // ignore: unused_field
++  final $Res Function($Val) _then;
++
++  /// Create a copy of ChatState
++  /// with the given fields replaced by the non-null parameter values.
++}
++
++/// @nodoc
++abstract class _$$IdleImplCopyWith<$Res> {
++  factory _$$IdleImplCopyWith(
++    _$IdleImpl value,
++    $Res Function(_$IdleImpl) then,
++  ) = __$$IdleImplCopyWithImpl<$Res>;
++}
++
++/// @nodoc
++class __$$IdleImplCopyWithImpl<$Res>
++    extends _$ChatStateCopyWithImpl<$Res, _$IdleImpl>
++    implements _$$IdleImplCopyWith<$Res> {
++  __$$IdleImplCopyWithImpl(_$IdleImpl _value, $Res Function(_$IdleImpl) _then)
++    : super(_value, _then);
++
++  /// Create a copy of ChatState
++  /// with the given fields replaced by the non-null parameter values.
++}
++
++/// @nodoc
++
++class _$IdleImpl implements _Idle {
++  const _$IdleImpl();
++
++  @override
++  String toString() {
++    return 'ChatState.idle()';
++  }
++
++  @override
++  bool operator ==(Object other) {
++    return identical(this, other) ||
++        (other.runtimeType == runtimeType && other is _$IdleImpl);
++  }
++
++  @override
++  int get hashCode => runtimeType.hashCode;
++
++  @override
++  @optionalTypeArgs
++  TResult when<TResult extends Object?>({
++    required TResult Function() idle,
++    required TResult Function() loading,
++    required TResult Function(BotReply reply) success,
++    required TResult Function(String message) error,
++  }) {
++    return idle();
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult? whenOrNull<TResult extends Object?>({
++    TResult? Function()? idle,
++    TResult? Function()? loading,
++    TResult? Function(BotReply reply)? success,
++    TResult? Function(String message)? error,
++  }) {
++    return idle?.call();
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult maybeWhen<TResult extends Object?>({
++    TResult Function()? idle,
++    TResult Function()? loading,
++    TResult Function(BotReply reply)? success,
++    TResult Function(String message)? error,
++    required TResult orElse(),
++  }) {
++    if (idle != null) {
++      return idle();
++    }
++    return orElse();
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult map<TResult extends Object?>({
++    required TResult Function(_Idle value) idle,
++    required TResult Function(_Loading value) loading,
++    required TResult Function(_Success value) success,
++    required TResult Function(_Error value) error,
++  }) {
++    return idle(this);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult? mapOrNull<TResult extends Object?>({
++    TResult? Function(_Idle value)? idle,
++    TResult? Function(_Loading value)? loading,
++    TResult? Function(_Success value)? success,
++    TResult? Function(_Error value)? error,
++  }) {
++    return idle?.call(this);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult maybeMap<TResult extends Object?>({
++    TResult Function(_Idle value)? idle,
++    TResult Function(_Loading value)? loading,
++    TResult Function(_Success value)? success,
++    TResult Function(_Error value)? error,
++    required TResult orElse(),
++  }) {
++    if (idle != null) {
++      return idle(this);
++    }
++    return orElse();
++  }
++}
++
++abstract class _Idle implements ChatState {
++  const factory _Idle() = _$IdleImpl;
++}
++
++/// @nodoc
++abstract class _$$LoadingImplCopyWith<$Res> {
++  factory _$$LoadingImplCopyWith(
++    _$LoadingImpl value,
++    $Res Function(_$LoadingImpl) then,
++  ) = __$$LoadingImplCopyWithImpl<$Res>;
++}
++
++/// @nodoc
++class __$$LoadingImplCopyWithImpl<$Res>
++    extends _$ChatStateCopyWithImpl<$Res, _$LoadingImpl>
++    implements _$$LoadingImplCopyWith<$Res> {
++  __$$LoadingImplCopyWithImpl(
++    _$LoadingImpl _value,
++    $Res Function(_$LoadingImpl) _then,
++  ) : super(_value, _then);
++
++  /// Create a copy of ChatState
++  /// with the given fields replaced by the non-null parameter values.
++}
++
++/// @nodoc
++
++class _$LoadingImpl implements _Loading {
++  const _$LoadingImpl();
++
++  @override
++  String toString() {
++    return 'ChatState.loading()';
++  }
++
++  @override
++  bool operator ==(Object other) {
++    return identical(this, other) ||
++        (other.runtimeType == runtimeType && other is _$LoadingImpl);
++  }
++
++  @override
++  int get hashCode => runtimeType.hashCode;
++
++  @override
++  @optionalTypeArgs
++  TResult when<TResult extends Object?>({
++    required TResult Function() idle,
++    required TResult Function() loading,
++    required TResult Function(BotReply reply) success,
++    required TResult Function(String message) error,
++  }) {
++    return loading();
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult? whenOrNull<TResult extends Object?>({
++    TResult? Function()? idle,
++    TResult? Function()? loading,
++    TResult? Function(BotReply reply)? success,
++    TResult? Function(String message)? error,
++  }) {
++    return loading?.call();
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult maybeWhen<TResult extends Object?>({
++    TResult Function()? idle,
++    TResult Function()? loading,
++    TResult Function(BotReply reply)? success,
++    TResult Function(String message)? error,
++    required TResult orElse(),
++  }) {
++    if (loading != null) {
++      return loading();
++    }
++    return orElse();
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult map<TResult extends Object?>({
++    required TResult Function(_Idle value) idle,
++    required TResult Function(_Loading value) loading,
++    required TResult Function(_Success value) success,
++    required TResult Function(_Error value) error,
++  }) {
++    return loading(this);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult? mapOrNull<TResult extends Object?>({
++    TResult? Function(_Idle value)? idle,
++    TResult? Function(_Loading value)? loading,
++    TResult? Function(_Success value)? success,
++    TResult? Function(_Error value)? error,
++  }) {
++    return loading?.call(this);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult maybeMap<TResult extends Object?>({
++    TResult Function(_Idle value)? idle,
++    TResult Function(_Loading value)? loading,
++    TResult Function(_Success value)? success,
++    TResult Function(_Error value)? error,
++    required TResult orElse(),
++  }) {
++    if (loading != null) {
++      return loading(this);
++    }
++    return orElse();
++  }
++}
++
++abstract class _Loading implements ChatState {
++  const factory _Loading() = _$LoadingImpl;
++}
++
++/// @nodoc
++abstract class _$$SuccessImplCopyWith<$Res> {
++  factory _$$SuccessImplCopyWith(
++    _$SuccessImpl value,
++    $Res Function(_$SuccessImpl) then,
++  ) = __$$SuccessImplCopyWithImpl<$Res>;
++  @useResult
++  $Res call({BotReply reply});
++
++  $BotReplyCopyWith<$Res> get reply;
++}
++
++/// @nodoc
++class __$$SuccessImplCopyWithImpl<$Res>
++    extends _$ChatStateCopyWithImpl<$Res, _$SuccessImpl>
++    implements _$$SuccessImplCopyWith<$Res> {
++  __$$SuccessImplCopyWithImpl(
++    _$SuccessImpl _value,
++    $Res Function(_$SuccessImpl) _then,
++  ) : super(_value, _then);
++
++  /// Create a copy of ChatState
++  /// with the given fields replaced by the non-null parameter values.
++  @pragma('vm:prefer-inline')
++  @override
++  $Res call({Object? reply = null}) {
++    return _then(
++      _$SuccessImpl(
++        null == reply
++            ? _value.reply
++            : reply // ignore: cast_nullable_to_non_nullable
++                as BotReply,
++      ),
++    );
++  }
++
++  /// Create a copy of ChatState
++  /// with the given fields replaced by the non-null parameter values.
++  @override
++  @pragma('vm:prefer-inline')
++  $BotReplyCopyWith<$Res> get reply {
++    return $BotReplyCopyWith<$Res>(_value.reply, (value) {
++      return _then(_value.copyWith(reply: value));
++    });
++  }
++}
++
++/// @nodoc
++
++class _$SuccessImpl implements _Success {
++  const _$SuccessImpl(this.reply);
++
++  @override
++  final BotReply reply;
++
++  @override
++  String toString() {
++    return 'ChatState.success(reply: $reply)';
++  }
++
++  @override
++  bool operator ==(Object other) {
++    return identical(this, other) ||
++        (other.runtimeType == runtimeType &&
++            other is _$SuccessImpl &&
++            (identical(other.reply, reply) || other.reply == reply));
++  }
++
++  @override
++  int get hashCode => Object.hash(runtimeType, reply);
++
++  /// Create a copy of ChatState
++  /// with the given fields replaced by the non-null parameter values.
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  @override
++  @pragma('vm:prefer-inline')
++  _$$SuccessImplCopyWith<_$SuccessImpl> get copyWith =>
++      __$$SuccessImplCopyWithImpl<_$SuccessImpl>(this, _$identity);
++
++  @override
++  @optionalTypeArgs
++  TResult when<TResult extends Object?>({
++    required TResult Function() idle,
++    required TResult Function() loading,
++    required TResult Function(BotReply reply) success,
++    required TResult Function(String message) error,
++  }) {
++    return success(reply);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult? whenOrNull<TResult extends Object?>({
++    TResult? Function()? idle,
++    TResult? Function()? loading,
++    TResult? Function(BotReply reply)? success,
++    TResult? Function(String message)? error,
++  }) {
++    return success?.call(reply);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult maybeWhen<TResult extends Object?>({
++    TResult Function()? idle,
++    TResult Function()? loading,
++    TResult Function(BotReply reply)? success,
++    TResult Function(String message)? error,
++    required TResult orElse(),
++  }) {
++    if (success != null) {
++      return success(reply);
++    }
++    return orElse();
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult map<TResult extends Object?>({
++    required TResult Function(_Idle value) idle,
++    required TResult Function(_Loading value) loading,
++    required TResult Function(_Success value) success,
++    required TResult Function(_Error value) error,
++  }) {
++    return success(this);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult? mapOrNull<TResult extends Object?>({
++    TResult? Function(_Idle value)? idle,
++    TResult? Function(_Loading value)? loading,
++    TResult? Function(_Success value)? success,
++    TResult? Function(_Error value)? error,
++  }) {
++    return success?.call(this);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult maybeMap<TResult extends Object?>({
++    TResult Function(_Idle value)? idle,
++    TResult Function(_Loading value)? loading,
++    TResult Function(_Success value)? success,
++    TResult Function(_Error value)? error,
++    required TResult orElse(),
++  }) {
++    if (success != null) {
++      return success(this);
++    }
++    return orElse();
++  }
++}
++
++abstract class _Success implements ChatState {
++  const factory _Success(final BotReply reply) = _$SuccessImpl;
++
++  BotReply get reply;
++
++  /// Create a copy of ChatState
++  /// with the given fields replaced by the non-null parameter values.
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  _$$SuccessImplCopyWith<_$SuccessImpl> get copyWith =>
++      throw _privateConstructorUsedError;
++}
++
++/// @nodoc
++abstract class _$$ErrorImplCopyWith<$Res> {
++  factory _$$ErrorImplCopyWith(
++    _$ErrorImpl value,
++    $Res Function(_$ErrorImpl) then,
++  ) = __$$ErrorImplCopyWithImpl<$Res>;
++  @useResult
++  $Res call({String message});
++}
++
++/// @nodoc
++class __$$ErrorImplCopyWithImpl<$Res>
++    extends _$ChatStateCopyWithImpl<$Res, _$ErrorImpl>
++    implements _$$ErrorImplCopyWith<$Res> {
++  __$$ErrorImplCopyWithImpl(
++    _$ErrorImpl _value,
++    $Res Function(_$ErrorImpl) _then,
++  ) : super(_value, _then);
++
++  /// Create a copy of ChatState
++  /// with the given fields replaced by the non-null parameter values.
++  @pragma('vm:prefer-inline')
++  @override
++  $Res call({Object? message = null}) {
++    return _then(
++      _$ErrorImpl(
++        null == message
++            ? _value.message
++            : message // ignore: cast_nullable_to_non_nullable
++                as String,
++      ),
++    );
++  }
++}
++
++/// @nodoc
++
++class _$ErrorImpl implements _Error {
++  const _$ErrorImpl(this.message);
++
++  @override
++  final String message;
++
++  @override
++  String toString() {
++    return 'ChatState.error(message: $message)';
++  }
++
++  @override
++  bool operator ==(Object other) {
++    return identical(this, other) ||
++        (other.runtimeType == runtimeType &&
++            other is _$ErrorImpl &&
++            (identical(other.message, message) || other.message == message));
++  }
++
++  @override
++  int get hashCode => Object.hash(runtimeType, message);
++
++  /// Create a copy of ChatState
++  /// with the given fields replaced by the non-null parameter values.
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  @override
++  @pragma('vm:prefer-inline')
++  _$$ErrorImplCopyWith<_$ErrorImpl> get copyWith =>
++      __$$ErrorImplCopyWithImpl<_$ErrorImpl>(this, _$identity);
++
++  @override
++  @optionalTypeArgs
++  TResult when<TResult extends Object?>({
++    required TResult Function() idle,
++    required TResult Function() loading,
++    required TResult Function(BotReply reply) success,
++    required TResult Function(String message) error,
++  }) {
++    return error(message);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult? whenOrNull<TResult extends Object?>({
++    TResult? Function()? idle,
++    TResult? Function()? loading,
++    TResult? Function(BotReply reply)? success,
++    TResult? Function(String message)? error,
++  }) {
++    return error?.call(message);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult maybeWhen<TResult extends Object?>({
++    TResult Function()? idle,
++    TResult Function()? loading,
++    TResult Function(BotReply reply)? success,
++    TResult Function(String message)? error,
++    required TResult orElse(),
++  }) {
++    if (error != null) {
++      return error(message);
++    }
++    return orElse();
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult map<TResult extends Object?>({
++    required TResult Function(_Idle value) idle,
++    required TResult Function(_Loading value) loading,
++    required TResult Function(_Success value) success,
++    required TResult Function(_Error value) error,
++  }) {
++    return error(this);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult? mapOrNull<TResult extends Object?>({
++    TResult? Function(_Idle value)? idle,
++    TResult? Function(_Loading value)? loading,
++    TResult? Function(_Success value)? success,
++    TResult? Function(_Error value)? error,
++  }) {
++    return error?.call(this);
++  }
++
++  @override
++  @optionalTypeArgs
++  TResult maybeMap<TResult extends Object?>({
++    TResult Function(_Idle value)? idle,
++    TResult Function(_Loading value)? loading,
++    TResult Function(_Success value)? success,
++    TResult Function(_Error value)? error,
++    required TResult orElse(),
++  }) {
++    if (error != null) {
++      return error(this);
++    }
++    return orElse();
++  }
++}
++
++abstract class _Error implements ChatState {
++  const factory _Error(final String message) = _$ErrorImpl;
++
++  String get message;
++
++  /// Create a copy of ChatState
++  /// with the given fields replaced by the non-null parameter values.
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  _$$ErrorImplCopyWith<_$ErrorImpl> get copyWith =>
++      throw _privateConstructorUsedError;
++}
+diff --git a/lib/features/conversation/data/chat_models.freezed.dart b/lib/features/conversation/data/chat_models.freezed.dart
+new file mode 100644
+index 0000000..6a51e1f
+--- /dev/null
++++ b/lib/features/conversation/data/chat_models.freezed.dart
+@@ -0,0 +1,412 @@
++// coverage:ignore-file
++// GENERATED CODE - DO NOT MODIFY BY HAND
++// ignore_for_file: type=lint
++// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
++
++part of 'chat_models.dart';
++
++// **************************************************************************
++// FreezedGenerator
++// **************************************************************************
++
++T _$identity<T>(T value) => value;
++
++final _privateConstructorUsedError = UnsupportedError(
++  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
++);
++
++ChatCitation _$ChatCitationFromJson(Map<String, dynamic> json) {
++  return _ChatCitation.fromJson(json);
++}
++
++/// @nodoc
++mixin _$ChatCitation {
++  String get docId => throw _privateConstructorUsedError;
++  String get sectionKey => throw _privateConstructorUsedError;
++
++  /// Serializes this ChatCitation to a JSON map.
++  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
++
++  /// Create a copy of ChatCitation
++  /// with the given fields replaced by the non-null parameter values.
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  $ChatCitationCopyWith<ChatCitation> get copyWith =>
++      throw _privateConstructorUsedError;
++}
++
++/// @nodoc
++abstract class $ChatCitationCopyWith<$Res> {
++  factory $ChatCitationCopyWith(
++    ChatCitation value,
++    $Res Function(ChatCitation) then,
++  ) = _$ChatCitationCopyWithImpl<$Res, ChatCitation>;
++  @useResult
++  $Res call({String docId, String sectionKey});
++}
++
++/// @nodoc
++class _$ChatCitationCopyWithImpl<$Res, $Val extends ChatCitation>
++    implements $ChatCitationCopyWith<$Res> {
++  _$ChatCitationCopyWithImpl(this._value, this._then);
++
++  // ignore: unused_field
++  final $Val _value;
++  // ignore: unused_field
++  final $Res Function($Val) _then;
++
++  /// Create a copy of ChatCitation
++  /// with the given fields replaced by the non-null parameter values.
++  @pragma('vm:prefer-inline')
++  @override
++  $Res call({Object? docId = null, Object? sectionKey = null}) {
++    return _then(
++      _value.copyWith(
++            docId:
++                null == docId
++                    ? _value.docId
++                    : docId // ignore: cast_nullable_to_non_nullable
++                        as String,
++            sectionKey:
++                null == sectionKey
++                    ? _value.sectionKey
++                    : sectionKey // ignore: cast_nullable_to_non_nullable
++                        as String,
++          )
++          as $Val,
++    );
++  }
++}
++
++/// @nodoc
++abstract class _$$ChatCitationImplCopyWith<$Res>
++    implements $ChatCitationCopyWith<$Res> {
++  factory _$$ChatCitationImplCopyWith(
++    _$ChatCitationImpl value,
++    $Res Function(_$ChatCitationImpl) then,
++  ) = __$$ChatCitationImplCopyWithImpl<$Res>;
++  @override
++  @useResult
++  $Res call({String docId, String sectionKey});
++}
++
++/// @nodoc
++class __$$ChatCitationImplCopyWithImpl<$Res>
++    extends _$ChatCitationCopyWithImpl<$Res, _$ChatCitationImpl>
++    implements _$$ChatCitationImplCopyWith<$Res> {
++  __$$ChatCitationImplCopyWithImpl(
++    _$ChatCitationImpl _value,
++    $Res Function(_$ChatCitationImpl) _then,
++  ) : super(_value, _then);
++
++  /// Create a copy of ChatCitation
++  /// with the given fields replaced by the non-null parameter values.
++  @pragma('vm:prefer-inline')
++  @override
++  $Res call({Object? docId = null, Object? sectionKey = null}) {
++    return _then(
++      _$ChatCitationImpl(
++        docId:
++            null == docId
++                ? _value.docId
++                : docId // ignore: cast_nullable_to_non_nullable
++                    as String,
++        sectionKey:
++            null == sectionKey
++                ? _value.sectionKey
++                : sectionKey // ignore: cast_nullable_to_non_nullable
++                    as String,
++      ),
++    );
++  }
++}
++
++/// @nodoc
++@JsonSerializable()
++class _$ChatCitationImpl implements _ChatCitation {
++  const _$ChatCitationImpl({required this.docId, required this.sectionKey});
++
++  factory _$ChatCitationImpl.fromJson(Map<String, dynamic> json) =>
++      _$$ChatCitationImplFromJson(json);
++
++  @override
++  final String docId;
++  @override
++  final String sectionKey;
++
++  @override
++  String toString() {
++    return 'ChatCitation(docId: $docId, sectionKey: $sectionKey)';
++  }
++
++  @override
++  bool operator ==(Object other) {
++    return identical(this, other) ||
++        (other.runtimeType == runtimeType &&
++            other is _$ChatCitationImpl &&
++            (identical(other.docId, docId) || other.docId == docId) &&
++            (identical(other.sectionKey, sectionKey) ||
++                other.sectionKey == sectionKey));
++  }
++
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  @override
++  int get hashCode => Object.hash(runtimeType, docId, sectionKey);
++
++  /// Create a copy of ChatCitation
++  /// with the given fields replaced by the non-null parameter values.
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  @override
++  @pragma('vm:prefer-inline')
++  _$$ChatCitationImplCopyWith<_$ChatCitationImpl> get copyWith =>
++      __$$ChatCitationImplCopyWithImpl<_$ChatCitationImpl>(this, _$identity);
++
++  @override
++  Map<String, dynamic> toJson() {
++    return _$$ChatCitationImplToJson(this);
++  }
++}
++
++abstract class _ChatCitation implements ChatCitation {
++  const factory _ChatCitation({
++    required final String docId,
++    required final String sectionKey,
++  }) = _$ChatCitationImpl;
++
++  factory _ChatCitation.fromJson(Map<String, dynamic> json) =
++      _$ChatCitationImpl.fromJson;
++
++  @override
++  String get docId;
++  @override
++  String get sectionKey;
++
++  /// Create a copy of ChatCitation
++  /// with the given fields replaced by the non-null parameter values.
++  @override
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  _$$ChatCitationImplCopyWith<_$ChatCitationImpl> get copyWith =>
++      throw _privateConstructorUsedError;
++}
++
++BotReply _$BotReplyFromJson(Map<String, dynamic> json) {
++  return _BotReply.fromJson(json);
++}
++
++/// @nodoc
++mixin _$BotReply {
++  String get content => throw _privateConstructorUsedError;
++  List<ChatCitation> get citations => throw _privateConstructorUsedError;
++  String get lastVerified => throw _privateConstructorUsedError;
++
++  /// Serializes this BotReply to a JSON map.
++  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
++
++  /// Create a copy of BotReply
++  /// with the given fields replaced by the non-null parameter values.
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  $BotReplyCopyWith<BotReply> get copyWith =>
++      throw _privateConstructorUsedError;
++}
++
++/// @nodoc
++abstract class $BotReplyCopyWith<$Res> {
++  factory $BotReplyCopyWith(BotReply value, $Res Function(BotReply) then) =
++      _$BotReplyCopyWithImpl<$Res, BotReply>;
++  @useResult
++  $Res call({
++    String content,
++    List<ChatCitation> citations,
++    String lastVerified,
++  });
++}
++
++/// @nodoc
++class _$BotReplyCopyWithImpl<$Res, $Val extends BotReply>
++    implements $BotReplyCopyWith<$Res> {
++  _$BotReplyCopyWithImpl(this._value, this._then);
++
++  // ignore: unused_field
++  final $Val _value;
++  // ignore: unused_field
++  final $Res Function($Val) _then;
++
++  /// Create a copy of BotReply
++  /// with the given fields replaced by the non-null parameter values.
++  @pragma('vm:prefer-inline')
++  @override
++  $Res call({
++    Object? content = null,
++    Object? citations = null,
++    Object? lastVerified = null,
++  }) {
++    return _then(
++      _value.copyWith(
++            content:
++                null == content
++                    ? _value.content
++                    : content // ignore: cast_nullable_to_non_nullable
++                        as String,
++            citations:
++                null == citations
++                    ? _value.citations
++                    : citations // ignore: cast_nullable_to_non_nullable
++                        as List<ChatCitation>,
++            lastVerified:
++                null == lastVerified
++                    ? _value.lastVerified
++                    : lastVerified // ignore: cast_nullable_to_non_nullable
++                        as String,
++          )
++          as $Val,
++    );
++  }
++}
++
++/// @nodoc
++abstract class _$$BotReplyImplCopyWith<$Res>
++    implements $BotReplyCopyWith<$Res> {
++  factory _$$BotReplyImplCopyWith(
++    _$BotReplyImpl value,
++    $Res Function(_$BotReplyImpl) then,
++  ) = __$$BotReplyImplCopyWithImpl<$Res>;
++  @override
++  @useResult
++  $Res call({
++    String content,
++    List<ChatCitation> citations,
++    String lastVerified,
++  });
++}
++
++/// @nodoc
++class __$$BotReplyImplCopyWithImpl<$Res>
++    extends _$BotReplyCopyWithImpl<$Res, _$BotReplyImpl>
++    implements _$$BotReplyImplCopyWith<$Res> {
++  __$$BotReplyImplCopyWithImpl(
++    _$BotReplyImpl _value,
++    $Res Function(_$BotReplyImpl) _then,
++  ) : super(_value, _then);
++
++  /// Create a copy of BotReply
++  /// with the given fields replaced by the non-null parameter values.
++  @pragma('vm:prefer-inline')
++  @override
++  $Res call({
++    Object? content = null,
++    Object? citations = null,
++    Object? lastVerified = null,
++  }) {
++    return _then(
++      _$BotReplyImpl(
++        content:
++            null == content
++                ? _value.content
++                : content // ignore: cast_nullable_to_non_nullable
++                    as String,
++        citations:
++            null == citations
++                ? _value._citations
++                : citations // ignore: cast_nullable_to_non_nullable
++                    as List<ChatCitation>,
++        lastVerified:
++            null == lastVerified
++                ? _value.lastVerified
++                : lastVerified // ignore: cast_nullable_to_non_nullable
++                    as String,
++      ),
++    );
++  }
++}
++
++/// @nodoc
++@JsonSerializable()
++class _$BotReplyImpl implements _BotReply {
++  const _$BotReplyImpl({
++    required this.content,
++    final List<ChatCitation> citations = const <ChatCitation>[],
++    required this.lastVerified,
++  }) : _citations = citations;
++
++  factory _$BotReplyImpl.fromJson(Map<String, dynamic> json) =>
++      _$$BotReplyImplFromJson(json);
++
++  @override
++  final String content;
++  final List<ChatCitation> _citations;
++  @override
++  @JsonKey()
++  List<ChatCitation> get citations {
++    if (_citations is EqualUnmodifiableListView) return _citations;
++    // ignore: implicit_dynamic_type
++    return EqualUnmodifiableListView(_citations);
++  }
++
++  @override
++  final String lastVerified;
++
++  @override
++  String toString() {
++    return 'BotReply(content: $content, citations: $citations, lastVerified: $lastVerified)';
++  }
++
++  @override
++  bool operator ==(Object other) {
++    return identical(this, other) ||
++        (other.runtimeType == runtimeType &&
++            other is _$BotReplyImpl &&
++            (identical(other.content, content) || other.content == content) &&
++            const DeepCollectionEquality().equals(
++              other._citations,
++              _citations,
++            ) &&
++            (identical(other.lastVerified, lastVerified) ||
++                other.lastVerified == lastVerified));
++  }
++
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  @override
++  int get hashCode => Object.hash(
++    runtimeType,
++    content,
++    const DeepCollectionEquality().hash(_citations),
++    lastVerified,
++  );
++
++  /// Create a copy of BotReply
++  /// with the given fields replaced by the non-null parameter values.
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  @override
++  @pragma('vm:prefer-inline')
++  _$$BotReplyImplCopyWith<_$BotReplyImpl> get copyWith =>
++      __$$BotReplyImplCopyWithImpl<_$BotReplyImpl>(this, _$identity);
++
++  @override
++  Map<String, dynamic> toJson() {
++    return _$$BotReplyImplToJson(this);
++  }
++}
++
++abstract class _BotReply implements BotReply {
++  const factory _BotReply({
++    required final String content,
++    final List<ChatCitation> citations,
++    required final String lastVerified,
++  }) = _$BotReplyImpl;
++
++  factory _BotReply.fromJson(Map<String, dynamic> json) =
++      _$BotReplyImpl.fromJson;
++
++  @override
++  String get content;
++  @override
++  List<ChatCitation> get citations;
++  @override
++  String get lastVerified;
++
++  /// Create a copy of BotReply
++  /// with the given fields replaced by the non-null parameter values.
++  @override
++  @JsonKey(includeFromJson: false, includeToJson: false)
++  _$$BotReplyImplCopyWith<_$BotReplyImpl> get copyWith =>
++      throw _privateConstructorUsedError;
++}
+diff --git a/lib/features/conversation/data/chat_models.g.dart b/lib/features/conversation/data/chat_models.g.dart
+new file mode 100644
+index 0000000..3c9f0e4
+--- /dev/null
++++ b/lib/features/conversation/data/chat_models.g.dart
+@@ -0,0 +1,37 @@
++// GENERATED CODE - DO NOT MODIFY BY HAND
++
++part of 'chat_models.dart';
++
++// **************************************************************************
++// JsonSerializableGenerator
++// **************************************************************************
++
++_$ChatCitationImpl _$$ChatCitationImplFromJson(Map<String, dynamic> json) =>
++    _$ChatCitationImpl(
++      docId: json['docId'] as String,
++      sectionKey: json['sectionKey'] as String,
++    );
++
++Map<String, dynamic> _$$ChatCitationImplToJson(_$ChatCitationImpl instance) =>
++    <String, dynamic>{
++      'docId': instance.docId,
++      'sectionKey': instance.sectionKey,
++    };
++
++_$BotReplyImpl _$$BotReplyImplFromJson(Map<String, dynamic> json) =>
++    _$BotReplyImpl(
++      content: json['content'] as String,
++      citations:
++          (json['citations'] as List<dynamic>?)
++              ?.map((e) => ChatCitation.fromJson(e as Map<String, dynamic>))
++              .toList() ??
++          const <ChatCitation>[],
++      lastVerified: json['lastVerified'] as String,
++    );
++
++Map<String, dynamic> _$$BotReplyImplToJson(_$BotReplyImpl instance) =>
++    <String, dynamic>{
++      'content': instance.content,
++      'citations': instance.citations,
++      'lastVerified': instance.lastVerified,
++    };
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 46c27f1..1e1fcba 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -11,7 +11,7 @@ import '../../../ui/components/appear.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
+ import '../../conversation/bloc/chat_cubit.dart';
+ import '../../conversation/data/chat_repository.dart';
+-import '../../conversation/data/chat_models.dart' as model;
++import '../../conversation/data/chat_models.dart';
+ 
+ class ConversationPage extends StatefulWidget {
+   const ConversationPage({super.key});
+@@ -288,7 +288,7 @@ class _ConversationPageState extends State<ConversationPage> {
+     return _typingRowIndex!;
+   }
+ 
+-  void _replaceTypingWithReply(int typingIndex, model.BotReply reply) {
++  void _replaceTypingWithReply(int typingIndex, BotReply reply) {
+     // Convert model citations to UI component citations
+     final cites = reply.citations
+         .map((c) => Citation(c.docId, c.sectionKey))
+@@ -446,7 +446,8 @@ class _ConversationPageState extends State<ConversationPage> {
+         ),
+       ),
+     ),
+-  );
++      ),
++    );
+   }
+ 
+   // Question flow (full v1 per INTAKE_FLOW.md)
+diff --git a/pubspec.lock b/pubspec.lock
+index 2008e41..b2e58a9 100644
+--- a/pubspec.lock
++++ b/pubspec.lock
+@@ -289,7 +289,7 @@ packages:
+     source: hosted
+     version: "2.3.2"
+   http:
+-    dependency: transitive
++    dependency: "direct main"
+     description:
+       name: http
+       sha256: bb2ce4590bc2667c96f318d68cac1b5a7987ec819351d32b1c987239a815e007
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 923c708f9183bc45a604c168c4e6f90acb55f4b6 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 16:37:45 +0900
+Subject: [PATCH 11/13] refactor(conversation): separate intake logic into
+ ConversationCubit; UI listens and renders; add MultiBlocProvider and progress
+ from state
+
+---
+ .../conversation/bloc/conversation_cubit.dart | 442 ++++++++++++++++++
+ .../conversation/ui/conversation_page.dart    | 151 +++---
+ 2 files changed, 526 insertions(+), 67 deletions(-)
+ create mode 100644 lib/features/conversation/bloc/conversation_cubit.dart
+
+diff --git a/lib/features/conversation/bloc/conversation_cubit.dart b/lib/features/conversation/bloc/conversation_cubit.dart
+new file mode 100644
+index 0000000..465c7d6
+--- /dev/null
++++ b/lib/features/conversation/bloc/conversation_cubit.dart
+@@ -0,0 +1,442 @@
++import 'package:flutter_bloc/flutter_bloc.dart';
++import 'package:flutter/foundation.dart';
++import '../../../common/analytics/analytics.dart';
++import '../../conversation/ui/../../ui/components/result_card.dart';
++import '../../conversation/ui/../../ui/components/intake_question.dart';
++
++enum ConversationPhase { survey, intake, qna }
++
++@immutable
++class ConversationQuestion {
++  final String qid;
++  final String label;
++  final List<Choice> choices;
++  final int index;
++  final int total;
++  final bool isSurvey;
++  const ConversationQuestion({
++    required this.qid,
++    required this.label,
++    required this.choices,
++    required this.index,
++    required this.total,
++    required this.isSurvey,
++  });
++}
++
++@immutable
++class ConversationResult {
++  final RulingStatus status;
++  final String tldr;
++  final List<ReasonItem> reasons;
++  final List<String> nextSteps;
++  final String lastVerified;
++  const ConversationResult(this.status, this.tldr, this.reasons, this.nextSteps, this.lastVerified);
++}
++
++@immutable
++class ConversationState {
++  final ConversationPhase phase;
++  final bool awaitingChoice;
++  final ConversationQuestion? question;
++  final ConversationResult? result;
++  final String? message; // optional bot message to show
++  const ConversationState({
++    required this.phase,
++    required this.awaitingChoice,
++    this.question,
++    this.result,
++    this.message,
++  });
++
++  ConversationState copyWith({
++    ConversationPhase? phase,
++    bool? awaitingChoice,
++    ConversationQuestion? question,
++    ConversationResult? result,
++    String? message,
++  }) => ConversationState(
++        phase: phase ?? this.phase,
++        awaitingChoice: awaitingChoice ?? this.awaitingChoice,
++        question: question,
++        result: result,
++        message: message,
++      );
++}
++
++class ConversationCubit extends Cubit<ConversationState> {
++  static const _unknown = '__unknown__';
++  int _step = 0;
++  final Map<String, String> _answers = {};
++  DateTime _phaseStartedAt = DateTime.now();
++
++  ConversationCubit() : super(const ConversationState(phase: ConversationPhase.survey, awaitingChoice: false));
++
++  void start() {
++    _phaseStartedAt = DateTime.now();
++    _emitQuestion(phase: ConversationPhase.survey, step: 0);
++  }
++
++  void answer(String qid, String value) {
++    final phase = state.phase;
++    _answers[qid] = value;
++    final list = phase == ConversationPhase.survey ? _surveyFlow : _flow;
++    if (_step < list.length - 1) {
++      _step += 1;
++      _emitQuestion(phase: phase, step: _step);
++    } else {
++      if (phase == ConversationPhase.survey) {
++        final surveyDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
++        Analytics.instance.quickSurveyComplete(_surveyFlow.length, surveyDuration);
++        // Transition to intake
++        _step = 0;
++        _phaseStartedAt = DateTime.now();
++        emit(ConversationState(
++          phase: ConversationPhase.intake,
++          awaitingChoice: false,
++          question: null,
++          result: null,
++          message: '감사합니다. 답변을 반영해 예비판정을 시작할게요.',
++        ));
++        Analytics.instance.intakeStart();
++        // Next question (intake)
++        _emitQuestion(phase: ConversationPhase.intake, step: 0);
++      } else {
++        _evaluateAndEmit();
++      }
++    }
++  }
++
++  void _emitQuestion({required ConversationPhase phase, required int step}) {
++    final list = phase == ConversationPhase.survey ? _surveyFlow : _flow;
++    final q = list[step];
++    final cq = ConversationQuestion(
++      qid: q.qid,
++      label: q.label,
++      choices: q.choices,
++      index: step + 1,
++      total: list.length,
++      isSurvey: phase == ConversationPhase.survey,
++    );
++    emit(ConversationState(phase: phase, awaitingChoice: true, question: cq, result: null, message: null));
++  }
++
++  void _evaluateAndEmit() {
++    // Unknowns
++    final unknowns = _answers.entries
++        .where((e) => e.value == _unknown && !_isSurveyQid(e.key))
++        .map((e) => e.key)
++        .toList();
++    if (unknowns.isNotEmpty) {
++      final reasons = unknowns.map((qid) => ReasonItem(Icons.help_outline, _unknownLabel(qid), '확인불가')).toList();
++      _emitResult(ConversationResult(
++        RulingStatus.notPossibleInfo,
++        '다음 정보가 없어 판정 불가입니다.',
++        reasons,
++        const ['세대주: 정부24 확인', '보증금: 계약서 확인', '근저당: 등기부등본 열람'],
++        '2025-09-02',
++      ), hasUnknown: true, statusKey: 'not_possible_info');
++      return;
++    }
++
++    // Disqualifier: A1 == 1주택
++    if (_answers['A1'] == 'onehome') {
++      _emitResult(
++        const ConversationResult(
++          RulingStatus.notPossibleDisq,
++          '아래 결격 사유로 신청이 불가합니다.',
++          [ReasonItem(Icons.cancel, '무주택 요건 불충족', '미충족')],
++          ['조건 변경(보증금 조정) 또는 타 기관 검토'],
++          '2025-09-02',
++        ),
++        hasUnknown: false,
++        statusKey: 'not_possible_disq',
++      );
++      return;
++    }
++
++    // Disqualifier: 중대한 신용 문제(A7)
++    if (_answers['A7'] == 'credit_severe') {
++      _emitResult(
++        const ConversationResult(
++          RulingStatus.notPossibleDisq,
++          '아래 결격 사유로 신청이 불가합니다.',
++          [ReasonItem(Icons.cancel, '중대한 신용 문제(장기연체/회생/파산/면책)', '미충족')],
++          ['신용 상태 확인 후 재시도 또는 타 상품 검토'],
++          '2025-09-02',
++        ),
++        hasUnknown: false,
++        statusKey: 'not_possible_disq',
++      );
++      return;
++    }
++
++    // Otherwise, possible
++    final reasons = <ReasonItem>[
++      const ReasonItem(Icons.check_circle, '가구/세대: (충족)', '충족'),
++      if (_answers.containsKey('A3')) const ReasonItem(Icons.check_circle, '소득 형태: (충족)', '충족'),
++      if (_answers.containsKey('A4')) const ReasonItem(Icons.check_circle, '소득 구간: (충족)', '충족'),
++      if (_answers.containsKey('P1')) const ReasonItem(Icons.check_circle, '주택 유형: (충족)', '충족'),
++      if (_answers.containsKey('P2')) const ReasonItem(Icons.check_circle, '전용면적: (충족)', '충족'),
++      if (_answers.containsKey('P3')) const ReasonItem(Icons.check_circle, '지역: (충족)', '충족'),
++      if (_answers.containsKey('P4')) const ReasonItem(Icons.check_circle, '보증금: (충족)', '충족'),
++      if (_answers['P7'] == 'encumbrance_yes') const ReasonItem(Icons.warning_amber, '근저당 있음 → 등기 확인 필요', '주의'),
++    ];
++    _emitResult(
++      const ConversationResult(
++        RulingStatus.possible,
++        '예비판정 결과, ‘해당’합니다. 체크리스트를 확인하세요.',
++        [], // reasons replaced below to keep const
++        ['신분증·가족/혼인관계·소득 증빙 준비', '임대인 등기부등본/계약서 사본', '은행 상담 → 심사 → 승인 → 실행'],
++        '2025-09-02',
++      ),
++      hasUnknown: false,
++      statusKey: 'possible',
++      overrideReasons: reasons,
++    );
++  }
++
++  void _emitResult(ConversationResult result,
++      {required bool hasUnknown, required String statusKey, List<ReasonItem>? overrideReasons}) {
++    final intakeDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
++    Analytics.instance.intakeComplete(_flow.length, intakeDuration, hasUnknown, statusKey);
++    Analytics.instance.rulingShown(statusKey);
++    final r = overrideReasons == null
++        ? result
++        : ConversationResult(result.status, result.tldr, overrideReasons, result.nextSteps, result.lastVerified);
++    emit(ConversationState(
++      phase: ConversationPhase.qna,
++      awaitingChoice: false,
++      question: null,
++      result: r,
++      message: null,
++    ));
++  }
++
++  String _unknownLabel(String qid) {
++    switch (qid) {
++      case 'A1':
++        return '세대주 여부';
++      case 'A2':
++        return '혼인/부양 상태';
++      case 'A3':
++        return '소득 형태';
++      case 'A4':
++        return '소득 구간';
++      case 'A5':
++        return '재직/사업 기간';
++      case 'A6':
++        return '기존 대출/보증';
++      case 'A7':
++        return '신용/연체 이력';
++      case 'P1':
++        return '주택 유형';
++      case 'P2':
++        return '전용면적';
++      case 'P3':
++        return '지역';
++      case 'P4':
++        return '보증금(또는 보증금+월세)';
++      case 'P5':
++        return '계약 상태';
++      case 'P6':
++        return '입주 예정';
++      case 'P7':
++        return '등기 근저당';
++      case 'S1':
++        return '우대/특례';
++      default:
++        return qid;
++    }
++  }
++
++  bool _isSurveyQid(String qid) => qid.startsWith('QS');
++
++  // Question flow (moved from UI)
++  static final List<_Q> _flow = [
++    _Q(
++      qid: 'A1',
++      label: '현재 무주택이며 세대주이신가요?',
++      choices: const [
++        Choice(value: 'owner', text: '무주택·세대주'),
++        Choice(value: 'member', text: '무주택·세대원'),
++        Choice(value: 'onehome', text: '1주택'),
++      ],
++    ),
++    _Q(
++      qid: 'A2',
++      label: '혼인/부양 상태를 선택해 주세요.',
++      choices: const [
++        Choice(value: 'single', text: '미혼'),
++        Choice(value: 'newly', text: '신혼(혼인 7년 이내)'),
++        Choice(value: 'children', text: '자녀 있음'),
++      ],
++    ),
++    _Q(
++      qid: 'A3',
++      label: '소득 형태를 선택해 주세요.',
++      choices: const [
++        Choice(value: 'work', text: '근로'),
++        Choice(value: 'biz', text: '사업'),
++        Choice(value: 'etc', text: '기타'),
++      ],
++    ),
++    _Q(
++      qid: 'A4',
++      label: '연간 소득 구간을 선택해 주세요.',
++      choices: const [
++        Choice(value: 'inc1', text: '내부 구간 1'),
++        Choice(value: 'inc2', text: '내부 구간 2'),
++        Choice(value: 'inc3', text: '내부 구간 3'),
++        Choice(value: 'inc4', text: '내부 구간 4'),
++      ],
++    ),
++    _Q(
++      qid: 'A5',
++      label: '현재 재직/사업 기간은 얼마나 되나요?',
++      choices: const [
++        Choice(value: 'm0_6', text: '0~6개월'),
++        Choice(value: 'm7_12', text: '7~12개월'),
++        Choice(value: 'm13_24', text: '13~24개월'),
++        Choice(value: 'm24p', text: '24개월 이상'),
++      ],
++    ),
++    _Q(
++      qid: 'A6',
++      label: '보유 중인 대출/보증이 있나요?',
++      choices: const [
++        Choice(value: 'jeonse', text: '전세보증'),
++        Choice(value: 'mtg', text: '주담대'),
++        Choice(value: 'credit', text: '신용'),
++        Choice(value: 'none', text: '없음'),
++      ],
++    ),
++    _Q(
++      qid: 'A7',
++      label: '최근 연체·회생·파산·면책 이력이 있나요?',
++      choices: const [
++        Choice(value: 'credit_ok', text: '문제 없음'),
++        Choice(value: 'credit_recent', text: '최근 연체'),
++        Choice(value: 'credit_severe', text: '장기연체/회생/파산/면책'),
++      ],
++    ),
++    _Q(
++      qid: 'P1',
++      label: '주택 유형을 선택해 주세요.',
++      choices: const [
++        Choice(value: 'apt', text: '아파트'),
++        Choice(value: 'officetel', text: '오피스텔'),
++        Choice(value: 'multifam', text: '다가구'),
++        Choice(value: 'villa', text: '연립·다세대'),
++        Choice(value: 'one_room', text: '원룸'),
++        Choice(value: 'etc', text: '기타'),
++      ],
++    ),
++    _Q(
++      qid: 'P2',
++      label: '전용면적 범위를 선택해 주세요.',
++      choices: const [
++        Choice(value: 'fa_le40', text: '≤ 40㎡'),
++        Choice(value: 'fa_41_60', text: '41–60㎡'),
++        Choice(value: 'fa_61_85', text: '61–85㎡'),
++        Choice(value: 'fa_gt85', text: '85㎡ 초과'),
++      ],
++    ),
++    _Q(
++      qid: 'P3',
++      label: '지역을 선택해 주세요.',
++      choices: const [
++        Choice(value: 'metro', text: '수도권'),
++        Choice(value: 'metrocity', text: '광역시'),
++        Choice(value: 'other', text: '기타'),
++      ],
++    ),
++    _Q(
++      qid: 'P4',
++      label: '전세보증금(또는 보증금+월세)을 알려주세요.',
++      choices: const [
++        Choice(value: 'dep_le1', text: '1억 이하'),
++        Choice(value: 'dep_1_2', text: '1~2억'),
++        Choice(value: 'dep_2_3', text: '2~3억'),
++        Choice(value: 'dep_gt3', text: '3억 이상'),
++      ],
++    ),
++    _Q(
++      qid: 'P5',
++      label: '계약 상태를 알려주세요.',
++      choices: const [
++        Choice(value: 'pre', text: '계약 전'),
++        Choice(value: 'precontract', text: '가계약'),
++        Choice(value: 'contract', text: '본계약'),
++      ],
++    ),
++    _Q(
++      qid: 'P6',
++      label: '입주 예정 시점을 알려주세요.',
++      choices: const [
++        Choice(value: 'w1', text: '1주 내'),
++        Choice(value: 'w2_4', text: '2~4주'),
++        Choice(value: 'm1_3', text: '1~3개월'),
++        Choice(value: 'm3p', text: '3개월+'),
++      ],
++    ),
++    _Q(
++      qid: 'P7',
++      label: '등기상 근저당이 있나요?',
++      choices: const [
++        Choice(value: 'encumbrance_yes', text: '있음'),
++        Choice(value: 'encumbrance_no', text: '없음'),
++      ],
++    ),
++    _Q(
++      qid: 'S1',
++      label: '우대/특례에 해당되나요?',
++      choices: const [
++        Choice(value: 'youth', text: '청년'),
++        Choice(value: 'newly', text: '신혼'),
++        Choice(value: 'multi', text: '다자녀'),
++        Choice(value: 'lowinc', text: '저소득'),
++        Choice(value: 'none', text: '해당 없음'),
++      ],
++    ),
++  ];
++
++  static final List<_Q> _surveyFlow = [
++    const _Q(
++      qid: 'QS1',
++      label: '언제까지 준비가 필요하신가요?',
++      choices: [
++        Choice(value: 'soon', text: '2주 이내'),
++        Choice(value: 'month1', text: '1개월 이내'),
++        Choice(value: 'flex', text: '유연함'),
++      ],
++    ),
++    const _Q(
++      qid: 'QS2',
++      label: '어떤 정보가 가장 궁금하신가요?',
++      choices: [
++        Choice(value: 'elig', text: '자격'),
++        Choice(value: 'limit', text: '한도'),
++        Choice(value: 'docs', text: '서류/절차'),
++      ],
++    ),
++    const _Q(
++      qid: 'QS3',
++      label: '주 관심 지역을 선택해 주세요.',
++      choices: [
++        Choice(value: 'metro', text: '수도권'),
++        Choice(value: 'metrocity', text: '광역시'),
++        Choice(value: 'other', text: '기타'),
++      ],
++    ),
++  ];
++}
++
++@immutable
++class _Q {
++  final String qid;
++  final String label;
++  final List<Choice> choices;
++  const _Q({required this.qid, required this.label, required this.choices});
++}
++
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 1e1fcba..5e3c4e6 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -73,49 +73,16 @@ class _ConversationPageState extends State<ConversationPage> {
+ 
+   void _onChoiceSelected(String qid, String? value) {
+     if (value == null) return;
+-    // Resolve the question from the current phase's list (survey vs intake)
+-    final list = _phase == _Phase.survey ? _surveyFlow : _flow;
+-    final q = list.firstWhere(
+-      (e) => e.qid == qid,
+-      orElse: () => _Question(qid: qid, label: qid, choices: const []),
+-    );
+-    final label = _labelFor(q, value);
++    final label = value == _unknown
++        ? '모름'
++        : (context.read<ConversationCubit>().state.question?.choices.firstWhere((c) => c.value == value).text ?? value);
+     _appendUserText(label);
+-    _answers[qid] = value;
+-    final isUnknown = value == _unknown;
+-    if (_phase == _Phase.intake) {
+-      Analytics.instance.intakeAnswer(qid, value, isUnknown);
+-    }
+     setState(() => _awaitingChoice = false);
+-
+-    // Advance within the current phase
+-    if (_step < list.length - 1) {
+-      _step += 1;
+-      _askCurrent();
+-    } else {
+-      if (_phase == _Phase.survey) {
+-        // Survey done → transition to intake
+-        final surveyDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
+-        Analytics.instance.quickSurveyComplete(_surveyFlow.length, surveyDuration);
+-        _appendBotText('감사합니다. 답변을 반영해 예비판정을 시작할게요.');
+-        setState(() {
+-          _phase = _Phase.intake;
+-          _step = 0;
+-          _phaseStartedAt = DateTime.now();
+-        });
+-        Analytics.instance.intakeStart();
+-        _rows.add(_Row.botRich(const TypingIndicator()));
+-        setState(() {});
+-        Future.delayed(const Duration(milliseconds: 400), _askCurrent);
+-      } else {
+-        _evaluateAndShow();
+-      }
+-    }
++    context.read<ConversationCubit>().answer(qid, value);
+   }
+ 
+   String _labelFor(_Question q, String value) {
+     if (value == _unknown) return '모름';
+-    // Safe lookup: fall back to raw value if not found
+     final match = q.choices.where((c) => c.value == value);
+     return match.isNotEmpty ? match.first.text : value;
+   }
+@@ -312,28 +279,64 @@ class _ConversationPageState extends State<ConversationPage> {
+   @override
+   Widget build(BuildContext context) {
+     final spacing = context.spacing;
+-    return BlocProvider<ChatCubit>(
+-      create: (ctx) => ChatCubit(RepositoryProvider.of(ctx)),
+-      child: BlocListener<ChatCubit, ChatState>(
+-        listener: (context, state) {
+-          state.maybeWhen(
+-            success: (reply) {
+-              if (_typingRowIndex != null) {
+-                _replaceTypingWithReply(_typingRowIndex!, reply);
+-                Analytics.instance
+-                    .qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
+-                _typingRowIndex = null;
+-              }
++    return MultiBlocProvider(
++      providers: [
++        BlocProvider<ChatCubit>(create: (ctx) => ChatCubit(RepositoryProvider.of(ctx))),
++        BlocProvider<ConversationCubit>(create: (_) => ConversationCubit()),
++      ],
++      child: MultiBlocListener(
++        listeners: [
++          BlocListener<ChatCubit, ChatState>(
++            listener: (context, state) {
++              state.maybeWhen(
++                success: (reply) {
++                  if (_typingRowIndex != null) {
++                    _replaceTypingWithReply(_typingRowIndex!, reply);
++                    Analytics.instance
++                        .qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
++                    _typingRowIndex = null;
++                  }
++                },
++                error: (msg) {
++                  if (_typingRowIndex != null) {
++                    _replaceTypingWithError(_typingRowIndex!, msg);
++                    _typingRowIndex = null;
++                  }
++                },
++                orElse: () {},
++              );
+             },
+-            error: (msg) {
+-              if (_typingRowIndex != null) {
+-                _replaceTypingWithError(_typingRowIndex!, msg);
+-                _typingRowIndex = null;
++          ),
++          BlocListener<ConversationCubit, ConversationState>(
++            listener: (context, state) {
++              if (state.message != null && state.message!.isNotEmpty) {
++                _appendBotText(state.message!);
++              }
++              if (state.question != null) {
++                _appendQuestion(
++                  state.question!.qid,
++                  state.question!.label,
++                  state.question!.choices,
++                  index: state.question!.index,
++                  total: state.question!.total,
++                  isSurvey: state.question!.isSurvey,
++                );
+               }
++              if (state.result != null) {
++                _rows.add(_Row.result(ResultCard(
++                  status: state.result!.status,
++                  tldr: state.result!.tldr,
++                  reasons: state.result!.reasons,
++                  nextSteps: state.result!.nextSteps,
++                  lastVerified: state.result!.lastVerified,
++                )));
++                setState(() {});
++                _showSuggestionsAndAds();
++              }
++              setState(() => _awaitingChoice = state.awaitingChoice);
+             },
+-            orElse: () {},
+-          );
+-        },
++          ),
++        ],
+         child: Scaffold(
+           appBar: AppBar(title: const Text('대화형 예비판정')),
+           body: SafeArea(
+@@ -361,17 +364,13 @@ class _ConversationPageState extends State<ConversationPage> {
+                         ),
+                       );
+                     case _RowType.intake:
+-                      final isSurvey = _isSurveyQid(row.qid!);
+-                      final list = isSurvey ? _surveyFlow : _flow;
+-                      final idx = list.indexWhere((e) => e.qid == row.qid);
+-                      final total = list.length;
+                       return Appear(
+                         child: Padding(
+                           padding: EdgeInsets.only(bottom: spacing.x4),
+                           child: Column(
+                             crossAxisAlignment: CrossAxisAlignment.start,
+                             children: [
+-                              ProgressInline(current: idx + 1, total: total, showBar: true),
++                              ProgressInline(current: row.index ?? 1, total: row.total ?? 1, showBar: true),
+                               SizedBox(height: spacing.x1),
+                               IntakeQuestion(
+                                 qid: row.qid!,
+@@ -709,6 +708,9 @@ class _Row {
+   final Widget? richWidget;
+   final Widget? adWidget;
+   final List<_Suggestion>? suggestions;
++  final int? index;
++  final int? total;
++  final bool? isSurvey;
+ 
+   _Row.bot(this.text)
+       : type = _RowType.botText,
+@@ -728,9 +730,12 @@ class _Row {
+         resultCard = null,
+         richWidget = null,
+         adWidget = null,
+-        suggestions = null;
++        suggestions = null,
++        index = null,
++        total = null,
++        isSurvey = null;
+ 
+-  _Row.intake({required this.qid, required this.label, required this.choices})
++  _Row.intake({required this.qid, required this.label, required this.choices, this.index, this.total, this.isSurvey})
+       : type = _RowType.intake,
+         text = null,
+         resultCard = null,
+@@ -746,7 +751,10 @@ class _Row {
+         choices = null,
+         richWidget = null,
+         adWidget = null,
+-        suggestions = null;
++        suggestions = null,
++        index = null,
++        total = null,
++        isSurvey = null;
+ 
+   _Row.botRich(this.richWidget)
+       : type = _RowType.botRich,
+@@ -756,7 +764,10 @@ class _Row {
+         choices = null,
+         resultCard = null,
+         adWidget = null,
+-        suggestions = null;
++        suggestions = null,
++        index = null,
++        total = null,
++        isSurvey = null;
+ 
+   _Row.ad(this.adWidget)
+       : type = _RowType.ad,
+@@ -766,7 +777,10 @@ class _Row {
+         choices = null,
+         resultCard = null,
+         richWidget = null,
+-        suggestions = null;
++        suggestions = null,
++        index = null,
++        total = null,
++        isSurvey = null;
+ 
+   _Row.suggestions(this.suggestions)
+       : type = _RowType.suggestions,
+@@ -776,7 +790,10 @@ class _Row {
+         choices = null,
+         resultCard = null,
+         richWidget = null,
+-        adWidget = null;
++        adWidget = null,
++        index = null,
++        total = null,
++        isSurvey = null;
+ }
+ 
+ class _Suggestion {
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 52eff7c1bb85f91adcd1677e7fe158bcb2e4be6a Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 17:43:12 +0900
+Subject: [PATCH 12/13] =?UTF-8?q?feat(ui):=20polish=20visuals=20=E2=80=94?=
+ =?UTF-8?q?=20Card-based=20ResultCard=20with=20status=20pill=20and=20stale?=
+ =?UTF-8?q?=20badge;=20refined=20ChatBubble=20paddings/radius;=20pill=20co?=
+ =?UTF-8?q?mposer=20and=20ChipTheme?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ .../conversation/ui/conversation_page.dart    |  14 +--
+ lib/ui/components/chat_bubble.dart            |  26 +++--
+ lib/ui/components/result_card.dart            | 101 +++++++++++++-----
+ lib/ui/theme/app_theme.dart                   |  10 +-
+ 4 files changed, 108 insertions(+), 43 deletions(-)
+
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 5e3c4e6..01265d0 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -643,7 +643,7 @@ class _Composer extends StatelessWidget {
+   Widget build(BuildContext context) {
+     final spacing = context.spacing;
+     final cs = Theme.of(context).colorScheme;
+-    final radius = BorderRadius.circular(12);
++    final radius = BorderRadius.circular(22);
+     return Container(
+       padding: EdgeInsets.fromLTRB(spacing.x3, spacing.x2, spacing.x3, spacing.x2),
+       decoration: BoxDecoration(
+@@ -655,7 +655,7 @@ class _Composer extends StatelessWidget {
+           Expanded(
+             child: Material(
+               elevation: enabled ? 2 : 0,
+-              color: cs.surfaceVariant,
++              color: cs.surface,
+               borderRadius: radius,
+               child: TextField(
+                 controller: controller,
+@@ -673,14 +673,14 @@ class _Composer extends StatelessWidget {
+             ),
+           ),
+           SizedBox(width: spacing.x2),
+-          Container(
+-            decoration: BoxDecoration(
+-              color: enabled ? cs.primary : cs.surfaceVariant,
+-              borderRadius: BorderRadius.circular(10),
+-            ),
++          Material(
++            color: enabled ? cs.primary : cs.surfaceVariant,
++            elevation: enabled ? 3 : 0,
++            shape: const CircleBorder(),
+             child: IconButton(
+               onPressed: enabled ? onSend : null,
+               icon: Icon(Icons.send, color: enabled ? cs.onPrimary : cs.onSurfaceVariant),
++              tooltip: '보내기',
+             ),
+           ),
+         ],
+diff --git a/lib/ui/components/chat_bubble.dart b/lib/ui/components/chat_bubble.dart
+index 6d10be9..12bf63d 100644
+--- a/lib/ui/components/chat_bubble.dart
++++ b/lib/ui/components/chat_bubble.dart
+@@ -22,11 +22,12 @@ class ChatBubble extends StatelessWidget {
+     final cs = Theme.of(context).colorScheme;
+     final bubbleColor = isUser ? cs.primaryContainer : cs.surfaceVariant;
+     final textColor = isUser ? cs.onPrimaryContainer : cs.onSurfaceVariant;
++    final r = context.corners.sm;
+     final radius = BorderRadius.only(
+-      topLeft: Radius.circular(context.corners.sm),
+-      topRight: Radius.circular(context.corners.sm),
+-      bottomLeft: Radius.circular(isUser ? context.corners.sm : 4),
+-      bottomRight: Radius.circular(isUser ? 4 : context.corners.sm),
++      topLeft: Radius.circular(r),
++      topRight: Radius.circular(r),
++      bottomLeft: Radius.circular(isUser ? r : 6),
++      bottomRight: Radius.circular(isUser ? 6 : r),
+     );
+     return Semantics(
+       label: 'Chat.${isUser ? 'user' : 'bot'}',
+@@ -40,14 +41,17 @@ class ChatBubble extends StatelessWidget {
+               mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+               children: [
+                 Flexible(
+-                  child: Container(
+-                    padding: EdgeInsets.all(spacing.x3),
+-                    constraints: const BoxConstraints(maxWidth: 560),
+-                    decoration: BoxDecoration(
+-                      color: bubbleColor,
+-                      borderRadius: radius,
++                  child: Material(
++                    color: bubbleColor,
++                    elevation: 0,
++                    borderRadius: radius,
++                    child: Padding(
++                      padding: EdgeInsets.all(spacing.x3),
++                      child: Text(
++                        content,
++                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: textColor),
++                      ),
+                     ),
+-                    child: Text(content, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: textColor)),
+                   ),
+                 ),
+               ],
+diff --git a/lib/ui/components/result_card.dart b/lib/ui/components/result_card.dart
+index 159fdc6..d726976 100644
+--- a/lib/ui/components/result_card.dart
++++ b/lib/ui/components/result_card.dart
+@@ -68,23 +68,47 @@ class ResultCard extends StatelessWidget {
+     final corners = context.corners;
+     return Semantics(
+       label: 'ResultCard',
+-      child: Container(
++      child: Card(
+         key: const Key('ResultCard.Container'),
+-        width: double.infinity,
+-        padding: EdgeInsets.all(spacing.x4),
+-        decoration: BoxDecoration(
+-          color: Theme.of(context).colorScheme.surface,
+-          borderRadius: BorderRadius.circular(corners.md),
+-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+-        ),
+-        child: Column(
++        elevation: 2,
++        clipBehavior: Clip.antiAlias,
++        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(corners.md)),
++        child: Container(
++          width: double.infinity,
++          padding: EdgeInsets.all(spacing.x4),
++          decoration: BoxDecoration(
++            gradient: LinearGradient(
++              begin: Alignment.topCenter,
++              end: Alignment.bottomCenter,
++              colors: [
++                Theme.of(context).colorScheme.surface,
++                Theme.of(context).colorScheme.surface.withOpacity(0.96),
++              ],
++            ),
++          ),
++          child: Column(
+           crossAxisAlignment: CrossAxisAlignment.start,
+           children: [
+             Row(
+               children: [
+-                Icon(_statusIcon(), color: _statusColor(context)),
+-                SizedBox(width: spacing.x2),
+-                Text(_statusLabel(), style: Theme.of(context).textTheme.titleSmall?.copyWith(color: _statusColor(context))),
++                Container(
++                  padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
++                  decoration: BoxDecoration(
++                    color: _statusColor(context).withOpacity(0.12),
++                    borderRadius: BorderRadius.circular(999),
++                  ),
++                  child: Row(
++                    mainAxisSize: MainAxisSize.min,
++                    children: [
++                      Icon(_statusIcon(), color: _statusColor(context), size: 16),
++                      SizedBox(width: spacing.x1),
++                      Text(
++                        _statusLabel(),
++                        style: Theme.of(context).textTheme.labelMedium?.copyWith(color: _statusColor(context)),
++                      ),
++                    ],
++                  ),
++                ),
+                 const Spacer(),
+                 _LastVerifiedBadge(lastVerified: lastVerified),
+               ],
+@@ -143,6 +167,7 @@ class ResultCard extends StatelessWidget {
+             ],
+           ],
+         ),
++        ),
+       ),
+     );
+   }
+@@ -170,20 +195,48 @@ class _LastVerifiedBadge extends StatelessWidget {
+   Widget build(BuildContext context) {
+     final spacing = context.spacing;
+     final cs = Theme.of(context).colorScheme;
+-    return Container(
+-      padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
+-      decoration: BoxDecoration(
+-        color: cs.surfaceVariant,
+-        borderRadius: BorderRadius.circular(12),
+-      ),
+-      child: Row(
+-        mainAxisSize: MainAxisSize.min,
+-        children: [
+-          const Icon(Icons.schedule, size: 14),
++    final stale = _isStale(lastVerified);
++    return Row(
++      mainAxisSize: MainAxisSize.min,
++      children: [
++        Container(
++          padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
++          decoration: BoxDecoration(
++            color: cs.surfaceVariant,
++            borderRadius: BorderRadius.circular(12),
++          ),
++          child: Row(
++            mainAxisSize: MainAxisSize.min,
++            children: [
++              const Icon(Icons.schedule, size: 14),
++              SizedBox(width: spacing.x1),
++              Text('마지막 확인일 $lastVerified', style: Theme.of(context).textTheme.labelSmall),
++            ],
++          ),
++        ),
++        if (stale) ...[
+           SizedBox(width: spacing.x1),
+-          Text('마지막 확인일 $lastVerified', style: Theme.of(context).textTheme.labelSmall),
++          Container(
++            padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
++            decoration: BoxDecoration(
++              color: cs.errorContainer,
++              borderRadius: BorderRadius.circular(12),
++            ),
++            child: Text(
++              '정보 최신성 확인 필요',
++              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onErrorContainer),
++            ),
++          ),
+         ],
+-      ),
++      ],
+     );
+   }
++  bool _isStale(String ymd) {
++    try {
++      final d = DateTime.parse(ymd);
++      return DateTime.now().difference(d).inDays > 30;
++    } catch (_) {
++      return false;
++    }
++  }
+ }
+diff --git a/lib/ui/theme/app_theme.dart b/lib/ui/theme/app_theme.dart
+index 1e16820..13dc231 100644
+--- a/lib/ui/theme/app_theme.dart
++++ b/lib/ui/theme/app_theme.dart
+@@ -43,6 +43,15 @@ ThemeData buildAppTheme(Brightness brightness) {
+       bodyMedium: base.textTheme.bodyMedium?.copyWith(height: 1.4),
+       labelLarge: base.textTheme.labelLarge?.copyWith(letterSpacing: 0.2),
+     ),
++    chipTheme: base.chipTheme.copyWith(
++      labelStyle: base.textTheme.labelLarge?.copyWith(letterSpacing: 0.1),
++      padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 8),
++      side: BorderSide(color: scheme.outlineVariant),
++      selectedColor: scheme.primaryContainer,
++      backgroundColor: scheme.surfaceVariant,
++      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
++      showCheckmark: false,
++    ),
+     inputDecorationTheme: const InputDecorationTheme(
+       border: OutlineInputBorder(),
+     ),
+@@ -65,4 +74,3 @@ extension ThemeGetters on BuildContext {
+   Spacing get spacing => Theme.of(this).extension<Spacing>() ?? const Spacing();
+   Corners get corners => Theme.of(this).extension<Corners>() ?? const Corners();
+ }
+-
+-- 
+2.39.5 (Apple Git-154)
+
+
+From eb19f8fd06ffb16df7aef44951d7366827d4c89e Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Wed, 3 Sep 2025 17:56:26 +0900
+Subject: [PATCH 13/13] feat(ui): add delayed Appear for staggered list
+ animations and animated scale on Composer send button
+
+---
+ .../conversation/ui/conversation_page.dart    | 27 ++++++++++----
+ lib/ui/components/appear.dart                 | 37 +++++++++++++++----
+ 2 files changed, 49 insertions(+), 15 deletions(-)
+
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 01265d0..e975b90 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -351,6 +351,7 @@ class _ConversationPageState extends State<ConversationPage> {
+                   switch (row.type) {
+                     case _RowType.botText:
+                       return Appear(
++                        delay: Duration(milliseconds: 40),
+                         child: Padding(
+                           padding: EdgeInsets.only(bottom: spacing.x3),
+                           child: ChatBubble(role: ChatRole.bot, content: row.text ?? ''),
+@@ -358,6 +359,7 @@ class _ConversationPageState extends State<ConversationPage> {
+                       );
+                     case _RowType.userText:
+                       return Appear(
++                        delay: Duration(milliseconds: 40),
+                         child: Padding(
+                           padding: EdgeInsets.only(bottom: spacing.x3),
+                           child: ChatBubble(role: ChatRole.user, content: row.text ?? ''),
+@@ -365,6 +367,7 @@ class _ConversationPageState extends State<ConversationPage> {
+                       );
+                     case _RowType.intake:
+                       return Appear(
++                        delay: Duration(milliseconds: 60),
+                         child: Padding(
+                           padding: EdgeInsets.only(bottom: spacing.x4),
+                           child: Column(
+@@ -385,6 +388,7 @@ class _ConversationPageState extends State<ConversationPage> {
+                       );
+                     case _RowType.ad:
+                       return Appear(
++                        delay: Duration(milliseconds: 80),
+                         child: Padding(
+                           padding: EdgeInsets.only(bottom: spacing.x4),
+                           child: row.adWidget!,
+@@ -393,6 +397,7 @@ class _ConversationPageState extends State<ConversationPage> {
+                     case _RowType.suggestions:
+                       return Appear(
+                         duration: const Duration(milliseconds: 120),
++                        delay: Duration(milliseconds: 50),
+                         child: Padding(
+                           padding: EdgeInsets.only(bottom: spacing.x3),
+                           child: Wrap(
+@@ -426,6 +431,7 @@ class _ConversationPageState extends State<ConversationPage> {
+                       );
+                     case _RowType.botRich:
+                       return Appear(
++                        delay: Duration(milliseconds: 50),
+                         duration: const Duration(milliseconds: 120),
+                         child: Padding(
+                           padding: EdgeInsets.only(bottom: spacing.x3),
+@@ -673,14 +679,19 @@ class _Composer extends StatelessWidget {
+             ),
+           ),
+           SizedBox(width: spacing.x2),
+-          Material(
+-            color: enabled ? cs.primary : cs.surfaceVariant,
+-            elevation: enabled ? 3 : 0,
+-            shape: const CircleBorder(),
+-            child: IconButton(
+-              onPressed: enabled ? onSend : null,
+-              icon: Icon(Icons.send, color: enabled ? cs.onPrimary : cs.onSurfaceVariant),
+-              tooltip: '보내기',
++          AnimatedScale(
++            scale: enabled ? 1.0 : 0.96,
++            duration: const Duration(milliseconds: 150),
++            curve: Curves.easeOut,
++            child: Material(
++              color: enabled ? cs.primary : cs.surfaceVariant,
++              elevation: enabled ? 3 : 0,
++              shape: const CircleBorder(),
++              child: IconButton(
++                onPressed: enabled ? onSend : null,
++                icon: Icon(Icons.send, color: enabled ? cs.onPrimary : cs.onSurfaceVariant),
++                tooltip: '보내기',
++              ),
+             ),
+           ),
+         ],
+diff --git a/lib/ui/components/appear.dart b/lib/ui/components/appear.dart
+index cd98773..589ca08 100644
+--- a/lib/ui/components/appear.dart
++++ b/lib/ui/components/appear.dart
+@@ -1,11 +1,12 @@
+ import 'package:flutter/material.dart';
+ 
+-/// Simple fade + slight y-translate appear animation.
+-class Appear extends StatelessWidget {
++/// Simple fade + slight y-translate appear animation with optional delay.
++class Appear extends StatefulWidget {
+   final Widget child;
+   final Duration duration;
+   final Curve curve;
+   final double offsetY;
++  final Duration delay;
+ 
+   const Appear({
+     super.key,
+@@ -13,22 +14,44 @@ class Appear extends StatelessWidget {
+     this.duration = const Duration(milliseconds: 200), // tokens.motion.durations_ms.normal
+     this.curve = Curves.easeOut, // tokens.motion.easing.standard
+     this.offsetY = 12,
++    this.delay = Duration.zero,
+   });
+ 
++  @override
++  State<Appear> createState() => _AppearState();
++}
++
++class _AppearState extends State<Appear> {
++  bool _start = false;
++
++  @override
++  void initState() {
++    super.initState();
++    if (widget.delay == Duration.zero) {
++      _start = true;
++    } else {
++      Future.delayed(widget.delay, () {
++        if (mounted) setState(() => _start = true);
++      });
++    }
++  }
++
+   @override
+   Widget build(BuildContext context) {
++    if (!_start) {
++      return Opacity(opacity: 0, child: Transform.translate(offset: Offset(0, widget.offsetY), child: widget.child));
++    }
+     return TweenAnimationBuilder<double>(
+       tween: Tween(begin: 0, end: 1),
+-      duration: duration,
+-      curve: curve,
++      duration: widget.duration,
++      curve: widget.curve,
+       builder: (context, t, _) => Opacity(
+         opacity: t,
+         child: Transform.translate(
+-          offset: Offset(0, (1 - t) * offsetY),
+-          child: child,
++          offset: Offset(0, (1 - t) * widget.offsetY),
++          child: widget.child,
+         ),
+       ),
+     );
+   }
+ }
+-
+-- 
+2.39.5 (Apple Git-154)
+
