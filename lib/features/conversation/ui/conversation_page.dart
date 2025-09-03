@@ -67,7 +67,12 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _onChoiceSelected(String qid, String? value) {
     if (value == null) return;
-    final q = _flow.firstWhere((e) => e.qid == qid);
+    // Resolve the question from the current phase's list (survey vs intake)
+    final list = _phase == _Phase.survey ? _surveyFlow : _flow;
+    final q = list.firstWhere(
+      (e) => e.qid == qid,
+      orElse: () => _Question(qid: qid, label: qid, choices: const []),
+    );
     final label = _labelFor(q, value);
     _appendUserText(label);
     _answers[qid] = value;
@@ -77,7 +82,7 @@ class _ConversationPageState extends State<ConversationPage> {
     }
     setState(() => _awaitingChoice = false);
 
-    final list = _phase == _Phase.survey ? _surveyFlow : _flow;
+    // Advance within the current phase
     if (_step < list.length - 1) {
       _step += 1;
       _askCurrent();
@@ -104,7 +109,9 @@ class _ConversationPageState extends State<ConversationPage> {
 
   String _labelFor(_Question q, String value) {
     if (value == _unknown) return '모름';
-    return q.choices.firstWhere((c) => c.value == value).text;
+    // Safe lookup: fall back to raw value if not found
+    final match = q.choices.where((c) => c.value == value);
+    return match.isNotEmpty ? match.first.text : value;
   }
 
   void _evaluateAndShow() {
