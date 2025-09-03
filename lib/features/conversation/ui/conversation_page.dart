@@ -73,49 +73,16 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _onChoiceSelected(String qid, String? value) {
     if (value == null) return;
-    // Resolve the question from the current phase's list (survey vs intake)
-    final list = _phase == _Phase.survey ? _surveyFlow : _flow;
-    final q = list.firstWhere(
-      (e) => e.qid == qid,
-      orElse: () => _Question(qid: qid, label: qid, choices: const []),
-    );
-    final label = _labelFor(q, value);
+    final label = value == _unknown
+        ? '모름'
+        : (context.read<ConversationCubit>().state.question?.choices.firstWhere((c) => c.value == value).text ?? value);
     _appendUserText(label);
-    _answers[qid] = value;
-    final isUnknown = value == _unknown;
-    if (_phase == _Phase.intake) {
-      Analytics.instance.intakeAnswer(qid, value, isUnknown);
-    }
     setState(() => _awaitingChoice = false);
-
-    // Advance within the current phase
-    if (_step < list.length - 1) {
-      _step += 1;
-      _askCurrent();
-    } else {
-      if (_phase == _Phase.survey) {
-        // Survey done → transition to intake
-        final surveyDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
-        Analytics.instance.quickSurveyComplete(_surveyFlow.length, surveyDuration);
-        _appendBotText('감사합니다. 답변을 반영해 예비판정을 시작할게요.');
-        setState(() {
-          _phase = _Phase.intake;
-          _step = 0;
-          _phaseStartedAt = DateTime.now();
-        });
-        Analytics.instance.intakeStart();
-        _rows.add(_Row.botRich(const TypingIndicator()));
-        setState(() {});
-        Future.delayed(const Duration(milliseconds: 400), _askCurrent);
-      } else {
-        _evaluateAndShow();
-      }
-    }
+    context.read<ConversationCubit>().answer(qid, value);
   }
 
   String _labelFor(_Question q, String value) {
     if (value == _unknown) return '모름';
-    // Safe lookup: fall back to raw value if not found
     final match = q.choices.where((c) => c.value == value);
     return match.isNotEmpty ? match.first.text : value;
   }
@@ -312,28 +279,64 @@ class _ConversationPageState extends State<ConversationPage> {
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacing;
-    return BlocProvider<ChatCubit>(
-      create: (ctx) => ChatCubit(RepositoryProvider.of(ctx)),
-      child: BlocListener<ChatCubit, ChatState>(
-        listener: (context, state) {
-          state.maybeWhen(
-            success: (reply) {
-              if (_typingRowIndex != null) {
-                _replaceTypingWithReply(_typingRowIndex!, reply);
-                Analytics.instance
-                    .qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
-                _typingRowIndex = null;
-              }
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ChatCubit>(create: (ctx) => ChatCubit(RepositoryProvider.of(ctx))),
+        BlocProvider<ConversationCubit>(create: (_) => ConversationCubit()),
+      ],
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<ChatCubit, ChatState>(
+            listener: (context, state) {
+              state.maybeWhen(
+                success: (reply) {
+                  if (_typingRowIndex != null) {
+                    _replaceTypingWithReply(_typingRowIndex!, reply);
+                    Analytics.instance
+                        .qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
+                    _typingRowIndex = null;
+                  }
+                },
+                error: (msg) {
+                  if (_typingRowIndex != null) {
+                    _replaceTypingWithError(_typingRowIndex!, msg);
+                    _typingRowIndex = null;
+                  }
+                },
+                orElse: () {},
+              );
             },
-            error: (msg) {
-              if (_typingRowIndex != null) {
-                _replaceTypingWithError(_typingRowIndex!, msg);
-                _typingRowIndex = null;
+          ),
+          BlocListener<ConversationCubit, ConversationState>(
+            listener: (context, state) {
+              if (state.message != null && state.message!.isNotEmpty) {
+                _appendBotText(state.message!);
               }
+              if (state.question != null) {
+                _appendQuestion(
+                  state.question!.qid,
+                  state.question!.label,
+                  state.question!.choices,
+                  index: state.question!.index,
+                  total: state.question!.total,
+                  isSurvey: state.question!.isSurvey,
+                );
+              }
+              if (state.result != null) {
+                _rows.add(_Row.result(ResultCard(
+                  status: state.result!.status,
+                  tldr: state.result!.tldr,
+                  reasons: state.result!.reasons,
+                  nextSteps: state.result!.nextSteps,
+                  lastVerified: state.result!.lastVerified,
+                )));
+                setState(() {});
+                _showSuggestionsAndAds();
+              }
+              setState(() => _awaitingChoice = state.awaitingChoice);
             },
-            orElse: () {},
-          );
-        },
+          ),
+        ],
         child: Scaffold(
           appBar: AppBar(title: const Text('대화형 예비판정')),
           body: SafeArea(
@@ -361,17 +364,13 @@ class _ConversationPageState extends State<ConversationPage> {
                         ),
                       );
                     case _RowType.intake:
-                      final isSurvey = _isSurveyQid(row.qid!);
-                      final list = isSurvey ? _surveyFlow : _flow;
-                      final idx = list.indexWhere((e) => e.qid == row.qid);
-                      final total = list.length;
                       return Appear(
                         child: Padding(
                           padding: EdgeInsets.only(bottom: spacing.x4),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ProgressInline(current: idx + 1, total: total, showBar: true),
+                              ProgressInline(current: row.index ?? 1, total: row.total ?? 1, showBar: true),
                               SizedBox(height: spacing.x1),
                               IntakeQuestion(
                                 qid: row.qid!,
@@ -709,6 +708,9 @@ class _Row {
   final Widget? richWidget;
   final Widget? adWidget;
   final List<_Suggestion>? suggestions;
+  final int? index;
+  final int? total;
+  final bool? isSurvey;
 
   _Row.bot(this.text)
       : type = _RowType.botText,
@@ -728,9 +730,12 @@ class _Row {
         resultCard = null,
         richWidget = null,
         adWidget = null,
-        suggestions = null;
+        suggestions = null,
+        index = null,
+        total = null,
+        isSurvey = null;
 
-  _Row.intake({required this.qid, required this.label, required this.choices})
+  _Row.intake({required this.qid, required this.label, required this.choices, this.index, this.total, this.isSurvey})
       : type = _RowType.intake,
         text = null,
         resultCard = null,
@@ -746,7 +751,10 @@ class _Row {
         choices = null,
         richWidget = null,
         adWidget = null,
-        suggestions = null;
+        suggestions = null,
+        index = null,
+        total = null,
+        isSurvey = null;
 
   _Row.botRich(this.richWidget)
       : type = _RowType.botRich,
@@ -756,7 +764,10 @@ class _Row {
         choices = null,
         resultCard = null,
         adWidget = null,
-        suggestions = null;
+        suggestions = null,
+        index = null,
+        total = null,
+        isSurvey = null;
 
   _Row.ad(this.adWidget)
       : type = _RowType.ad,
@@ -766,7 +777,10 @@ class _Row {
         choices = null,
         resultCard = null,
         richWidget = null,
-        suggestions = null;
+        suggestions = null,
+        index = null,
+        total = null,
+        isSurvey = null;
 
   _Row.suggestions(this.suggestions)
       : type = _RowType.suggestions,
@@ -776,7 +790,10 @@ class _Row {
         choices = null,
         resultCard = null,
         richWidget = null,
-        adWidget = null;
+        adWidget = null,
+        index = null,
+        total = null,
+        isSurvey = null;
 }
 
 class _Suggestion {
