@@ -12,6 +12,8 @@
 - 화면 기획(챗봇형): `docs/docs/APP_SCREEN_PLAN.md`
  - UI/UX 가이드: `docs/docs/UI_UX_GUIDE.md`
  - 문서 인덱스: `docs/docs/DOCS_INDEX.md`
+ - MVP 종합 기획: `docs/docs/PRODUCT_PLAN_MVP.md`
+ - 백로그(에픽/스토리): `docs/docs/BACKLOG_EPICS_USER_STORIES.md`
 
 A few resources to get you started if this is your first Flutter project:
 

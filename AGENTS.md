@@ -34,6 +34,7 @@
 - Commits: use Conventional Commits when possible
   - Examples: `feat(ui): add ResultCard`, `fix(theme): correct color contrast`, `docs: update PRD links`.
 - PRs: include concise description, motivation, screenshots/GIFs for UI, and linked issue (e.g., `Closes #123`). Ensure `flutter analyze` and tests pass.
+ - 작업 단위당 커밋: 하나의 논리적 작업(파일 추가/기능 단위/리팩터링 단위)마다 최소 1 커밋으로 쪼개어 기록합니다.
 
 ## Architecture Notes
 - Follow one-way deps: UI → BLoC → Repository → Data sources.
@@ -101,3 +102,6 @@
  - 화면 기획(챗봇형): `docs/docs/APP_SCREEN_PLAN.md`
  - UI/UX 가이드: `docs/docs/UI_UX_GUIDE.md`
  - 문서 인덱스: `docs/docs/DOCS_INDEX.md`
+ - 화면 사양(트리/프롭/상태): `docs/docs/SCREEN_SPECS.md`
+ - MVP 종합 기획: `docs/docs/PRODUCT_PLAN_MVP.md`
+ - 백로그: `docs/docs/BACKLOG_EPICS_USER_STORIES.md`
