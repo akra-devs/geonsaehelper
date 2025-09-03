@@ -48,8 +48,9 @@ class ApiChatRepository implements ChatRepository {
     if (r.statusCode ~/ 100 != 2) {
       throw ChatError('complete failed (${r.statusCode})');
     }
-    final body = jsonDecode(r.body) as Map<String, dynamic>;
-    return BotReply.fromJson(body);
+    final raw = jsonDecode(r.body) as Map<String, dynamic>;
+    final norm = _normalizeReplyJson(raw);
+    return BotReply.fromJson(norm);
   }
 }
 
@@ -64,10 +65,26 @@ class MockChatRepository implements ChatRepository {
   Future<BotReply> complete(String userText) async {
     await Future.delayed(const Duration(milliseconds: 400));
     return BotReply(
-      content: 'TL;DR: 서류는 신분증, 가족·혼인관계, 소득 증빙이 기본입니다. 다음 단계에서 발급처/순서를 안내해 드립니다.',
+      content:
+          'TL;DR: 서류는 신분증, 가족·혼인관계, 소득 증빙이 기본입니다. 다음 단계에서 발급처/순서를 안내해 드립니다.',
       citations: const [ChatCitation(docId: 'HUG_internal_policy.md', sectionKey: 'A.1')],
       lastVerified: lastVerified,
     );
   }
 }
 
+Map<String, dynamic> _normalizeReplyJson(Map<String, dynamic> json) {
+  final out = Map<String, dynamic>.from(json);
+  final citations = (out['citations'] as List<dynamic>? ?? const [])
+      .whereType<Map<String, dynamic>>()
+      .map((e) {
+    final m = Map<String, dynamic>.from(e);
+    // Accept either 'section' or 'sectionKey'
+    if (!m.containsKey('sectionKey') && m.containsKey('section')) {
+      m['sectionKey'] = m['section'];
+    }
+    return m;
+  }).toList();
+  out['citations'] = citations;
+  return out;
+}

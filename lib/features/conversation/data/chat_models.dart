@@ -1,30 +1,23 @@
-import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-@immutable
-class ChatCitation {
-  final String docId;
-  final String sectionKey;
-  const ChatCitation({required this.docId, required this.sectionKey});
+part 'chat_models.freezed.dart';
+part 'chat_models.g.dart';
+
+@freezed
+class ChatCitation with _$ChatCitation {
+  const factory ChatCitation({required String docId, required String sectionKey}) = _ChatCitation;
+  factory ChatCitation.fromJson(Map<String, dynamic> json) => _$ChatCitationFromJson(json);
 }
 
-@immutable
-class BotReply {
-  final String content;
-  final List<ChatCitation> citations;
-  final String lastVerified; // YYYY-MM-DD
-  const BotReply({required this.content, required this.citations, required this.lastVerified});
+@freezed
+class BotReply with _$BotReply {
+  const factory BotReply({
+    required String content,
+    @Default(<ChatCitation>[]) List<ChatCitation> citations,
+    required String lastVerified, // YYYY-MM-DD
+  }) = _BotReply;
 
-  factory BotReply.fromJson(Map<String, dynamic> json) {
-    final cites = (json['citations'] as List<dynamic>? ?? const [])
-        .whereType<Map<String, dynamic>>()
-        .map((e) => ChatCitation(docId: e['docId'] ?? '', sectionKey: e['section'] ?? e['sectionKey'] ?? ''))
-        .toList();
-    return BotReply(
-      content: json['content'] ?? '',
-      citations: cites,
-      lastVerified: json['lastVerified'] ?? '',
-    );
-  }
+  factory BotReply.fromJson(Map<String, dynamic> json) => _$BotReplyFromJson(json);
 }
 
 class ChatError implements Exception {
@@ -33,4 +26,3 @@ class ChatError implements Exception {
   @override
   String toString() => 'ChatError: $message';
 }
-

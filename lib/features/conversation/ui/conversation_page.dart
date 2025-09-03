@@ -316,17 +316,23 @@ class _ConversationPageState extends State<ConversationPage> {
       create: (ctx) => ChatCubit(RepositoryProvider.of(ctx)),
       child: BlocListener<ChatCubit, ChatState>(
         listener: (context, state) {
-          if (_typingRowIndex != null) {
-            if (state.reply != null) {
-              _replaceTypingWithReply(_typingRowIndex!, state.reply!);
-              Analytics.instance.qnaAnswer(true,
-                  state.reply!.lastVerified.isEmpty ? '2025-09-02' : state.reply!.lastVerified);
-              _typingRowIndex = null;
-            } else if (state.error != null) {
-              _replaceTypingWithError(_typingRowIndex!, state.error!);
-              _typingRowIndex = null;
-            }
-          }
+          state.maybeWhen(
+            success: (reply) {
+              if (_typingRowIndex != null) {
+                _replaceTypingWithReply(_typingRowIndex!, reply);
+                Analytics.instance
+                    .qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
+                _typingRowIndex = null;
+              }
+            },
+            error: (msg) {
+              if (_typingRowIndex != null) {
+                _replaceTypingWithError(_typingRowIndex!, msg);
+                _typingRowIndex = null;
+              }
+            },
+            orElse: () {},
+          );
         },
         child: Scaffold(
           appBar: AppBar(title: const Text('대화형 예비판정')),
