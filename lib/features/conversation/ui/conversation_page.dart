@@ -643,7 +643,7 @@ class _Composer extends StatelessWidget {
   Widget build(BuildContext context) {
     final spacing = context.spacing;
     final cs = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(12);
+    final radius = BorderRadius.circular(22);
     return Container(
       padding: EdgeInsets.fromLTRB(spacing.x3, spacing.x2, spacing.x3, spacing.x2),
       decoration: BoxDecoration(
@@ -655,7 +655,7 @@ class _Composer extends StatelessWidget {
           Expanded(
             child: Material(
               elevation: enabled ? 2 : 0,
-              color: cs.surfaceVariant,
+              color: cs.surface,
               borderRadius: radius,
               child: TextField(
                 controller: controller,
@@ -673,14 +673,14 @@ class _Composer extends StatelessWidget {
             ),
           ),
           SizedBox(width: spacing.x2),
-          Container(
-            decoration: BoxDecoration(
-              color: enabled ? cs.primary : cs.surfaceVariant,
-              borderRadius: BorderRadius.circular(10),
-            ),
+          Material(
+            color: enabled ? cs.primary : cs.surfaceVariant,
+            elevation: enabled ? 3 : 0,
+            shape: const CircleBorder(),
             child: IconButton(
               onPressed: enabled ? onSend : null,
               icon: Icon(Icons.send, color: enabled ? cs.onPrimary : cs.onSurfaceVariant),
+              tooltip: '보내기',
             ),
           ),
         ],

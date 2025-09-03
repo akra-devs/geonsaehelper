@@ -22,11 +22,12 @@ class ChatBubble extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final bubbleColor = isUser ? cs.primaryContainer : cs.surfaceVariant;
     final textColor = isUser ? cs.onPrimaryContainer : cs.onSurfaceVariant;
+    final r = context.corners.sm;
     final radius = BorderRadius.only(
-      topLeft: Radius.circular(context.corners.sm),
-      topRight: Radius.circular(context.corners.sm),
-      bottomLeft: Radius.circular(isUser ? context.corners.sm : 4),
-      bottomRight: Radius.circular(isUser ? 4 : context.corners.sm),
+      topLeft: Radius.circular(r),
+      topRight: Radius.circular(r),
+      bottomLeft: Radius.circular(isUser ? r : 6),
+      bottomRight: Radius.circular(isUser ? 6 : r),
     );
     return Semantics(
       label: 'Chat.${isUser ? 'user' : 'bot'}',
@@ -40,14 +41,17 @@ class ChatBubble extends StatelessWidget {
               mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
               children: [
                 Flexible(
-                  child: Container(
-                    padding: EdgeInsets.all(spacing.x3),
-                    constraints: const BoxConstraints(maxWidth: 560),
-                    decoration: BoxDecoration(
-                      color: bubbleColor,
-                      borderRadius: radius,
+                  child: Material(
+                    color: bubbleColor,
+                    elevation: 0,
+                    borderRadius: radius,
+                    child: Padding(
+                      padding: EdgeInsets.all(spacing.x3),
+                      child: Text(
+                        content,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: textColor),
+                      ),
                     ),
-                    child: Text(content, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: textColor)),
                   ),
                 ),
               ],

@@ -43,6 +43,15 @@ ThemeData buildAppTheme(Brightness brightness) {
       bodyMedium: base.textTheme.bodyMedium?.copyWith(height: 1.4),
       labelLarge: base.textTheme.labelLarge?.copyWith(letterSpacing: 0.2),
     ),
+    chipTheme: base.chipTheme.copyWith(
+      labelStyle: base.textTheme.labelLarge?.copyWith(letterSpacing: 0.1),
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 8),
+      side: BorderSide(color: scheme.outlineVariant),
+      selectedColor: scheme.primaryContainer,
+      backgroundColor: scheme.surfaceVariant,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      showCheckmark: false,
+    ),
     inputDecorationTheme: const InputDecorationTheme(
       border: OutlineInputBorder(),
     ),
@@ -65,4 +74,3 @@ extension ThemeGetters on BuildContext {
   Spacing get spacing => Theme.of(this).extension<Spacing>() ?? const Spacing();
   Corners get corners => Theme.of(this).extension<Corners>() ?? const Corners();
 }
-
