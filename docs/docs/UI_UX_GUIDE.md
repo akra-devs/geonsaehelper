@@ -1,4 +1,5 @@
 # UI_UX_GUIDE — UI/UX 우선 설계 가이드
+Status: canonical (UX Principles)
 
 마지막 업데이트: 2025-09-02
 
@@ -14,8 +15,8 @@
 
 ## IA/네비게이션
 - 기본 진입: Conversation(대화) 화면
-- 보조: History(히스토리), DocsChecklist(체크리스트), Settings(설정)
-- 하단 탭 생략, AppBar 액션/CTA로 이동
+- 보조: DocsChecklist(체크리스트), History(히스토리), Settings(설정)
+- 하단 탭: 4-탭(시작/체크리스트/히스토리/설정). AppBar 액션/CTA는 보조 이동
 
 ## 화면 구성 요소
 - ChatBubble(role: user|bot, citations[]): 인용 칩은 문서ID/섹션키, 링크 미노출
@@ -60,4 +61,3 @@
 - 컴포넌트 사양: COMPONENT_SPECS.md
 - 카피/톤: COPY_GUIDE.md, RESULT_CARD_COPY.md
 - 제품 요구사항: PRD_v1.md
-

@@ -1,4 +1,5 @@
 # OPERATIONS_RUNBOOK — 운영 런북(규정 갱신/정정/핫픽스)
+Status: canonical (Operations)
 
 마지막 업데이트: 2025-09-02
 

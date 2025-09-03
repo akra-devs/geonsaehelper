@@ -1,4 +1,5 @@
 # COMPONENT_SPECS — 공용 위젯 사양(Flutter API 초안)
+Status: canonical (Component APIs)
 
 마지막 업데이트: 2025-09-02
 

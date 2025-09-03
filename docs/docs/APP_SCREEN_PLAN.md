@@ -1,4 +1,5 @@
 # APP_SCREEN_PLAN — 챗봇형(선택형+대화형) 화면 기획
+Status: canonical (Screen Flow)
 
 마지막 업데이트: 2025-09-02
 

@@ -1,4 +1,5 @@
 # RULES_HUG_v1 — HUG 자격 판정 규칙(초안)
+Status: canonical (Eligibility Rules). Data: RULES_HUG_mapping.yaml
 
 마지막 업데이트: 2025-09-02
 주의: 본 문서는 내부 규정 문서(섹션/키) 기준으로 작성됩니다. 구체 임계값·예외는 내부 문서 값으로만 채웁니다(외부 링크 미사용).

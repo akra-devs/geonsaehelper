@@ -1,4 +1,5 @@
 # 제품 기획 핵심 요약 및 진행 기록
+Status: derived (Executive summary). Canonical: PRD_v1.md
 
 마지막 업데이트: 2025-09-02
 

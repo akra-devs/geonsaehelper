@@ -1,4 +1,5 @@
 # RAG_POLICY — 내부 문서 기반 검색/답변 정책
+Status: canonical (RAG Policy)
 
 마지막 업데이트: 2025-09-02
 

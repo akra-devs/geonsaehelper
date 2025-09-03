@@ -1,4 +1,5 @@
 # DOCS_INDEX — 문서 인덱스 & 연관성 맵
+Status: canonical (Information Architecture)
 
 마지막 업데이트: 2025-09-02
 
@@ -8,6 +9,19 @@
 3) UI/UX — UI_UX_GUIDE.md → APP_SCREEN_PLAN.md → SCREEN_SPECS.md → UI_BLUEPRINT.yaml → DESIGN_TOKENS.yaml → COMPONENT_SPECS.md → COPY_GUIDE.md / RESULT_CARD_COPY.md
 4) 측정/운영/법/광고 — MEASUREMENT_PLAN.md, OPERATIONS_RUNBOOK.md, LEGAL_CHECKLIST.md, ADS_POLICY.md
 5) 실행 계획 — PRODUCT_PLAN_MVP.md, BACKLOG_EPICS_USER_STORIES.md
+
+## Canonical Set
+- Product: PRD_v1.md (PRODUCT_BRIEF.md는 요약본)
+- Intake: INTAKE_FLOW.md
+- Rules: RULES_HUG_v1.md + RULES_HUG_mapping.yaml
+- RAG: RAG_POLICY.md
+- UI Design: DESIGN_TOKENS.yaml, UI_BLUEPRINT.yaml
+- Component APIs: COMPONENT_SPECS.md
+- Screen Flow/Specs: APP_SCREEN_PLAN.md, SCREEN_SPECS.md
+- UX Guide: UI_UX_GUIDE.md, Flutter implementation: FLUTTER_DESIGN_SYSTEM.md
+- Measurement: MEASUREMENT_PLAN.md
+- Operations: OPERATIONS_RUNBOOK.md, Release: RELEASE_PLAN.md
+- Legal/Ads: LEGAL_CHECKLIST.md, ADS_POLICY.md
 
 ## 연관성(요약)
 - PRD_v1.md → 화면/컴포넌트의 수용기준과 콘텐츠 범위 정의

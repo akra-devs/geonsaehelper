@@ -1,4 +1,5 @@
 # SCREEN_SPECS — 화면별 컴포넌트 트리/프롭/상태 사양
+Status: canonical (Screen Specs)
 
 마지막 업데이트: 2025-09-02
 

@@ -18,10 +18,12 @@
 - 품질: 결과 만족(👍) ≥ 70%, “사유 보기” ≥ 40%, 정정 요청 ≤ 5%
 - 리텐션: 후속 Q&A 진입 ≥ 50%, D7 재방문 ≥ 25%
 
+Status: canonical (Plan & Roadmap)
+
 ## 5) 정보 구조(IA)/네비게이션
 - 기본 진입: Conversation(대화)
-- 보조 화면: Home(선택), DocsChecklist, History, Settings
-- 하단 탭 없음, AppBar 액션/CTA 중심
+- 보조 화면: DocsChecklist, History, Settings
+- 하단 탭: 4-탭(시작/체크리스트/히스토리/설정) — 구현과 일치(AppShell 기준)
 
 ## 6) 핵심 플로우
 - 인테이크 → 결과 카드 인라인 → Q&A → 체크리스트/한도/확인 방법 → 히스토리 저장/재방문
@@ -77,4 +79,3 @@
 
 ## 16) 참조
 - PRD_v1.md, PRODUCT_BRIEF.md, INTAKE_FLOW.md, RULES_HUG_v1.md, RULES_HUG_mapping.yaml, RAG_POLICY.md, UI_UX_GUIDE.md, APP_SCREEN_PLAN.md, SCREEN_SPECS.md, UI_BLUEPRINT.yaml, DESIGN_TOKENS.yaml, COMPONENT_SPECS.md, COPY_GUIDE.md, RESULT_CARD_COPY.md, MEASUREMENT_PLAN.md, OPERATIONS_RUNBOOK.md, ADS_POLICY.md, LEGAL_CHECKLIST.md
-

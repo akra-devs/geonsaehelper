@@ -1,4 +1,5 @@
 # MEASUREMENT_PLAN — 측정/계측 계획
+Status: canonical (Analytics Schema)
 
 마지막 업데이트: 2025-09-02
 

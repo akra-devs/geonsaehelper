@@ -1,4 +1,5 @@
 # FLUTTER_DESIGN_SYSTEM — Flutter UI 작성 가이드(실행 지향)
+Status: derived (Implementation guide). Canonical: DESIGN_TOKENS.yaml, COMPONENT_SPECS.md, UI_UX_GUIDE.md
 
 마지막 업데이트: 2025-09-02
 범위: 디자인 토큰 → ThemeData/ThemeExtension 매핑 → 컴포넌트 규약 → 접근성/반응형/테스트.
@@ -115,4 +116,3 @@ ThemeData buildAppTheme(Brightness brightness) {
 - DESIGN_TOKENS.yaml → ThemeExtension 매핑 확인
 - 컴포넌트가 Theme/Extension 토큰만 참조(하드코딩 X)
 - TestKey 부착, 골든 스냅샷 통과
-

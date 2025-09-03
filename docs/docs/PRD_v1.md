@@ -1,4 +1,5 @@
 # PRD v1 — 전세자금대출 자격 판별 + AI Q&A (HUG 우선)
+Status: canonical (Product Requirements)
 
 마지막 업데이트: 2025-09-02
 

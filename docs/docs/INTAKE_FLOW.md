@@ -1,4 +1,5 @@
 # INTAKE_FLOW — 대화형 인테이크 설계(HUG 자격 판정)
+Status: canonical (Intake Script)
 
 마지막 업데이트: 2025-09-02
 
