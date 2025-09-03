@@ -59,6 +59,66 @@ class ChatBubble extends StatelessWidget {
 ```
 - A11y: role별 Semantics 분리, 인용은 Chips로 음성 대체 텍스트 포함
 
+## Micro Components (신규 제안)
+- ProgressInline
+  - 파일: `lib/ui/components/progress_inline.dart`(제안)
+  - 시그니처:
+```dart
+class ProgressInline extends StatelessWidget {
+  final int current;
+  final int total;
+  final bool showBar; // 텍스트만 or LinearProgress 포함
+  const ProgressInline({super.key, required this.current, required this.total, this.showBar=false});
+}
+```
+- TypingIndicator
+  - 파일: `lib/ui/components/typing_indicator.dart`(제안)
+  - 시그니처:
+```dart
+class TypingIndicator extends StatelessWidget {
+  final bool active; // bot 타이핑 중 여부
+  const TypingIndicator({super.key, this.active=true});
+}
+```
+- ErrorBubble
+  - 파일: `lib/ui/components/error_bubble.dart`(제안)
+  - 시그니처:
+```dart
+class ErrorBubble extends StatelessWidget {
+  final String message;
+  final VoidCallback? onRetry;
+  const ErrorBubble({super.key, required this.message, this.onRetry});
+}
+```
+- SummaryToggle
+  - 파일: `lib/ui/components/summary_toggle.dart`(제안)
+  - 시그니처:
+```dart
+class SummaryToggle extends StatelessWidget {
+  final bool expanded;
+  final ValueChanged<bool> onChanged;
+  const SummaryToggle({super.key, required this.expanded, required this.onChanged});
+}
+```
+- AdSlot
+  - 파일: `lib/ui/components/ad_slot.dart`(제안)
+  - 시그니처:
+```dart
+enum AdPlacement { resultBottom, chatBottom }
+class AdSlot extends StatelessWidget {
+  final AdPlacement placement;
+  final bool visible; // optional 노출
+  const AdSlot({super.key, required this.placement, this.visible=true});
+}
+```
+
+### Keys(테스트 식별자) — Micro
+- ProgressInline: `Key('ProgressInline.Text')`, `Key('ProgressInline.Bar')`
+- TypingIndicator: `Key('TypingIndicator')`
+- ErrorBubble: `Key('ErrorBubble')`, `Key('ErrorBubble.Retry')`
+- SummaryToggle: `Key('SummaryToggle')`
+- AdSlot: `Key('AdSlot.Result')`, `Key('AdSlot.Chat')`
+
 ## Buttons/Chips
 - ElevatedButton/OutlinedButton/TextButton을 사용, 스타일은 Theme에서 일괄 지정
 - ChoiceChip: 선택/비선택 대비 확보, 최소 폭 44dp
@@ -70,4 +130,3 @@ class ChatBubble extends StatelessWidget {
 - ResultCard: `Key('ResultCard.TLDR')`, `Key('ResultCard.Reasons')`, `Key('ResultCard.Next')`
 - IntakeQuestion: `Key('Intake.$qid')`, 옵션 `Key('Intake.$qid.$value')`
 - ChatBubble: `Key('Chat.$role')`, 인용 `Key('Chat.Citation.$index')`
-

@@ -8,6 +8,13 @@ tokens:
   typography: [display, headline, title, body, label]
 
 screens:
+  shell:
+    bottom_tabs:
+      - { key: start, label: "시작", icon: play_circle }
+      - { key: checklist, label: "체크리스트", icon: checklist }
+      - { key: history, label: "히스토리", icon: history }
+      - { key: settings, label: "설정", icon: settings }
+
   home:
     frame: { platform: mobile, size: "360x800" }
     appbar: { title: "전세자금대출 도우미", actions: [help] }
@@ -48,7 +55,7 @@ screens:
           - "임대인 등기부등본/계약서 사본"
           - "은행 상담 → 심사 → 승인 → 실행"
     ctas: [docs_checklist, howto_verify, estimate_limit]
-    adslot: optional
+    adslot: { placement: resultBottom, optional: true }
 
   result_info_lack:
     frame: { platform: mobile, size: "360x800" }
@@ -63,6 +70,7 @@ screens:
           - "보증금: 계약서 확인"
           - "근저당: 등기부등본"
     cta_primary: retry_after_verify
+    adslot: { placement: resultBottom, optional: true }
 
   result_disqualifier:
     frame: { platform: mobile, size: "360x800" }
@@ -74,19 +82,21 @@ screens:
         reasons: ["무주택 요건 불충족", "보증금 한도 초과"]
         next: ["조건 변경(보증금 조정) 또는 타 기관 검토"]
     cta_secondary: similar_cases
+    adslot: { placement: resultBottom, optional: true }
 
   chat:
     frame: { platform: mobile, size: "360x800" }
     history:
       - { role: bot, hasCitations: true }
       - { role: user }
+    progress_inline: { current: 3, total: 12 }
+    typing_indicator: true
     composer:
       input: { placeholder: "질문을 입력하세요…" }
       suggestions: [estimate_limit, docs_guide, glossary]
-    adslot: optional
+    adslot: { placement: chatBottom, optional: true }
 
 events:  # MEASUREMENT_PLAN과 1:1 매핑
   intake_answer: { qid: A1 }
   ruling_shown: { status: not_possible_info }
   qna_ask: { topic: docs }
-

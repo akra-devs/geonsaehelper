@@ -16,13 +16,13 @@
 - 후속 대화: Spring AI 기반 API 연동(서버 측 생성/검색)으로 답변. 앱은 대화 UI/상태·이벤트·근거 표시 담당.
 
 ## IA & 네비게이션
-- 홈(Home)
-- 대화(Conversation) — 기본 진입점
-- 히스토리(History)
-- 체크리스트(DocsChecklist)
-- 설정(Settings)
+- 하단 탭(권장 4-탭):
+  - 시작(Start): 대화(Conversation) — 기본 진입점(온보딩 간단 조사 → 본판정 → 결과 → Q&A)
+  - 체크리스트(DocsChecklist)
+  - 히스토리(History)
+  - 설정(Settings)
 
-하단 탭 미사용. 상단 AppBar 액션(History/Help/Settings) + 화면 내 CTA로 이동.
+탭 외 이동: 상단 AppBar 액션(Help 등) + 결과/챗 내 CTA로 세부 화면 이동.
 
 ## 화면 설계
 
@@ -83,6 +83,8 @@
 - ResultCard: status/tldr/reasons/nextSteps/lastVerified(onExpand)
 - ProgressInline: Text(“x/y”), LinearProgress(optional)
 - AdSlot: ‘광고’ 라벨 + 시각적 구분, 전면/팝업 금지
+
+세부 컴포넌트 트리/프롭/상태는 SCREEN_SPECS.md 참조.
 
 ## 디자인 원칙/토큰
 - 색상: Material3 ColorScheme(seed #3B6EF5), 성공/경고/오류 시맨틱 사용
