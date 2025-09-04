@@ -62,21 +62,16 @@ class ResultCard extends StatelessWidget {
       label: 'ResultCard',
       child: Card(
         key: const Key('ResultCard.Container'),
-        elevation: 2,
+        elevation: 0,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(corners.md)),
         child: Container(
           width: double.infinity,
           padding: EdgeInsets.all(spacing.x4),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withOpacity(0.96),
-              ],
-            ),
+            color: Theme.of(context).colorScheme.surface,
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(corners.md),
           ),
           child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,7 +120,7 @@ class ResultCard extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(_reasonIcon(r.kind), size: 18, color: color),
+                        Icon(_reasonIcon(r.kind), size: 14, color: color),
                         SizedBox(width: spacing.x2),
                         Expanded(child: Text(r.text, style: Theme.of(context).textTheme.bodyMedium)),
                       ],
@@ -148,7 +143,7 @@ class ResultCard extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.chevron_right, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          Icon(Icons.chevron_right, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           SizedBox(width: spacing.x1),
                           Expanded(child: Text(s)),
                         ],
