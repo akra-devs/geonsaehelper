@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'ui/theme/app_theme.dart';
-import 'features/shell/ui/app_shell.dart';
 import 'features/splash/ui/splash_page.dart';
 import 'features/conversation/data/chat_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

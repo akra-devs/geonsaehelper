@@ -22,10 +22,12 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+    // Initialize with fallback config immediately to avoid uninitialized controller.
+    _initAnim(_config);
+    // Load external config asynchronously; update labels/assets when ready.
     SplashConfig.load().then((cfg) {
       if (!mounted) return;
       setState(() => _config = cfg);
-      _initAnim(cfg);
     });
   }
 
@@ -41,7 +43,8 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     _ctrl.forward();
     _ctrl.addStatusListener((s) {
       if (s == AnimationStatus.completed) {
-        Future.delayed(Duration(milliseconds: cfg.nextDelayMs), () {
+        final delayMs = _config.nextDelayMs;
+        Future.delayed(Duration(milliseconds: delayMs), () {
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
