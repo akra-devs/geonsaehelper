@@ -2,38 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/analytics/analytics.dart';
-import '../../../ui/components/result_card.dart';
-import '../../../ui/components/intake_question.dart';
+import '../../conversation/domain/models.dart';
 
 enum ConversationPhase { survey, intake, qna }
 
-@immutable
-class ConversationQuestion {
-  final String qid;
-  final String label;
-  final List<Choice> choices;
-  final int index;
-  final int total;
-  final bool isSurvey;
-  const ConversationQuestion({
-    required this.qid,
-    required this.label,
-    required this.choices,
-    required this.index,
-    required this.total,
-    required this.isSurvey,
-  });
-}
-
-@immutable
-class ConversationResult {
-  final RulingStatus status;
-  final String tldr;
-  final List<ReasonItem> reasons;
-  final List<String> nextSteps;
-  final String lastVerified;
-  const ConversationResult(this.status, this.tldr, this.reasons, this.nextSteps, this.lastVerified);
-}
+// ConversationQuestion and ConversationResult moved to domain models.
 
 @immutable
 class ConversationState {
@@ -129,7 +102,7 @@ class ConversationCubit extends Cubit<ConversationState> {
         .map((e) => e.key)
         .toList();
     if (unknowns.isNotEmpty) {
-      final reasons = unknowns.map((qid) => ReasonItem(Icons.help_outline, _unknownLabel(qid), '확인불가')).toList();
+      final reasons = unknowns.map((qid) => Reason(_unknownLabel(qid), ReasonKind.unknown)).toList();
       _emitResult(ConversationResult(
         RulingStatus.notPossibleInfo,
         '다음 정보가 없어 판정 불가입니다.',
@@ -143,11 +116,11 @@ class ConversationCubit extends Cubit<ConversationState> {
     // Disqualifier: A1 == 1주택
     if (_answers['A1'] == 'onehome') {
       _emitResult(
-        const ConversationResult(
+        ConversationResult(
           RulingStatus.notPossibleDisq,
           '아래 결격 사유로 신청이 불가합니다.',
-          [ReasonItem(Icons.cancel, '무주택 요건 불충족', '미충족')],
-          ['조건 변경(보증금 조정) 또는 타 기관 검토'],
+          const [Reason('무주택 요건 불충족', ReasonKind.unmet)],
+          const ['조건 변경(보증금 조정) 또는 타 기관 검토'],
           '2025-09-02',
         ),
         hasUnknown: false,
@@ -159,11 +132,11 @@ class ConversationCubit extends Cubit<ConversationState> {
     // Disqualifier: 중대한 신용 문제(A7)
     if (_answers['A7'] == 'credit_severe') {
       _emitResult(
-        const ConversationResult(
+        ConversationResult(
           RulingStatus.notPossibleDisq,
           '아래 결격 사유로 신청이 불가합니다.',
-          [ReasonItem(Icons.cancel, '중대한 신용 문제(장기연체/회생/파산/면책)', '미충족')],
-          ['신용 상태 확인 후 재시도 또는 타 상품 검토'],
+          const [Reason('중대한 신용 문제(장기연체/회생/파산/면책)', ReasonKind.unmet)],
+          const ['신용 상태 확인 후 재시도 또는 타 상품 검토'],
           '2025-09-02',
         ),
         hasUnknown: false,
@@ -173,22 +146,22 @@ class ConversationCubit extends Cubit<ConversationState> {
     }
 
     // Otherwise, possible
-    final reasons = <ReasonItem>[
-      const ReasonItem(Icons.check_circle, '가구/세대: (충족)', '충족'),
-      if (_answers.containsKey('A3')) const ReasonItem(Icons.check_circle, '소득 형태: (충족)', '충족'),
-      if (_answers.containsKey('A4')) const ReasonItem(Icons.check_circle, '소득 구간: (충족)', '충족'),
-      if (_answers.containsKey('P1')) const ReasonItem(Icons.check_circle, '주택 유형: (충족)', '충족'),
-      if (_answers.containsKey('P2')) const ReasonItem(Icons.check_circle, '전용면적: (충족)', '충족'),
-      if (_answers.containsKey('P3')) const ReasonItem(Icons.check_circle, '지역: (충족)', '충족'),
-      if (_answers.containsKey('P4')) const ReasonItem(Icons.check_circle, '보증금: (충족)', '충족'),
-      if (_answers['P7'] == 'encumbrance_yes') const ReasonItem(Icons.warning_amber, '근저당 있음 → 등기 확인 필요', '주의'),
+    final reasons = <Reason>[
+      const Reason('가구/세대: (충족)', ReasonKind.met),
+      if (_answers.containsKey('A3')) const Reason('소득 형태: (충족)', ReasonKind.met),
+      if (_answers.containsKey('A4')) const Reason('소득 구간: (충족)', ReasonKind.met),
+      if (_answers.containsKey('P1')) const Reason('주택 유형: (충족)', ReasonKind.met),
+      if (_answers.containsKey('P2')) const Reason('전용면적: (충족)', ReasonKind.met),
+      if (_answers.containsKey('P3')) const Reason('지역: (충족)', ReasonKind.met),
+      if (_answers.containsKey('P4')) const Reason('보증금: (충족)', ReasonKind.met),
+      if (_answers['P7'] == 'encumbrance_yes') const Reason('근저당 있음 → 등기 확인 필요', ReasonKind.warning),
     ];
     _emitResult(
-      const ConversationResult(
+      ConversationResult(
         RulingStatus.possible,
         '예비판정 결과, ‘해당’합니다. 체크리스트를 확인하세요.',
-        [], // reasons replaced below to keep const
-        ['신분증·가족/혼인관계·소득 증빙 준비', '임대인 등기부등본/계약서 사본', '은행 상담 → 심사 → 승인 → 실행'],
+        const [], // reasons replaced below to keep const
+        const ['신분증·가족/혼인관계·소득 증빙 준비', '임대인 등기부등본/계약서 사본', '은행 상담 → 심사 → 승인 → 실행'],
         '2025-09-02',
       ),
       hasUnknown: false,
@@ -198,7 +171,7 @@ class ConversationCubit extends Cubit<ConversationState> {
   }
 
   void _emitResult(ConversationResult result,
-      {required bool hasUnknown, required String statusKey, List<ReasonItem>? overrideReasons}) {
+      {required bool hasUnknown, required String statusKey, List<Reason>? overrideReasons}) {
     final intakeDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
     Analytics.instance.intakeComplete(_flow.length, intakeDuration, hasUnknown, statusKey);
     Analytics.instance.rulingShown(statusKey);
@@ -440,4 +413,3 @@ class _Q {
   final List<Choice> choices;
   const _Q({required this.qid, required this.label, required this.choices});
 }
-
