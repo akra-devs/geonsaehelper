@@ -52,7 +52,30 @@
 전환 효과
 - 현재는 페이드 전환(FadeTransition). 필요 시 `SplashPage`의 `PageRouteBuilder`에서 전환 효과 변경 가능.
 
-주의
-- 첫 프레임(네이티브 스플래시)이 필요할 경우 `flutter_native_splash` 패키지로 네이티브 런치 스크린을 구성하고, 본 애니메이션은 그 뒤에 표시하는 것을 권장합니다.
-- 웹 배포 시 Lottie JSON은 동일 경로로 번들되며, 상대 경로가 유효해야 합니다.
+네이티브 스플래시(첫 프레임) 추가 — flutter_native_splash
+1) 설정(pubspec.yaml)
+   ```yaml
+   dev_dependencies:
+     flutter_native_splash: ^2.4.1
 
+   flutter_native_splash:
+     color: "#FFFFFF"
+     color_dark: "#0B0C0F"
+     android: true
+     ios: true
+     web: true
+     # Desktop은 필요 시 추가
+     android_12:
+       color: "#FFFFFF"
+       color_dark: "#0B0C0F"
+   ```
+2) 실행
+   - `flutter pub get`
+   - `dart run flutter_native_splash:create`
+3) 결과
+   - Android/iOS/웹에 초기 빈 화면(색상) 스플래시 적용 → Flutter 위젯 트리 준비 동안 공백화면 방지
+   - 앱 진입 후, 이 문서의 Animated SplashPage가 이어서 표시됨
+
+주의
+- Android/iOS의 생성된 이미지 파일(PNG)은 환경에 따라 Git에 바로 커밋되지 않을 수 있습니다(권한/보안 이슈). 생성 스텝은 로컬에서 재실행 가능합니다.
+- 웹 배포 시 Lottie JSON은 동일 경로로 번들되며, 상대 경로가 유효해야 합니다.
