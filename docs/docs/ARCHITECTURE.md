@@ -121,3 +121,54 @@ return RepositoryProvider<ChatRepository>(
   child: MaterialApp(/* ... */),
 );
 ```
+
+### Freezed 사용 가이드(권장 패턴)
+- 언제 쓰나: 합타입(State)·불변 값 객체·JSON 직렬화가 필요한 경우.
+- 어디에 쓰나: bloc(state union), data(API/DTO), 필요 시 domain(값 동등성/`copyWith` 필요할 때).
+- 주의: domain은 Flutter/Material 의존 금지. Freezed는 코드 생성 도구일 뿐 도메인 경계를 흐리지 않음.
+
+```dart
+// bloc/state (union 예시)
+part 'chat_cubit.freezed.dart';
+@freezed
+class ChatState with _$ChatState {
+  const factory ChatState.idle() = _Idle;
+  const factory ChatState.loading() = _Loading;
+  const factory ChatState.success(BotReply reply) = _Success;
+  const factory ChatState.error(String message) = _Error;
+}
+
+// data/json (API 모델 예시)
+part 'chat_models.freezed.dart';
+part 'chat_models.g.dart';
+@freezed
+class BotReply with _$BotReply {
+  const factory BotReply({
+    required String content,
+    @Default(<ChatCitation>[]) List<ChatCitation> citations,
+    required String lastVerified,
+  }) = _BotReply;
+  factory BotReply.fromJson(Map<String, dynamic> json) => _$BotReplyFromJson(json);
+}
+
+// domain(선택): 값 동등성/사본 필요 시
+part 'models.freezed.dart';
+@freezed
+class Reason with _$Reason {
+  const factory Reason({required String text, required ReasonKind kind}) = _Reason;
+}
+@freezed
+class ConversationResult with _$ConversationResult {
+  const factory ConversationResult({
+    required RulingStatus status,
+    required String tldr,
+    @Default(<Reason>[]) List<Reason> reasons,
+    @Default(<String>[]) List<String> nextSteps,
+    required String lastVerified,
+  }) = _ConversationResult;
+}
+```
+
+코드 생성
+- 명령: `dart run build_runner build --delete-conflicting-outputs`
+- 생성물: `*.freezed.dart`, `*.g.dart`는 커밋 대상이며 수동 수정 금지.
