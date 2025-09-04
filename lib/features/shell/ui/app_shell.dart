@@ -99,7 +99,7 @@ class _ChecklistPageState extends State<_ChecklistPage> {
             SizedBox(height: spacing.x2),
           ],
         ],
-      ),
+      )),
     );
   }
 }
@@ -148,7 +148,7 @@ class _HistoryPage extends StatelessWidget {
         children: const [
           _EmptyHint(text: '최근 판정/대화가 여기에 표시됩니다.'),
         ],
-      ),
+      )),
     );
   }
 }
@@ -183,6 +183,24 @@ class _EmptyHint extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
           textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
+
+class _CenteredBody extends StatelessWidget {
+  final Widget child;
+  const _CenteredBody({required this.child});
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 820),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: context.spacing.x4),
+          child: child,
         ),
       ),
     );

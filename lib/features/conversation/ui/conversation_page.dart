@@ -387,7 +387,7 @@ class _ConversationPageState extends State<ConversationPage> {
                       enabled: !_awaitingChoice,
                     ),
                   ],
-                ),
+                )),
               ),
             ),
           );
