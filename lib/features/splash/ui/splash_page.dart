@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lottie/lottie.dart';
 import '../../../ui/theme/app_theme.dart';
 import '../../shell/ui/app_shell.dart';
+import '../domain/splash_config.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -14,11 +17,20 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   late final Animation<double> _fadeIn;
   late final Animation<double> _scaleUp;
   late final Animation<double> _slideUp;
+  SplashConfig _config = SplashConfig.fallback;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
+    SplashConfig.load().then((cfg) {
+      if (!mounted) return;
+      setState(() => _config = cfg);
+      _initAnim(cfg);
+    });
+  }
+
+  void _initAnim(SplashConfig cfg) {
+    _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: cfg.durationMs));
     _fadeIn = CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.5, curve: Curves.easeOut));
     _scaleUp = Tween<double>(begin: 0.86, end: 1.0).animate(
       CurvedAnimation(parent: _ctrl, curve: const Interval(0.15, 0.75, curve: Curves.easeOutBack)),
@@ -29,7 +41,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     _ctrl.forward();
     _ctrl.addStatusListener((s) {
       if (s == AnimationStatus.completed) {
-        Future.delayed(const Duration(milliseconds: 250), () {
+        Future.delayed(Duration(milliseconds: cfg.nextDelayMs), () {
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
@@ -73,12 +85,12 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo mark: chat bubble + home glyph with gentle motion
+                    // Logo/animation
                     Transform.translate(
                       offset: Offset(0, _slideUp.value),
                       child: Transform.scale(
                         scale: _scaleUp.value,
-                        child: _LogoMark(opacity: _fadeIn.value),
+                        child: _AnimatedMark(opacity: _fadeIn.value, config: _config),
                       ),
                     ),
                     SizedBox(height: spacing.x3),
@@ -86,9 +98,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                       opacity: _fadeIn.value,
                       child: Column(
                         children: [
-                          Text('전세자금대출 도우미', style: titleStyle, textAlign: TextAlign.center),
+                          Text(_config.title, style: titleStyle, textAlign: TextAlign.center),
                           SizedBox(height: spacing.x1),
-                          Text('HUG 예비판정 · 내부 근거 Q&A', style: subStyle, textAlign: TextAlign.center),
+                          Text(_config.subtitle, style: subStyle, textAlign: TextAlign.center),
                         ],
                       ),
                     ),
@@ -103,15 +115,18 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   }
 }
 
-class _LogoMark extends StatelessWidget {
+class _AnimatedMark extends StatelessWidget {
   final double opacity;
-  const _LogoMark({required this.opacity});
+  final SplashConfig config;
+  const _AnimatedMark({required this.opacity, required this.config});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final spacing = context.spacing;
-    final size = 96.0;
+    final size = 112.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final asset = isDark ? config.animation.darkAsset : config.animation.lightAsset;
 
     return Semantics(
       label: '앱 로고',
@@ -134,20 +149,8 @@ class _LogoMark extends StatelessWidget {
               ),
             ),
           ),
-          // chat bubble circle
-          _Pill(
-            w: size,
-            h: size * 0.68,
-            color: cs.primaryContainer,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.chat_bubble_rounded, color: cs.onPrimaryContainer),
-                SizedBox(width: spacing.x1),
-                Icon(Icons.home_rounded, color: cs.onPrimaryContainer),
-              ],
-            ),
-          ),
+          // animation content
+          _contentByType(config.animation.type, asset, cs, spacing, size),
           // floating dot accents
           Positioned(
             right: -8,
@@ -171,6 +174,39 @@ class _LogoMark extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _contentByType(SplashAnimationType type, String asset, ColorScheme cs, dynamic spacing, double size) {
+    switch (type) {
+      case SplashAnimationType.lottie:
+        return SizedBox(
+          width: size,
+          height: size,
+          child: Lottie.asset(asset, fit: BoxFit.contain, repeat: true),
+        );
+      case SplashAnimationType.svg:
+        return _Pill(
+          w: size,
+          h: size * 0.68,
+          color: cs.primaryContainer,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(asset, width: size * 0.44, colorFilter: ColorFilter.mode(cs.onPrimaryContainer, BlendMode.srcIn)),
+            ],
+          ),
+        );
+      case SplashAnimationType.image:
+        return _Pill(
+          w: size,
+          h: size * 0.68,
+          color: cs.primaryContainer,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(size * 0.34),
+            child: Image.asset(asset, width: size * 0.56, height: size * 0.56, fit: BoxFit.contain),
+          ),
+        );
+    }
   }
 }
 
@@ -211,4 +247,3 @@ class _Dot extends StatelessWidget {
     );
   }
 }
-

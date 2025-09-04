@@ -1,0 +1,12 @@
+{
+  "durationMs": 1200,
+  "nextDelayMs": 250,
+  "title": "전세자금대출 도우미",
+  "subtitle": "HUG 예비판정 · 내부 근거 Q&A",
+  "animation": {
+    "type": "svg",
+    "lightAsset": "assets/splash/logo.svg",
+    "darkAsset": "assets/splash/logo.svg"
+  }
+}
+
