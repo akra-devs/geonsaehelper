@@ -89,7 +89,7 @@ ThemeData buildAppTheme(Brightness brightness) {
       padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 8),
       side: BorderSide(color: scheme.outlineVariant),
       selectedColor: scheme.primaryContainer,
-      backgroundColor: scheme.surfaceVariant,
+      backgroundColor: scheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       showCheckmark: false,
     ),

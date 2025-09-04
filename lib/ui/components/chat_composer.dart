@@ -37,7 +37,7 @@ class ChatComposer extends StatelessWidget {
                   hintText: enabled ? '질문을 입력하세요…' : '선택지에서 답변해 주세요',
                   isDense: true,
                   filled: true,
-                  fillColor: cs.surfaceVariant,
+                  fillColor: cs.surfaceContainerHighest,
                   contentPadding: EdgeInsets.symmetric(horizontal: spacing.x3, vertical: spacing.x2),
                   border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
                 ),
@@ -51,7 +51,7 @@ class ChatComposer extends StatelessWidget {
             duration: const Duration(milliseconds: 150),
             curve: Curves.easeOut,
             child: Material(
-              color: enabled ? cs.primaryContainer : cs.surfaceVariant,
+              color: enabled ? cs.primaryContainer : cs.surfaceContainerHighest,
               elevation: enabled ? 2 : 0,
               shape: const CircleBorder(),
               child: IconButton(

@@ -105,6 +105,8 @@ class ResultCard extends StatelessWidget {
               tldr,
               key: const Key('ResultCard.TLDR'),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             SizedBox(height: spacing.x3),
             if (reasons.isNotEmpty) ...[
@@ -200,7 +202,7 @@ class _LastVerifiedBadge extends StatelessWidget {
         Container(
           padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
           decoration: BoxDecoration(
-            color: cs.surfaceVariant,
+            color: cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(

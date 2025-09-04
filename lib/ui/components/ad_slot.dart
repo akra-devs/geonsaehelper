@@ -18,7 +18,7 @@ class AdSlot extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text('광고', style: TextStyle(fontSize: 10)),
@@ -32,7 +32,7 @@ class AdSlot extends StatelessWidget {
           height: 72,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceVariant,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
           ),
         ),
