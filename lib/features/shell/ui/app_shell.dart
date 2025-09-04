@@ -77,8 +77,8 @@ class _ChecklistPageState extends State<_ChecklistPage> {
     final done = _sections.values.fold<int>(0, (p, e) => p + e.where((i) => i.done).length);
     return Scaffold(
       appBar: AppBar(title: const Text('서류 체크리스트')),
-      body: ListView(
-        padding: EdgeInsets.all(spacing.x4),
+      body: _CenteredBody(child: ListView(
+        padding: EdgeInsets.symmetric(vertical: spacing.x4),
         children: [
           // Overall progress
           Text('진행 현황', style: Theme.of(context).textTheme.titleMedium),
@@ -143,8 +143,8 @@ class _HistoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('히스토리')),
-      body: ListView(
-        padding: EdgeInsets.all(context.spacing.x4),
+      body: _CenteredBody(child: ListView(
+        padding: EdgeInsets.symmetric(vertical: context.spacing.x4),
         children: const [
           _EmptyHint(text: '최근 판정/대화가 여기에 표시됩니다.'),
         ],
@@ -160,7 +160,7 @@ class _SettingsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('설정')),
       body: ListView(
-        padding: EdgeInsets.all(context.spacing.x4),
+        padding: EdgeInsets.symmetric(vertical: context.spacing.x4),
         children: const [
           _EmptyHint(text: '테마/데이터/고지 설정이 여기에 표시됩니다.'),
         ],

@@ -266,12 +266,12 @@ class _ConversationPageState extends State<ConversationPage> {
             child: Scaffold(
               appBar: AppBar(title: const Text('대화형 예비판정')),
               body: SafeArea(
-                child: Column(
+                child: _CenteredContent(child: Column(
                   children: [
                     Expanded(
                       child: ListView.builder(
                         controller: _scroll,
-                        padding: EdgeInsets.all(spacing.x4),
+                        padding: EdgeInsets.only(top: spacing.x4, bottom: spacing.x4),
                         itemCount: _rows.length,
                         itemBuilder: (context, index) {
                           final row = _rows[index];
@@ -407,6 +407,26 @@ class _ConversationPageState extends State<ConversationPage> {
 
 // UI no longer declares a _Question; ConversationCubit provides question data.
 
+
+
+class _CenteredContent extends StatelessWidget {
+  final Widget child;
+  const _CenteredContent({required this.child});
+  @override
+  Widget build(BuildContext context) {
+    final spacing = context.spacing;
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 820),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: spacing.x4),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
 enum _RowType { botText, userText, intake, result, botRich, ad, suggestions }
 
 class _Row {
