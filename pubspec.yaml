@@ -41,6 +41,7 @@ dependencies:
   # Immutable models and unions
   freezed: ^2.5.7
   freezed_annotation: ^2.4.4
+  meta: ^1.12.0
   
   # JSON serialization
   json_annotation: ^4.9.0
