@@ -1,19 +1,11 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-
-enum RulingStatus { possible, notPossibleInfo, notPossibleDisq }
-
-class ReasonItem {
-  final IconData icon;
-  final String text;
-  final String type; // e.g., '충족' | '미충족' | '확인불가'
-  const ReasonItem(this.icon, this.text, this.type);
-}
+import '../../features/conversation/domain/models.dart' as domain;
 
 class ResultCard extends StatelessWidget {
-  final RulingStatus status;
+  final domain.RulingStatus status;
   final String tldr;
-  final List<ReasonItem> reasons;
+  final List<domain.Reason> reasons;
   final List<String> nextSteps;
   final String lastVerified; // YYYY-MM-DD
   final VoidCallback? onExpand;
@@ -31,33 +23,33 @@ class ResultCard extends StatelessWidget {
   Color _statusColor(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     switch (status) {
-      case RulingStatus.possible:
+      case domain.RulingStatus.possible:
         return cs.primary;
-      case RulingStatus.notPossibleInfo:
+      case domain.RulingStatus.notPossibleInfo:
         return cs.tertiary;
-      case RulingStatus.notPossibleDisq:
+      case domain.RulingStatus.notPossibleDisq:
         return cs.error;
     }
   }
 
   IconData _statusIcon() {
     switch (status) {
-      case RulingStatus.possible:
+      case domain.RulingStatus.possible:
         return Icons.check_circle;
-      case RulingStatus.notPossibleInfo:
+      case domain.RulingStatus.notPossibleInfo:
         return Icons.info;
-      case RulingStatus.notPossibleDisq:
+      case domain.RulingStatus.notPossibleDisq:
         return Icons.error;
     }
   }
 
   String _statusLabel() {
     switch (status) {
-      case RulingStatus.possible:
+      case domain.RulingStatus.possible:
         return '가능';
-      case RulingStatus.notPossibleInfo:
+      case domain.RulingStatus.notPossibleInfo:
         return '불가(정보 부족)';
-      case RulingStatus.notPossibleDisq:
+      case domain.RulingStatus.notPossibleDisq:
         return '불가(결격)';
     }
   }
@@ -127,13 +119,13 @@ class ResultCard extends StatelessWidget {
                 key: const Key('ResultCard.Reasons'),
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: reasons.map((r) {
-                  final color = _reasonColor(context, r.type);
+                  final color = _reasonColor(context, r.kind);
                   return Padding(
                     padding: EdgeInsets.only(bottom: spacing.x2),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(r.icon, size: 18, color: color),
+                        Icon(_reasonIcon(r.kind), size: 18, color: color),
                         SizedBox(width: spacing.x2),
                         Expanded(child: Text(r.text, style: Theme.of(context).textTheme.bodyMedium)),
                       ],
@@ -172,18 +164,29 @@ class ResultCard extends StatelessWidget {
     );
   }
 
-  Color _reasonColor(BuildContext context, String type) {
+  Color _reasonColor(BuildContext context, domain.ReasonKind kind) {
     final cs = Theme.of(context).colorScheme;
-    switch (type) {
-      case '충족':
+    switch (kind) {
+      case domain.ReasonKind.met:
         return cs.primary;
-      case '미충족':
+      case domain.ReasonKind.unmet:
         return cs.error;
-      case '확인불가':
-      case '주의':
+      case domain.ReasonKind.unknown:
+      case domain.ReasonKind.warning:
         return cs.tertiary;
-      default:
-        return cs.onSurfaceVariant;
+    }
+  }
+
+  IconData _reasonIcon(domain.ReasonKind kind) {
+    switch (kind) {
+      case domain.ReasonKind.met:
+        return Icons.check_circle;
+      case domain.ReasonKind.unmet:
+        return Icons.cancel;
+      case domain.ReasonKind.warning:
+        return Icons.warning_amber;
+      case domain.ReasonKind.unknown:
+        return Icons.help_outline;
     }
   }
 }
