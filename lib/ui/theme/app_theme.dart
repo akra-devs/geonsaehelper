@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 @immutable
 class Spacing extends ThemeExtension<Spacing> {
@@ -52,12 +53,13 @@ ThemeData buildAppTheme(Brightness brightness) {
   );
   final base = ThemeData(colorScheme: scheme, useMaterial3: true);
   final corners = const Corners();
+  final interText = GoogleFonts.interTextTheme(base.textTheme);
   return base.copyWith(
-    textTheme: base.textTheme.copyWith(
+    textTheme: interText.copyWith(
       titleLarge: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
       titleMedium: base.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-      bodyMedium: base.textTheme.bodyMedium?.copyWith(height: 1.5),
-      labelLarge: base.textTheme.labelLarge?.copyWith(letterSpacing: 0.15),
+      bodyMedium: interText.bodyMedium?.copyWith(height: 1.5),
+      labelLarge: interText.labelLarge?.copyWith(letterSpacing: 0.15),
     ),
     appBarTheme: base.appBarTheme.copyWith(
       centerTitle: true,
