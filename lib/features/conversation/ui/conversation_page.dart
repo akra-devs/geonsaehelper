@@ -441,7 +441,7 @@ class _Row {
   final String? text;
   final String? qid;
   final String? label;
-  final List<Choice>? choices;
+  final List<domain.Choice>? choices;
   final ResultCard? resultCard;
   final Widget? richWidget;
   final Widget? adWidget;
