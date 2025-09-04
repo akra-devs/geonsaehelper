@@ -79,7 +79,7 @@ ThemeData buildAppTheme(Brightness brightness) {
     ),
     navigationBarTheme: base.navigationBarTheme.copyWith(
       height: 64,
-      indicatorColor: scheme.primaryContainer.withOpacity(0.6),
+      indicatorColor: scheme.primaryContainer.withAlpha(153),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       backgroundColor: scheme.surface,
       surfaceTintColor: Colors.transparent,

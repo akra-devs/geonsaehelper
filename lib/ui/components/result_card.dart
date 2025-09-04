@@ -81,7 +81,7 @@ class ResultCard extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
                   decoration: BoxDecoration(
-                    color: _statusColor(context).withOpacity(0.12),
+                    color: _statusColor(context).withAlpha(31),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(

@@ -20,7 +20,7 @@ class ChatComposer extends StatelessWidget {
         child: Container(
       padding: EdgeInsets.fromLTRB(spacing.x4, spacing.x2, spacing.x4, spacing.x2),
       decoration: BoxDecoration(
-        color: cs.surface.withOpacity(0.7),
+        color: cs.surface.withAlpha(178),
         border: Border(top: BorderSide(color: cs.outlineVariant)),
       ),
       child: Row(
@@ -28,7 +28,7 @@ class ChatComposer extends StatelessWidget {
           Expanded(
             child: Material(
               elevation: 0,
-              color: cs.surface.withOpacity(0.7),
+              color: cs.surface.withAlpha(178),
               borderRadius: radius,
               child: TextField(
                 controller: controller,

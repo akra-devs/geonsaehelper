@@ -77,7 +77,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [cs.surface, cs.surface.withOpacity(0.98), cs.surface],
+            colors: [cs.surface, cs.surface.withAlpha(250), cs.surface],
           ),
         ),
         child: SafeArea(
@@ -147,7 +147,7 @@ class _AnimatedMark extends StatelessWidget {
                 color: cs.primary,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
-                  BoxShadow(color: cs.primary.withOpacity(0.15), blurRadius: 24, spreadRadius: 4),
+                  BoxShadow(color: cs.primary.withAlpha(38), blurRadius: 24, spreadRadius: 4),
                 ],
               ),
             ),
