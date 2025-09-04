@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-
-class Choice {
-  final String value;
-  final String text;
-  final IconData? icon;
-  const Choice({required this.value, required this.text, this.icon});
-}
+import '../../features/conversation/domain/models.dart' as domain;
 
 class IntakeQuestion extends StatelessWidget {
   final String qid; // e.g., A1..S1
   final String label;
-  final List<Choice> options; // value, text, optional icon
+  final List<domain.Choice> options; // value, text
   final String? selected; // selected value
   final bool showUnknown; // show "모름"
   final ValueChanged<String?> onChanged;
@@ -33,10 +27,9 @@ class IntakeQuestion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacing;
-    final allOptions = [
+    final allOptions = <domain.Choice>[
       ...options,
-      if (showUnknown)
-        const Choice(value: '__unknown__', text: '모름'),
+      if (showUnknown) const domain.Choice(value: '__unknown__', text: '모름'),
     ];
     return Semantics(
       label: 'IntakeQuestion $qid',
@@ -55,10 +48,6 @@ class IntakeQuestion extends StatelessWidget {
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (c.icon != null) ...[
-                        Icon(c.icon, size: 18),
-                        SizedBox(width: spacing.x1),
-                      ],
                       Text(c.text),
                     ],
                   ),
@@ -83,4 +72,3 @@ class IntakeQuestion extends StatelessWidget {
     );
   }
 }
-
