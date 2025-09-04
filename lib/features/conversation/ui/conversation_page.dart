@@ -8,6 +8,8 @@ import '../../../ui/components/typing_indicator.dart';
 import '../../../ui/components/ad_slot.dart';
 import '../../../common/analytics/analytics.dart';
 import '../../../ui/components/appear.dart';
+import '../../../ui/components/suggestions_panel.dart';
+import '../../../ui/components/chat_composer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../conversation/bloc/chat_cubit.dart';
 import '../../conversation/bloc/conversation_cubit.dart';
@@ -104,9 +106,9 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _showSuggestionsAndAds() {
     _rows.add(_Row.suggestions(const [
-      _Suggestion('한도 추정하기', '한도는 소득/보증금/지역 등에 따라 달라집니다. 내부 기준으로 개요를 안내드릴게요.'),
-      _Suggestion('서류 체크리스트', '기본 서류는 신분증, 가족·혼인관계, 소득 증빙입니다. 발급처와 순서를 안내해요.'),
-      _Suggestion('확인 방법 보기', '세대주/보증금/근저당 확인 방법을 알려드릴게요.'),
+      SuggestionItem('한도 추정하기', '한도는 소득/보증금/지역 등에 따라 달라집니다. 내부 기준으로 개요를 안내드릴게요.'),
+      SuggestionItem('서류 체크리스트', '기본 서류는 신분증, 가족·혼인관계, 소득 증빙입니다. 발급처와 순서를 안내해요.'),
+      SuggestionItem('확인 방법 보기', '세대주/보증금/근저당 확인 방법을 알려드릴게요.'),
     ]));
     _rows.add(_Row.ad(const AdSlot(placement: AdPlacement.resultBottom)));
     setState(() {
@@ -307,25 +309,17 @@ class _ConversationPageState extends State<ConversationPage> {
                         delay: Duration(milliseconds: 50),
                         child: Padding(
                           padding: EdgeInsets.only(bottom: spacing.x3),
-                          child: Wrap(
-                            spacing: spacing.x2,
-                            runSpacing: spacing.x2,
-                            children: [
-                              for (final s in row.suggestions!)
-                                ActionChip(
-                                  avatar: const Icon(Icons.tips_and_updates, size: 18),
-                                  label: Text(s.label),
-                                  onPressed: () {
-                                    _appendUserText(s.label);
-                                    _rows.add(_Row.botRich(ChatBubble(
-                                      role: ChatRole.bot,
-                                      content: s.botReply,
-                                    )));
-                                    Analytics.instance.nextStepClick(s.label);
-                                    setState(() {});
-                                  },
-                                ),
-                            ],
+                          child: SuggestionsPanel(
+                            suggestions: row.suggestions!,
+                            onTap: (s) {
+                              _appendUserText(s.label);
+                              _rows.add(_Row.botRich(ChatBubble(
+                                role: ChatRole.bot,
+                                content: s.botReply,
+                              )));
+                              Analytics.instance.nextStepClick(s.label);
+                              setState(() {});
+                            },
                           ),
                         ),
                       );
@@ -349,7 +343,7 @@ class _ConversationPageState extends State<ConversationPage> {
                 },
               ),
             ),
-            _Composer(
+            ChatComposer(
               controller: _composer,
               onSend: () => _onSend(context),
               enabled: !_awaitingChoice,
@@ -371,66 +365,7 @@ class _ConversationPageState extends State<ConversationPage> {
   // Flows and survey handling are provided by ConversationCubit.
 }
 
-class _Composer extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onSend;
-  final bool enabled;
-  const _Composer({required this.controller, required this.onSend, required this.enabled});
-
-  @override
-  Widget build(BuildContext context) {
-    final spacing = context.spacing;
-    final cs = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(22);
-    return Container(
-      padding: EdgeInsets.fromLTRB(spacing.x3, spacing.x2, spacing.x3, spacing.x2),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border(top: BorderSide(color: cs.outlineVariant)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Material(
-              elevation: enabled ? 2 : 0,
-              color: cs.surface,
-              borderRadius: radius,
-              child: TextField(
-                controller: controller,
-                enabled: enabled,
-                decoration: InputDecoration(
-                  hintText: enabled ? '질문을 입력하세요…' : '선택지에서 답변해 주세요',
-                  isDense: true,
-                  filled: true,
-                  fillColor: cs.surfaceVariant,
-                  contentPadding: EdgeInsets.symmetric(horizontal: spacing.x3, vertical: spacing.x2),
-                  border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
-                ),
-                onSubmitted: (_) => onSend(),
-              ),
-            ),
-          ),
-          SizedBox(width: spacing.x2),
-          AnimatedScale(
-            scale: enabled ? 1.0 : 0.96,
-            duration: const Duration(milliseconds: 150),
-            curve: Curves.easeOut,
-            child: Material(
-              color: enabled ? cs.primary : cs.surfaceVariant,
-              elevation: enabled ? 3 : 0,
-              shape: const CircleBorder(),
-              child: IconButton(
-                onPressed: enabled ? onSend : null,
-                icon: Icon(Icons.send, color: enabled ? cs.onPrimary : cs.onSurfaceVariant),
-                tooltip: '보내기',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// _Composer extracted to ui/components/chat_composer.dart as ChatComposer
 
 // UI no longer declares a _Question; ConversationCubit provides question data.
 
@@ -445,7 +380,7 @@ class _Row {
   final ResultCard? resultCard;
   final Widget? richWidget;
   final Widget? adWidget;
-  final List<_Suggestion>? suggestions;
+  final List<SuggestionItem>? suggestions;
   final int? index;
   final int? total;
   final bool? isSurvey;
@@ -537,10 +472,6 @@ class _Row {
         isSurvey = null;
 }
 
-class _Suggestion {
-  final String label;
-  final String botReply;
-  const _Suggestion(this.label, this.botReply);
-}
+// _Suggestion extracted to ui/components/suggestions_panel.dart as SuggestionItem
 
 // Phase state is tracked in ConversationCubit; no local enum needed here.
