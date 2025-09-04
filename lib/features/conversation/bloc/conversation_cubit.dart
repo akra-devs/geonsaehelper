@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/analytics/analytics.dart';
@@ -55,14 +54,14 @@ class ConversationCubit extends Cubit<ConversationState> {
   void answer(String qid, String value) {
     final phase = state.phase;
     _answers[qid] = value;
-    final list = phase == ConversationPhase.survey ? _surveyFlow : _flow;
+    final list = phase == ConversationPhase.survey ? qf.surveyFlow : qf.intakeFlow;
     if (_step < list.length - 1) {
       _step += 1;
       _emitQuestion(phase: phase, step: _step);
     } else {
       if (phase == ConversationPhase.survey) {
         final surveyDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
-        Analytics.instance.quickSurveyComplete(_surveyFlow.length, surveyDuration);
+        Analytics.instance.quickSurveyComplete(qf.surveyFlow.length, surveyDuration);
         // Transition to intake
         _step = 0;
         _phaseStartedAt = DateTime.now();
@@ -174,7 +173,7 @@ class ConversationCubit extends Cubit<ConversationState> {
   void _emitResult(ConversationResult result,
       {required bool hasUnknown, required String statusKey, List<Reason>? overrideReasons}) {
     final intakeDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
-    Analytics.instance.intakeComplete(_flow.length, intakeDuration, hasUnknown, statusKey);
+    Analytics.instance.intakeComplete(qf.intakeFlow.length, intakeDuration, hasUnknown, statusKey);
     Analytics.instance.rulingShown(statusKey);
     final r = overrideReasons == null
         ? result
