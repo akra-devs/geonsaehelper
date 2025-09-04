@@ -6,7 +6,7 @@ Status: canonical (Information Architecture)
 ## 읽기 순서(권장)
 1) 제품 개요 — PRODUCT_BRIEF.md → PRD_v1.md
 2) 규칙/정책 — RULES_HUG_v1.md, RULES_HUG_mapping.yaml, RAG_POLICY.md
-3) UI/UX — UI_UX_GUIDE.md → APP_SCREEN_PLAN.md → SCREEN_SPECS.md → UI_BLUEPRINT.yaml → DESIGN_TOKENS.yaml → COMPONENT_SPECS.md → COPY_GUIDE.md / RESULT_CARD_COPY.md
+3) UI/UX/Architecture — ARCHITECTURE.md → UI_UX_GUIDE.md → APP_SCREEN_PLAN.md → SCREEN_SPECS.md → UI_BLUEPRINT.yaml → DESIGN_TOKENS.yaml → COMPONENT_SPECS.md → COPY_GUIDE.md / RESULT_CARD_COPY.md
 4) 측정/운영/법/광고 — MEASUREMENT_PLAN.md, OPERATIONS_RUNBOOK.md, LEGAL_CHECKLIST.md, ADS_POLICY.md
 5) 실행 계획 — PRODUCT_PLAN_MVP.md, BACKLOG_EPICS_USER_STORIES.md
 
@@ -15,6 +15,7 @@ Status: canonical (Information Architecture)
 - Intake: INTAKE_FLOW.md
 - Rules: RULES_HUG_v1.md + RULES_HUG_mapping.yaml
 - RAG: RAG_POLICY.md
+- Architecture: ARCHITECTURE.md
 - UI Design: DESIGN_TOKENS.yaml, UI_BLUEPRINT.yaml
 - Component APIs: COMPONENT_SPECS.md
 - Screen Flow/Specs: APP_SCREEN_PLAN.md, SCREEN_SPECS.md
