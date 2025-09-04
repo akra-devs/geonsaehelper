@@ -54,6 +54,7 @@ ThemeData buildAppTheme(Brightness brightness) {
   final base = ThemeData(colorScheme: scheme, useMaterial3: true);
   final corners = const Corners();
   final interText = GoogleFonts.interTextTheme(base.textTheme);
+  final isDark = brightness == Brightness.dark;
   return base.copyWith(
     textTheme: interText.copyWith(
       titleLarge: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
@@ -75,7 +76,7 @@ ThemeData buildAppTheme(Brightness brightness) {
       ),
     ),
     dividerTheme: base.dividerTheme.copyWith(
-      color: scheme.outlineVariant,
+      color: isDark ? scheme.outline : scheme.outlineVariant,
       thickness: 1,
       space: 24,
     ),
