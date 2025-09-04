@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../../features/conversation/domain/models.dart' as domain;
 
-class ResultCard extends StatelessWidget {
+class ResultCard extends StatefulWidget {
   final domain.RulingStatus status;
   final String tldr;
   final List<domain.Reason> reasons;
@@ -20,9 +20,17 @@ class ResultCard extends StatelessWidget {
     this.onExpand,
   });
 
+  @override
+  State<ResultCard> createState() => _ResultCardState();
+}
+
+class _ResultCardState extends State<ResultCard> {
+  bool _expandReasons = false;
+  bool _expandNext = false;
+
   Color _statusColor(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    switch (status) {
+    switch (widget.status) {
       case domain.RulingStatus.possible:
         return cs.primary;
       case domain.RulingStatus.notPossibleInfo:
@@ -33,7 +41,7 @@ class ResultCard extends StatelessWidget {
   }
 
   IconData _statusIcon() {
-    switch (status) {
+    switch (widget.status) {
       case domain.RulingStatus.possible:
         return Icons.check_circle;
       case domain.RulingStatus.notPossibleInfo:
@@ -44,7 +52,7 @@ class ResultCard extends StatelessWidget {
   }
 
   String _statusLabel() {
-    switch (status) {
+    switch (widget.status) {
       case domain.RulingStatus.possible:
         return '가능';
       case domain.RulingStatus.notPossibleInfo:
@@ -74,88 +82,104 @@ class ResultCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(corners.md),
           ),
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
-                  decoration: BoxDecoration(
-                    color: _statusColor(context).withAlpha(31),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(_statusIcon(), color: _statusColor(context), size: 16),
-                      SizedBox(width: spacing.x1),
-                      Text(
-                        _statusLabel(),
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(color: _statusColor(context)),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                _LastVerifiedBadge(lastVerified: lastVerified),
-              ],
-            ),
-            SizedBox(height: spacing.x3),
-            Text(
-              tldr,
-              key: const Key('ResultCard.TLDR'),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: spacing.x3),
-            if (reasons.isNotEmpty) ...[
-              Text('사유', style: Theme.of(context).textTheme.titleSmall),
-              SizedBox(height: spacing.x2),
-              Column(
-                key: const Key('ResultCard.Reasons'),
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: reasons.map((r) {
-                  final color = _reasonColor(context, r.kind);
-                  return Padding(
-                    padding: EdgeInsets.only(bottom: spacing.x2),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
+                    decoration: BoxDecoration(
+                      color: _statusColor(context).withAlpha(31),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_reasonIcon(r.kind), size: 14, color: color),
-                        SizedBox(width: spacing.x2),
-                        Expanded(child: Text(r.text, style: Theme.of(context).textTheme.bodyMedium)),
+                        Icon(_statusIcon(), color: _statusColor(context), size: 16),
+                        SizedBox(width: spacing.x1),
+                        Text(
+                          _statusLabel(),
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: _statusColor(context)),
+                        ),
                       ],
                     ),
-                  );
-                }).toList(),
+                  ),
+                  const Spacer(),
+                  _LastVerifiedBadge(lastVerified: widget.lastVerified),
+                ],
               ),
               SizedBox(height: spacing.x3),
-            ],
-            if (nextSteps.isNotEmpty) ...[
-              Text('다음 단계', style: Theme.of(context).textTheme.titleSmall),
-              SizedBox(height: spacing.x2),
-              Column(
-                key: const Key('ResultCard.Next'),
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final s in nextSteps)
-                    Padding(
+              Text(
+                widget.tldr,
+                key: const Key('ResultCard.TLDR'),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: spacing.x3),
+              if (widget.reasons.isNotEmpty) ...[
+                Text('사유', style: Theme.of(context).textTheme.titleSmall),
+                SizedBox(height: spacing.x2),
+                Column(
+                  key: const Key('ResultCard.Reasons'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _visibleReasons().map((r) {
+                    final color = _reasonColor(context, r.kind);
+                    return Padding(
                       padding: EdgeInsets.only(bottom: spacing.x2),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.chevron_right, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          SizedBox(width: spacing.x1),
-                          Expanded(child: Text(s)),
+                          Icon(_reasonIcon(r.kind), size: 14, color: color),
+                          SizedBox(width: spacing.x2),
+                          Expanded(child: Text(r.text, style: Theme.of(context).textTheme.bodyMedium)),
                         ],
                       ),
+                    );
+                  }).toList(),
+                ),
+                if (_showReasonsToggle())
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => setState(() => _expandReasons = !_expandReasons),
+                      child: Text(_expandReasons ? '접기' : '자세히'),
                     ),
-                ],
-              ),
+                  ),
+                SizedBox(height: spacing.x3),
+              ],
+              if (widget.nextSteps.isNotEmpty) ...[
+                Text('다음 단계', style: Theme.of(context).textTheme.titleSmall),
+                SizedBox(height: spacing.x2),
+                Column(
+                  key: const Key('ResultCard.Next'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final s in _visibleNextSteps())
+                      Padding(
+                        padding: EdgeInsets.only(bottom: spacing.x2),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.chevron_right, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            SizedBox(width: spacing.x1),
+                            Expanded(child: Text(s)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                if (_showNextToggle())
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => setState(() => _expandNext = !_expandNext),
+                      child: Text(_expandNext ? '접기' : '자세히'),
+                    ),
+                  ),
+              ],
             ],
-          ],
-        ),
+          ),
         ),
       ),
     );
@@ -186,6 +210,23 @@ class ResultCard extends StatelessWidget {
         return Icons.help_outline;
     }
   }
+
+  List<domain.Reason> _visibleReasons() {
+    final list = widget.reasons;
+    if (_expandReasons) return list;
+    const maxShown = 3;
+    return list.length <= maxShown ? list : list.take(maxShown).toList();
+  }
+
+  List<String> _visibleNextSteps() {
+    final list = widget.nextSteps;
+    if (_expandNext) return list;
+    const maxShown = 3;
+    return list.length <= maxShown ? list : list.take(maxShown).toList();
+  }
+
+  bool _showReasonsToggle() => widget.reasons.length > 3;
+  bool _showNextToggle() => widget.nextSteps.length > 3;
 }
 
 class _LastVerifiedBadge extends StatelessWidget {
