@@ -22,7 +22,6 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final spacing = context.spacing;
     return Scaffold(
       body: SafeArea(
         child: IndexedStack(index: _index, children: _pages),
