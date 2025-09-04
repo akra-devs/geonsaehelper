@@ -13,6 +13,7 @@ import '../../conversation/bloc/chat_cubit.dart';
 import '../../conversation/bloc/conversation_cubit.dart';
 import '../../conversation/data/chat_repository.dart';
 import '../../conversation/data/chat_models.dart';
+import '../../conversation/domain/models.dart' as domain;
 
 class ConversationPage extends StatefulWidget {
   const ConversationPage({super.key});
@@ -61,7 +62,7 @@ class _ConversationPageState extends State<ConversationPage> {
   void _appendQuestion(
     String qid,
     String label,
-    List<Choice> choices, {
+    List<domain.Choice> choices, {
     int? index,
     int? total,
     bool isSurvey = false,
@@ -286,8 +287,8 @@ class _ConversationPageState extends State<ConversationPage> {
                                 label: row.label!,
                                 options: row.choices!,
                                 showUnknown: true,
-                                onChanged: (v) => _onChoiceSelected(context, row.qid!, v),
-                              ),
+        onChanged: (v) => _onChoiceSelected(context, row.qid!, v),
+      ),
                             ],
                           ),
                         ),
