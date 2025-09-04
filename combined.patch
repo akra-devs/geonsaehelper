@@ -1,0 +1,4406 @@
+From 292a7b0e0b3a13ad18319de8060af2ec6d4f401e Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 11:31:15 +0900
+Subject: [PATCH 01/22] feat(domain): add conversation domain models (Choice,
+ RulingStatus, Reason, Question/Result)
+
+---
+ lib/features/conversation/domain/models.dart | 48 ++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+ create mode 100644 lib/features/conversation/domain/models.dart
+
+diff --git a/lib/features/conversation/domain/models.dart b/lib/features/conversation/domain/models.dart
+new file mode 100644
+index 0000000..315419a
+--- /dev/null
++++ b/lib/features/conversation/domain/models.dart
+@@ -0,0 +1,48 @@
++import 'package:flutter/foundation.dart';
++
++@immutable
++class Choice {
++  final String value;
++  final String text;
++  const Choice({required this.value, required this.text});
++}
++
++enum RulingStatus { possible, notPossibleInfo, notPossibleDisq }
++
++enum ReasonKind { met, unmet, unknown, warning }
++
++@immutable
++class Reason {
++  final String text;
++  final ReasonKind kind;
++  const Reason(this.text, this.kind);
++}
++
++@immutable
++class ConversationQuestion {
++  final String qid;
++  final String label;
++  final List<Choice> choices;
++  final int index;
++  final int total;
++  final bool isSurvey;
++  const ConversationQuestion({
++    required this.qid,
++    required this.label,
++    required this.choices,
++    required this.index,
++    required this.total,
++    required this.isSurvey,
++  });
++}
++
++@immutable
++class ConversationResult {
++  final RulingStatus status;
++  final String tldr;
++  final List<Reason> reasons;
++  final List<String> nextSteps;
++  final String lastVerified;
++  const ConversationResult(this.status, this.tldr, this.reasons, this.nextSteps, this.lastVerified);
++}
++
+-- 
+2.39.5 (Apple Git-154)
+
+
+From e373a169eefb9b2a17d2723b27048506a00321a2 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 11:31:26 +0900
+Subject: [PATCH 02/22] refactor(ui): use domain Choice in IntakeQuestion and
+ drop UI-specific Choice with icons
+
+---
+ lib/ui/components/intake_question.dart | 20 ++++----------------
+ 1 file changed, 4 insertions(+), 16 deletions(-)
+
+diff --git a/lib/ui/components/intake_question.dart b/lib/ui/components/intake_question.dart
+index d427235..f4990c6 100644
+--- a/lib/ui/components/intake_question.dart
++++ b/lib/ui/components/intake_question.dart
+@@ -1,17 +1,11 @@
+ import 'package:flutter/material.dart';
+ import '../theme/app_theme.dart';
+-
+-class Choice {
+-  final String value;
+-  final String text;
+-  final IconData? icon;
+-  const Choice({required this.value, required this.text, this.icon});
+-}
++import '../../features/conversation/domain/models.dart' as domain;
+ 
+ class IntakeQuestion extends StatelessWidget {
+   final String qid; // e.g., A1..S1
+   final String label;
+-  final List<Choice> options; // value, text, optional icon
++  final List<domain.Choice> options; // value, text
+   final String? selected; // selected value
+   final bool showUnknown; // show "모름"
+   final ValueChanged<String?> onChanged;
+@@ -33,10 +27,9 @@ class IntakeQuestion extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) {
+     final spacing = context.spacing;
+-    final allOptions = [
++    final allOptions = <domain.Choice>[
+       ...options,
+-      if (showUnknown)
+-        const Choice(value: '__unknown__', text: '모름'),
++      if (showUnknown) const domain.Choice(value: '__unknown__', text: '모름'),
+     ];
+     return Semantics(
+       label: 'IntakeQuestion $qid',
+@@ -55,10 +48,6 @@ class IntakeQuestion extends StatelessWidget {
+                   label: Row(
+                     mainAxisSize: MainAxisSize.min,
+                     children: [
+-                      if (c.icon != null) ...[
+-                        Icon(c.icon, size: 18),
+-                        SizedBox(width: spacing.x1),
+-                      ],
+                       Text(c.text),
+                     ],
+                   ),
+@@ -83,4 +72,3 @@ class IntakeQuestion extends StatelessWidget {
+     );
+   }
+ }
+-
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 442fd09bb6c976109a9292ce724f1dbeb3d88e07 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 11:31:43 +0900
+Subject: [PATCH 03/22] refactor(ui): ResultCard uses domain
+ RulingStatus/Reason and maps ReasonKind to icon/color in UI
+
+---
+ lib/ui/components/result_card.dart | 63 ++++++++++++++++--------------
+ 1 file changed, 33 insertions(+), 30 deletions(-)
+
+diff --git a/lib/ui/components/result_card.dart b/lib/ui/components/result_card.dart
+index d726976..54afd2d 100644
+--- a/lib/ui/components/result_card.dart
++++ b/lib/ui/components/result_card.dart
+@@ -1,19 +1,11 @@
+ import 'package:flutter/material.dart';
+ import '../theme/app_theme.dart';
+-
+-enum RulingStatus { possible, notPossibleInfo, notPossibleDisq }
+-
+-class ReasonItem {
+-  final IconData icon;
+-  final String text;
+-  final String type; // e.g., '충족' | '미충족' | '확인불가'
+-  const ReasonItem(this.icon, this.text, this.type);
+-}
++import '../../features/conversation/domain/models.dart' as domain;
+ 
+ class ResultCard extends StatelessWidget {
+-  final RulingStatus status;
++  final domain.RulingStatus status;
+   final String tldr;
+-  final List<ReasonItem> reasons;
++  final List<domain.Reason> reasons;
+   final List<String> nextSteps;
+   final String lastVerified; // YYYY-MM-DD
+   final VoidCallback? onExpand;
+@@ -31,33 +23,33 @@ class ResultCard extends StatelessWidget {
+   Color _statusColor(BuildContext context) {
+     final cs = Theme.of(context).colorScheme;
+     switch (status) {
+-      case RulingStatus.possible:
++      case domain.RulingStatus.possible:
+         return cs.primary;
+-      case RulingStatus.notPossibleInfo:
++      case domain.RulingStatus.notPossibleInfo:
+         return cs.tertiary;
+-      case RulingStatus.notPossibleDisq:
++      case domain.RulingStatus.notPossibleDisq:
+         return cs.error;
+     }
+   }
+ 
+   IconData _statusIcon() {
+     switch (status) {
+-      case RulingStatus.possible:
++      case domain.RulingStatus.possible:
+         return Icons.check_circle;
+-      case RulingStatus.notPossibleInfo:
++      case domain.RulingStatus.notPossibleInfo:
+         return Icons.info;
+-      case RulingStatus.notPossibleDisq:
++      case domain.RulingStatus.notPossibleDisq:
+         return Icons.error;
+     }
+   }
+ 
+   String _statusLabel() {
+     switch (status) {
+-      case RulingStatus.possible:
++      case domain.RulingStatus.possible:
+         return '가능';
+-      case RulingStatus.notPossibleInfo:
++      case domain.RulingStatus.notPossibleInfo:
+         return '불가(정보 부족)';
+-      case RulingStatus.notPossibleDisq:
++      case domain.RulingStatus.notPossibleDisq:
+         return '불가(결격)';
+     }
+   }
+@@ -127,13 +119,13 @@ class ResultCard extends StatelessWidget {
+                 key: const Key('ResultCard.Reasons'),
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 children: reasons.map((r) {
+-                  final color = _reasonColor(context, r.type);
++                  final color = _reasonColor(context, r.kind);
+                   return Padding(
+                     padding: EdgeInsets.only(bottom: spacing.x2),
+                     child: Row(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+-                        Icon(r.icon, size: 18, color: color),
++                        Icon(_reasonIcon(r.kind), size: 18, color: color),
+                         SizedBox(width: spacing.x2),
+                         Expanded(child: Text(r.text, style: Theme.of(context).textTheme.bodyMedium)),
+                       ],
+@@ -172,18 +164,29 @@ class ResultCard extends StatelessWidget {
+     );
+   }
+ 
+-  Color _reasonColor(BuildContext context, String type) {
++  Color _reasonColor(BuildContext context, domain.ReasonKind kind) {
+     final cs = Theme.of(context).colorScheme;
+-    switch (type) {
+-      case '충족':
++    switch (kind) {
++      case domain.ReasonKind.met:
+         return cs.primary;
+-      case '미충족':
++      case domain.ReasonKind.unmet:
+         return cs.error;
+-      case '확인불가':
+-      case '주의':
++      case domain.ReasonKind.unknown:
++      case domain.ReasonKind.warning:
+         return cs.tertiary;
+-      default:
+-        return cs.onSurfaceVariant;
++    }
++  }
++
++  IconData _reasonIcon(domain.ReasonKind kind) {
++    switch (kind) {
++      case domain.ReasonKind.met:
++        return Icons.check_circle;
++      case domain.ReasonKind.unmet:
++        return Icons.cancel;
++      case domain.ReasonKind.warning:
++        return Icons.warning_amber;
++      case domain.ReasonKind.unknown:
++        return Icons.help_outline;
+     }
+   }
+ }
+-- 
+2.39.5 (Apple Git-154)
+
+
+From ad9e75e473936afdf67d2fb771e8de45f7606852 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 11:32:16 +0900
+Subject: [PATCH 04/22] refactor(bloc): remove UI dependencies; use domain
+ models and ReasonKind without Material icons
+
+---
+ .../conversation/bloc/conversation_cubit.dart | 72 ++++++-------------
+ 1 file changed, 22 insertions(+), 50 deletions(-)
+
+diff --git a/lib/features/conversation/bloc/conversation_cubit.dart b/lib/features/conversation/bloc/conversation_cubit.dart
+index cce76f1..dcd7e7a 100644
+--- a/lib/features/conversation/bloc/conversation_cubit.dart
++++ b/lib/features/conversation/bloc/conversation_cubit.dart
+@@ -2,38 +2,11 @@ import 'package:flutter/foundation.dart';
+ import 'package:flutter/material.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
+ import '../../../common/analytics/analytics.dart';
+-import '../../../ui/components/result_card.dart';
+-import '../../../ui/components/intake_question.dart';
++import '../../conversation/domain/models.dart';
+ 
+ enum ConversationPhase { survey, intake, qna }
+ 
+-@immutable
+-class ConversationQuestion {
+-  final String qid;
+-  final String label;
+-  final List<Choice> choices;
+-  final int index;
+-  final int total;
+-  final bool isSurvey;
+-  const ConversationQuestion({
+-    required this.qid,
+-    required this.label,
+-    required this.choices,
+-    required this.index,
+-    required this.total,
+-    required this.isSurvey,
+-  });
+-}
+-
+-@immutable
+-class ConversationResult {
+-  final RulingStatus status;
+-  final String tldr;
+-  final List<ReasonItem> reasons;
+-  final List<String> nextSteps;
+-  final String lastVerified;
+-  const ConversationResult(this.status, this.tldr, this.reasons, this.nextSteps, this.lastVerified);
+-}
++// ConversationQuestion and ConversationResult moved to domain models.
+ 
+ @immutable
+ class ConversationState {
+@@ -129,7 +102,7 @@ class ConversationCubit extends Cubit<ConversationState> {
+         .map((e) => e.key)
+         .toList();
+     if (unknowns.isNotEmpty) {
+-      final reasons = unknowns.map((qid) => ReasonItem(Icons.help_outline, _unknownLabel(qid), '확인불가')).toList();
++      final reasons = unknowns.map((qid) => Reason(_unknownLabel(qid), ReasonKind.unknown)).toList();
+       _emitResult(ConversationResult(
+         RulingStatus.notPossibleInfo,
+         '다음 정보가 없어 판정 불가입니다.',
+@@ -143,11 +116,11 @@ class ConversationCubit extends Cubit<ConversationState> {
+     // Disqualifier: A1 == 1주택
+     if (_answers['A1'] == 'onehome') {
+       _emitResult(
+-        const ConversationResult(
++        ConversationResult(
+           RulingStatus.notPossibleDisq,
+           '아래 결격 사유로 신청이 불가합니다.',
+-          [ReasonItem(Icons.cancel, '무주택 요건 불충족', '미충족')],
+-          ['조건 변경(보증금 조정) 또는 타 기관 검토'],
++          const [Reason('무주택 요건 불충족', ReasonKind.unmet)],
++          const ['조건 변경(보증금 조정) 또는 타 기관 검토'],
+           '2025-09-02',
+         ),
+         hasUnknown: false,
+@@ -159,11 +132,11 @@ class ConversationCubit extends Cubit<ConversationState> {
+     // Disqualifier: 중대한 신용 문제(A7)
+     if (_answers['A7'] == 'credit_severe') {
+       _emitResult(
+-        const ConversationResult(
++        ConversationResult(
+           RulingStatus.notPossibleDisq,
+           '아래 결격 사유로 신청이 불가합니다.',
+-          [ReasonItem(Icons.cancel, '중대한 신용 문제(장기연체/회생/파산/면책)', '미충족')],
+-          ['신용 상태 확인 후 재시도 또는 타 상품 검토'],
++          const [Reason('중대한 신용 문제(장기연체/회생/파산/면책)', ReasonKind.unmet)],
++          const ['신용 상태 확인 후 재시도 또는 타 상품 검토'],
+           '2025-09-02',
+         ),
+         hasUnknown: false,
+@@ -173,22 +146,22 @@ class ConversationCubit extends Cubit<ConversationState> {
+     }
+ 
+     // Otherwise, possible
+-    final reasons = <ReasonItem>[
+-      const ReasonItem(Icons.check_circle, '가구/세대: (충족)', '충족'),
+-      if (_answers.containsKey('A3')) const ReasonItem(Icons.check_circle, '소득 형태: (충족)', '충족'),
+-      if (_answers.containsKey('A4')) const ReasonItem(Icons.check_circle, '소득 구간: (충족)', '충족'),
+-      if (_answers.containsKey('P1')) const ReasonItem(Icons.check_circle, '주택 유형: (충족)', '충족'),
+-      if (_answers.containsKey('P2')) const ReasonItem(Icons.check_circle, '전용면적: (충족)', '충족'),
+-      if (_answers.containsKey('P3')) const ReasonItem(Icons.check_circle, '지역: (충족)', '충족'),
+-      if (_answers.containsKey('P4')) const ReasonItem(Icons.check_circle, '보증금: (충족)', '충족'),
+-      if (_answers['P7'] == 'encumbrance_yes') const ReasonItem(Icons.warning_amber, '근저당 있음 → 등기 확인 필요', '주의'),
++    final reasons = <Reason>[
++      const Reason('가구/세대: (충족)', ReasonKind.met),
++      if (_answers.containsKey('A3')) const Reason('소득 형태: (충족)', ReasonKind.met),
++      if (_answers.containsKey('A4')) const Reason('소득 구간: (충족)', ReasonKind.met),
++      if (_answers.containsKey('P1')) const Reason('주택 유형: (충족)', ReasonKind.met),
++      if (_answers.containsKey('P2')) const Reason('전용면적: (충족)', ReasonKind.met),
++      if (_answers.containsKey('P3')) const Reason('지역: (충족)', ReasonKind.met),
++      if (_answers.containsKey('P4')) const Reason('보증금: (충족)', ReasonKind.met),
++      if (_answers['P7'] == 'encumbrance_yes') const Reason('근저당 있음 → 등기 확인 필요', ReasonKind.warning),
+     ];
+     _emitResult(
+-      const ConversationResult(
++      ConversationResult(
+         RulingStatus.possible,
+         '예비판정 결과, ‘해당’합니다. 체크리스트를 확인하세요.',
+-        [], // reasons replaced below to keep const
+-        ['신분증·가족/혼인관계·소득 증빙 준비', '임대인 등기부등본/계약서 사본', '은행 상담 → 심사 → 승인 → 실행'],
++        const [], // reasons replaced below to keep const
++        const ['신분증·가족/혼인관계·소득 증빙 준비', '임대인 등기부등본/계약서 사본', '은행 상담 → 심사 → 승인 → 실행'],
+         '2025-09-02',
+       ),
+       hasUnknown: false,
+@@ -198,7 +171,7 @@ class ConversationCubit extends Cubit<ConversationState> {
+   }
+ 
+   void _emitResult(ConversationResult result,
+-      {required bool hasUnknown, required String statusKey, List<ReasonItem>? overrideReasons}) {
++      {required bool hasUnknown, required String statusKey, List<Reason>? overrideReasons}) {
+     final intakeDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
+     Analytics.instance.intakeComplete(_flow.length, intakeDuration, hasUnknown, statusKey);
+     Analytics.instance.rulingShown(statusKey);
+@@ -440,4 +413,3 @@ class _Q {
+   final List<Choice> choices;
+   const _Q({required this.qid, required this.label, required this.choices});
+ }
+-
+-- 
+2.39.5 (Apple Git-154)
+
+
+From b7aae52a4224778223636e122c660f0c2b1bce4d Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 11:32:25 +0900
+Subject: [PATCH 05/22] refactor(ui): ConversationPage imports domain models;
+ question choices use domain Choice
+
+---
+ lib/features/conversation/ui/conversation_page.dart | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 6c94fe6..819aba7 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -13,6 +13,7 @@ import '../../conversation/bloc/chat_cubit.dart';
+ import '../../conversation/bloc/conversation_cubit.dart';
+ import '../../conversation/data/chat_repository.dart';
+ import '../../conversation/data/chat_models.dart';
++import '../../conversation/domain/models.dart' as domain;
+ 
+ class ConversationPage extends StatefulWidget {
+   const ConversationPage({super.key});
+@@ -61,7 +62,7 @@ class _ConversationPageState extends State<ConversationPage> {
+   void _appendQuestion(
+     String qid,
+     String label,
+-    List<Choice> choices, {
++    List<domain.Choice> choices, {
+     int? index,
+     int? total,
+     bool isSurvey = false,
+@@ -286,8 +287,8 @@ class _ConversationPageState extends State<ConversationPage> {
+                                 label: row.label!,
+                                 options: row.choices!,
+                                 showUnknown: true,
+-                                onChanged: (v) => _onChoiceSelected(context, row.qid!, v),
+-                              ),
++        onChanged: (v) => _onChoiceSelected(context, row.qid!, v),
++      ),
+                             ],
+                           ),
+                         ),
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 52e3f09208ea3409ef8d25456dfd1b3f9720919c Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 11:32:57 +0900
+Subject: [PATCH 06/22] fix(ui): annotate _Row.choices with domain.Choice to
+ match refactor
+
+---
+ lib/features/conversation/ui/conversation_page.dart | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 819aba7..35c66b9 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -441,7 +441,7 @@ class _Row {
+   final String? text;
+   final String? qid;
+   final String? label;
+-  final List<Choice>? choices;
++  final List<domain.Choice>? choices;
+   final ResultCard? resultCard;
+   final Widget? richWidget;
+   final Widget? adWidget;
+-- 
+2.39.5 (Apple Git-154)
+
+
+From cbe16051cf3043a19c889b3b80d0d44c95eaca7b Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 11:33:09 +0900
+Subject: [PATCH 07/22] chore(demo): update DemoGallery to use domain models
+ (Choice, RulingStatus, Reason)
+
+---
+ lib/ui/demo/demo_gallery.dart | 34 +++++++++++++++++-----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
+
+diff --git a/lib/ui/demo/demo_gallery.dart b/lib/ui/demo/demo_gallery.dart
+index ae34f57..cf8ba37 100644
+--- a/lib/ui/demo/demo_gallery.dart
++++ b/lib/ui/demo/demo_gallery.dart
+@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
+ import '../theme/app_theme.dart';
+ import '../components/intake_question.dart';
+ import '../components/result_card.dart';
++import '../../features/conversation/domain/models.dart' as domain;
+ import '../components/chat_bubble.dart';
+ 
+ class DemoGallery extends StatefulWidget {
+@@ -27,9 +28,9 @@ class _DemoGalleryState extends State<DemoGallery> {
+             qid: 'A1',
+             label: '현재 무주택이며 세대주이신가요?',
+             options: const [
+-              Choice(value: 'owner', text: '무주택·세대주'),
+-              Choice(value: 'member', text: '무주택·세대원'),
+-              Choice(value: 'onehome', text: '1주택'),
++              domain.Choice(value: 'owner', text: '무주택·세대주'),
++              domain.Choice(value: 'member', text: '무주택·세대원'),
++              domain.Choice(value: 'onehome', text: '1주택'),
+             ],
+             selected: _a1Selected,
+             onChanged: (v) => setState(() => _a1Selected = v),
+@@ -39,14 +40,14 @@ class _DemoGalleryState extends State<DemoGallery> {
+ 
+           _sectionTitle(context, 'ResultCard — 가능'),
+           ResultCard(
+-            status: RulingStatus.possible,
++            status: domain.RulingStatus.possible,
+             tldr: '예비판정 결과, ‘해당’합니다. 체크리스트를 확인하세요.',
+             reasons: const [
+-              ReasonItem(Icons.check_circle, '무주택·세대주(충족)', '충족'),
+-              ReasonItem(Icons.check_circle, '소득 형태/구간: 근로 / 5천만원대', '충족'),
+-              ReasonItem(Icons.check_circle, '주택 유형/면적: 아파트 / 59㎡', '충족'),
+-              ReasonItem(Icons.check_circle, '지역/보증금: 수도권 / 3억', '충족'),
+-              ReasonItem(Icons.warning_amber, '근저당 있음 → 등기 확인 필요', '주의'),
++              domain.Reason('무주택·세대주(충족)', domain.ReasonKind.met),
++              domain.Reason('소득 형태/구간: 근로 / 5천만원대', domain.ReasonKind.met),
++              domain.Reason('주택 유형/면적: 아파트 / 59㎡', domain.ReasonKind.met),
++              domain.Reason('지역/보증금: 수도권 / 3억', domain.ReasonKind.met),
++              domain.Reason('근저당 있음 → 등기 확인 필요', domain.ReasonKind.warning),
+             ],
+             nextSteps: const [
+               '신분증·가족/혼인관계·소득 증빙 준비',
+@@ -59,12 +60,12 @@ class _DemoGalleryState extends State<DemoGallery> {
+ 
+           _sectionTitle(context, 'ResultCard — 불가(정보 부족)'),
+           ResultCard(
+-            status: RulingStatus.notPossibleInfo,
++            status: domain.RulingStatus.notPossibleInfo,
+             tldr: '다음 정보가 없어 판정 불가입니다.',
+             reasons: const [
+-              ReasonItem(Icons.help_outline, '세대주 여부 확인 필요', '확인불가'),
+-              ReasonItem(Icons.help_outline, '보증금 구간 확인 필요', '확인불가'),
+-              ReasonItem(Icons.help_outline, '근저당 유무 확인 필요', '확인불가'),
++              domain.Reason('세대주 여부 확인 필요', domain.ReasonKind.unknown),
++              domain.Reason('보증금 구간 확인 필요', domain.ReasonKind.unknown),
++              domain.Reason('근저당 유무 확인 필요', domain.ReasonKind.unknown),
+             ],
+             nextSteps: const [
+               '세대주: 정부24 확인',
+@@ -77,11 +78,11 @@ class _DemoGalleryState extends State<DemoGallery> {
+ 
+           _sectionTitle(context, 'ResultCard — 불가(결격)'),
+           ResultCard(
+-            status: RulingStatus.notPossibleDisq,
++            status: domain.RulingStatus.notPossibleDisq,
+             tldr: '아래 결격 사유로 신청이 불가합니다.',
+             reasons: const [
+-              ReasonItem(Icons.cancel, '무주택 요건 불충족', '미충족'),
+-              ReasonItem(Icons.cancel, '보증금 한도 초과', '미충족'),
++              domain.Reason('무주택 요건 불충족', domain.ReasonKind.unmet),
++              domain.Reason('보증금 한도 초과', domain.ReasonKind.unmet),
+             ],
+             nextSteps: const [
+               '조건 변경(보증금 조정) 또는 타 기관 검토',
+@@ -113,4 +114,3 @@ class _DemoGalleryState extends State<DemoGallery> {
+     );
+   }
+ }
+-
+-- 
+2.39.5 (Apple Git-154)
+
+
+From a2ee8ff4bbf1ee3f2aac5dcb601d26028e81ca89 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 11:54:44 +0900
+Subject: [PATCH 08/22] =?UTF-8?q?docs(architecture):=20define=20ideal=20UI?=
+ =?UTF-8?q?=E2=86=92BLoC=E2=86=92Domain=E2=86=92Repository=20layering,=20c?=
+ =?UTF-8?q?onversation-specific=20rules,=20and=20testing/DI=20guidance?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ docs/docs/ARCHITECTURE.md | 131 +++++++++++++++++++++++---------------
+ 1 file changed, 81 insertions(+), 50 deletions(-)
+
+diff --git a/docs/docs/ARCHITECTURE.md b/docs/docs/ARCHITECTURE.md
+index e501018..dbe19f1 100644
+--- a/docs/docs/ARCHITECTURE.md
++++ b/docs/docs/ARCHITECTURE.md
+@@ -2,8 +2,10 @@
+ 
+ ## 개요
+ - 목표: 기능 단위로 확장 가능한 구조를 간결하게 유지합니다.
+-- 패턴: Flutter + BLoC(`flutter_bloc`) + Freezed 모델 + Repository(+선택: Sqflite).
+-- 원칙: UI → BLoC → Service/Repository → DB/Platform 단방향 의존. 생성 파일(`*.freezed.dart`, `*.g.dart`)은 수정 금지.
++- 패턴: Flutter + BLoC(`flutter_bloc`) + Domain 모델 + Repository(+선택: Local/Remote).
++- 원칙: UI → BLoC → Domain → Repository → DataSource 단방향 의존. 생성 파일(`*.freezed.dart`, `*.g.dart`)은 수정 금지.
++
++> 본 문서는 우리 제품 맥락(HUG 예비판정 + RAG Q&A)에 맞춘 이상적 구조를 정의합니다.
+ 
+ ## 디렉터리 구조(권장)
+ ```
+@@ -11,67 +13,66 @@ lib/
+   features/
+     <feature>/
+       ui/    # 화면/위젯
+-      bloc/  # Bloc, Event, State
+-      data/  # Repository, 모델, 매퍼
+-  common/    # 공용 위젯/유틸/테마/상수
++      bloc/  # Cubit/Bloc, State
++      domain/# 도메인 모델/타입(Flutter 의존 금지)
++      data/  # Repository interface + impl, 매퍼, remote/local data sources
++  common/    # 공용 테마/토큰/유틸/측정(Analytics)
+ ```
+ 예시
+ ```
+-lib/features/rebalancing/ui/rebalancing_page.dart
+-lib/features/rebalancing/bloc/rebalancing_bloc.dart
+-lib/features/rebalancing/data/rebalancing_repository.dart
++lib/features/conversation/ui/conversation_page.dart
++lib/features/conversation/bloc/conversation_cubit.dart
++lib/features/conversation/domain/models.dart
++lib/features/conversation/data/chat_repository.dart
+ ```
+ 
+-## 샘플(축약): Freezed + BLoC + JSON
+-```dart
+-// 이벤트/상태
+-@freezed
+-class RebalancingEvent with _$RebalancingEvent {
+-  const factory RebalancingEvent.load() = Load;
+-  const factory RebalancingEvent.changeRatio(double stock, double bond) = ChangeRatio;
+-}
++### 의존성 매트릭스(허용 방향)
++- `ui` → `bloc`, `domain`, `common`
++- `bloc` → `domain`, `data`(interface만)
++- `domain` → (없음; 순수 Dart 타입)
++- `data` → `domain`(interface/모델), `common`(로깅 선택)
++- `common` → (테마/토큰/로깅 등)
+ 
+-@freezed
+-class RebalancingState with _$RebalancingState {
+-  const factory RebalancingState({
+-    required double stock,
+-    required double bond,
+-    @Default(false) bool loading,
+-  }) = _RebalancingState;
+-}
++금지 사항
++- `bloc`에서 Flutter UI 타입/아이콘 사용 금지(Material import X)
++- `ui` 타입을 `bloc`/`data`에서 import 금지(ResultCard, IntakeQuestion 등)
++- Domain에 플랫폼/프레임워크 의존 금지(순수 값 객체)
+ 
+-// Bloc
+-class RebalancingBloc extends Bloc<RebalancingEvent, RebalancingState> {
+-  final RebalancingRepository repo;
+-  RebalancingBloc(this.repo)
+-      : super(const RebalancingState(stock: 0, bond: 0)) {
+-    on<Load>((e, emit) async { /* load from repo */ });
+-    on<ChangeRatio>((e, emit) =>
+-        emit(state.copyWith(stock: e.stock, bond: e.bond)));
++## 샘플(축약): Domain + Cubit + Repository
++```dart
++// domain/models.dart
++enum RulingStatus { possible, notPossibleInfo, notPossibleDisq }
++enum ReasonKind { met, unmet, unknown, warning }
++class Reason { final String text; final ReasonKind kind; const Reason(this.text, this.kind); }
++class Choice { final String value; final String text; const Choice({required this.value, required this.text}); }
++
++// bloc/conversation_cubit.dart (발췌)
++class ConversationCubit extends Cubit<ConversationState> {
++  void answer(String qid, String value) { /* 상태 전이/판정 */ }
++  void _evaluateAndEmit() {
++    // ‘모름’ 처리 → notPossibleInfo, ReasonKind.unknown
++    // 결격 우선 → notPossibleDisq, ReasonKind.unmet
++    // 가능 → possible, ReasonKind.met/warning
+   }
+ }
+ 
+-// Freezed + JSON 모델
+-@freezed
+-class RebalanceItem with _$RebalanceItem {
+-  const factory RebalanceItem({
+-    required String id,
+-    required String symbol,
+-    required double targetRatio,
+-    required double currentValue,
+-    @Default(false) bool favorite,
+-  }) = _RebalanceItem;
+-  factory RebalanceItem.fromJson(Map<String, dynamic> json)
+-      => _$RebalanceItemFromJson(json);
+-}
+-// 중첩 모델은 @JsonSerializable(explicitToJson: true)로 자식 toJson() 호출을 보장합니다.
++// ui/result_card.dart (발췌)
++// UI는 ReasonKind → 아이콘/색/텍스트를 매핑(프레젠테이션 책임)
++IconData _icon(ReasonKind k) => switch (k) {
++  ReasonKind.met => Icons.check_circle,
++  ReasonKind.unmet => Icons.cancel,
++  ReasonKind.warning => Icons.warning_amber,
++  ReasonKind.unknown => Icons.help_outline,
++};
+ ```
+ 
+ ## 아키텍처 결정(핵심)
+-- 의존성 주입: `main.dart`(또는 `bootstrap.dart`)에서 Repository/Bloc를 중앙에서 생성·주입. `RepositoryProvider`/`BlocProvider`로 구성하고 전역 싱글톤은 지양.
+-- 오류/결과 모델: 인프라 예외→도메인 `Failure` 매핑, BLoC에는 `Result<T>`(성공/실패)만 전달. 메시지/재시도 정책을 일원화.
+-- 네비게이션: Navigator 2.0 또는 `go_router` 중 하나로 표준화. 라우트 정의 중앙 집중, 위젯 내부 네비게이션 로직 최소화.
+-- 데이터 소스: Repository 아래 `LocalDataSource(SQLite)` 분리(추후 `RemoteDataSource` 확장 전제). 캐싱/동기화 규칙은 Repository에서 캡슐화.
++- 의존성 주입: `main.dart`에서 `RepositoryProvider`/`BlocProvider`로 주입. API/Mock은 Env로 스위치(`USE_API_CHAT`).
++- 도메인 경계: 도메인 타입은 Flutter/Material/Icons 비의존. UI 매핑은 컴포넌트 내부에서 수행.
++- 오류/결과: 인프라 예외 → 도메인 에러로 변환 후 Cubit에서 사용자 메시지 표준화.
++- 규칙 엔진(예비판정): 우선순위 C1(결격) → C2(필수 확인/모름) → C3(조건/경고). Cubit 내부에서 도메인 ReasonKind로만 판단.
++- 데이터 소스: Repository 아래 Local/Remote 분리. 캐시/리트라이/백오프는 Repository에서 관리.
++- 네비게이션: 화면 로직은 UI에서 최소화. BLoC 상태 전이에 기반해 UI 조합.
+ 
+ ## 필수 명령어
+ - 의존성: `flutter pub get`
+@@ -90,3 +91,33 @@ class RebalanceItem with _$RebalanceItem {
+ - flutter_masked_text2: 입력 포맷팅(마스킹)
+ - flutter_lints: 린트 규칙(analysis_options.yaml)
+ - flutter_test: 위젯/단위 테스트 프레임워크
++
++## Conversation(챗봇/예비판정) 가이드(본 프로젝트 특화)
++- Intake 플로우: 질문 A1..A7, P1..P7, S1. 각 질문에는 ‘모름’ 제공. Cubit이 질문/단계 전환을 소유(UI는 표시만).
++- ‘모름’ 처리: 하나라도 포함되면 최종 판정은 `notPossibleInfo`(정보 부족). ReasonKind.unknown으로 사유 표기.
++- 결과 카드: TL;DR → 사유(충족/미충족/확인불가/주의) → 다음 단계 → last_verified. 30일 초과 시 ‘정보 최신성 확인 필요’ 배지.
++- Chat(Q&A): `ChatCubit` → `ChatRepository(Api/Mock)` 호출. RAG 정책 준수(내부 문서만, {docId, sectionKey} 유지, 외부 링크 금지).
++- 출처/최신성: 응답에는 citations와 last_verified 포함. UI에서 Chip/Badge로 노출.
++- 계측: `Analytics`는 UI 상호작용 시점에 배치. 핵심 이벤트는 MEASUREMENT_PLAN.md 준수.
++
++## 테스트 전략
++- 도메인: 규칙/판정 로직 단위 테스트(경계값, ‘모름’, 결격 우선순위). 시간 의존성은 주입 또는 고정 Clock 사용.
++- BLoC/Cubit: 상태 전이 테스트(mock repository). 성공/실패/로딩/‘모름’ 분기 검증.
++- UI: 위젯 테스트(컴포넌트 API 계약 검증, 접근성 키/레이블 확인). 스냅샷 보단 의미 기반 검사.
++
++## Do / Don’t
++- Do: UI는 Domain→프레젠테이션 매핑만 담당. 비즈니스 판단은 Cubit/도메인.
++- Do: BLoC는 Flutter/Material에 의존하지 않음. Domain 타입만 사용.
++- Do: Repository 인터페이스는 Domain 관점으로 설계. 구현은 DataSource 캡슐화.
++- Don’t: Cubit에서 아이콘/색상 등 UI 세부 정의 금지.
++- Don’t: 외부 링크/추정 제공 금지(RAG 정책). 불확실 시 ‘확인불가’ 처리.
++
++## DI/부트스트랩(예시)
++```dart
++// main.dart
++const useApi = bool.fromEnvironment('USE_API_CHAT', defaultValue: false);
++return RepositoryProvider<ChatRepository>(
++  create: (_) => useApi ? ApiChatRepository() : MockChatRepository(),
++  child: MaterialApp(/* ... */),
++);
++```
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 8a0f777142e12a6b97900ddbf57c1475e42094fd Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 11:55:08 +0900
+Subject: [PATCH 09/22] docs(index): add ARCHITECTURE.md to reading order and
+ canonical set
+
+---
+ docs/docs/DOCS_INDEX.md | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/docs/docs/DOCS_INDEX.md b/docs/docs/DOCS_INDEX.md
+index 59979f9..c7b4b7b 100644
+--- a/docs/docs/DOCS_INDEX.md
++++ b/docs/docs/DOCS_INDEX.md
+@@ -6,7 +6,7 @@ Status: canonical (Information Architecture)
+ ## 읽기 순서(권장)
+ 1) 제품 개요 — PRODUCT_BRIEF.md → PRD_v1.md
+ 2) 규칙/정책 — RULES_HUG_v1.md, RULES_HUG_mapping.yaml, RAG_POLICY.md
+-3) UI/UX — UI_UX_GUIDE.md → APP_SCREEN_PLAN.md → SCREEN_SPECS.md → UI_BLUEPRINT.yaml → DESIGN_TOKENS.yaml → COMPONENT_SPECS.md → COPY_GUIDE.md / RESULT_CARD_COPY.md
++3) UI/UX/Architecture — ARCHITECTURE.md → UI_UX_GUIDE.md → APP_SCREEN_PLAN.md → SCREEN_SPECS.md → UI_BLUEPRINT.yaml → DESIGN_TOKENS.yaml → COMPONENT_SPECS.md → COPY_GUIDE.md / RESULT_CARD_COPY.md
+ 4) 측정/운영/법/광고 — MEASUREMENT_PLAN.md, OPERATIONS_RUNBOOK.md, LEGAL_CHECKLIST.md, ADS_POLICY.md
+ 5) 실행 계획 — PRODUCT_PLAN_MVP.md, BACKLOG_EPICS_USER_STORIES.md
+ 
+@@ -15,6 +15,7 @@ Status: canonical (Information Architecture)
+ - Intake: INTAKE_FLOW.md
+ - Rules: RULES_HUG_v1.md + RULES_HUG_mapping.yaml
+ - RAG: RAG_POLICY.md
++- Architecture: ARCHITECTURE.md
+ - UI Design: DESIGN_TOKENS.yaml, UI_BLUEPRINT.yaml
+ - Component APIs: COMPONENT_SPECS.md
+ - Screen Flow/Specs: APP_SCREEN_PLAN.md, SCREEN_SPECS.md
+-- 
+2.39.5 (Apple Git-154)
+
+
+From e26ed13834b54c08b0cad6de61e6e9722c65113a Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 11:58:48 +0900
+Subject: [PATCH 10/22] docs(architecture): restore Freezed usage guidance with
+ union/data/domain examples and build_runner notes
+
+---
+ docs/docs/ARCHITECTURE.md | 51 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
+
+diff --git a/docs/docs/ARCHITECTURE.md b/docs/docs/ARCHITECTURE.md
+index dbe19f1..b382a1d 100644
+--- a/docs/docs/ARCHITECTURE.md
++++ b/docs/docs/ARCHITECTURE.md
+@@ -121,3 +121,54 @@ return RepositoryProvider<ChatRepository>(
+   child: MaterialApp(/* ... */),
+ );
+ ```
++
++### Freezed 사용 가이드(권장 패턴)
++- 언제 쓰나: 합타입(State)·불변 값 객체·JSON 직렬화가 필요한 경우.
++- 어디에 쓰나: bloc(state union), data(API/DTO), 필요 시 domain(값 동등성/`copyWith` 필요할 때).
++- 주의: domain은 Flutter/Material 의존 금지. Freezed는 코드 생성 도구일 뿐 도메인 경계를 흐리지 않음.
++
++```dart
++// bloc/state (union 예시)
++part 'chat_cubit.freezed.dart';
++@freezed
++class ChatState with _$ChatState {
++  const factory ChatState.idle() = _Idle;
++  const factory ChatState.loading() = _Loading;
++  const factory ChatState.success(BotReply reply) = _Success;
++  const factory ChatState.error(String message) = _Error;
++}
++
++// data/json (API 모델 예시)
++part 'chat_models.freezed.dart';
++part 'chat_models.g.dart';
++@freezed
++class BotReply with _$BotReply {
++  const factory BotReply({
++    required String content,
++    @Default(<ChatCitation>[]) List<ChatCitation> citations,
++    required String lastVerified,
++  }) = _BotReply;
++  factory BotReply.fromJson(Map<String, dynamic> json) => _$BotReplyFromJson(json);
++}
++
++// domain(선택): 값 동등성/사본 필요 시
++part 'models.freezed.dart';
++@freezed
++class Reason with _$Reason {
++  const factory Reason({required String text, required ReasonKind kind}) = _Reason;
++}
++@freezed
++class ConversationResult with _$ConversationResult {
++  const factory ConversationResult({
++    required RulingStatus status,
++    required String tldr,
++    @Default(<Reason>[]) List<Reason> reasons,
++    @Default(<String>[]) List<String> nextSteps,
++    required String lastVerified,
++  }) = _ConversationResult;
++}
++```
++
++코드 생성
++- 명령: `dart run build_runner build --delete-conflicting-outputs`
++- 생성물: `*.freezed.dart`, `*.g.dart`는 커밋 대상이며 수동 수정 금지.
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 42a3a08e8fb97d600596485c5f647927e8f9d183 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 12:16:43 +0900
+Subject: [PATCH 11/22] refactor(bloc): remove Material dependency; use meta
+ for @immutable in ConversationCubit
+
+---
+ lib/features/conversation/bloc/conversation_cubit.dart | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/features/conversation/bloc/conversation_cubit.dart b/lib/features/conversation/bloc/conversation_cubit.dart
+index dcd7e7a..c72e099 100644
+--- a/lib/features/conversation/bloc/conversation_cubit.dart
++++ b/lib/features/conversation/bloc/conversation_cubit.dart
+@@ -1,5 +1,5 @@
+ import 'package:flutter/foundation.dart';
+-import 'package:flutter/material.dart';
++import 'package:meta/meta.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
+ import '../../../common/analytics/analytics.dart';
+ import '../../conversation/domain/models.dart';
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 34187792dc0c692a9bdd56c3c17c41546a70beaa Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 12:17:04 +0900
+Subject: [PATCH 12/22] feat(domain): extract survey/intake question flows into
+ domain/question_flow.dart (pure Choice-based)
+
+---
+ .../conversation/domain/question_flow.dart    | 189 ++++++++++++++++++
+ 1 file changed, 189 insertions(+)
+ create mode 100644 lib/features/conversation/domain/question_flow.dart
+
+diff --git a/lib/features/conversation/domain/question_flow.dart b/lib/features/conversation/domain/question_flow.dart
+new file mode 100644
+index 0000000..19d42e6
+--- /dev/null
++++ b/lib/features/conversation/domain/question_flow.dart
+@@ -0,0 +1,189 @@
++import 'models.dart';
++
++class QuestionDef {
++  final String qid;
++  final String label;
++  final List<Choice> choices;
++  const QuestionDef({required this.qid, required this.label, required this.choices});
++}
++
++// Quick survey flow (QS1..)
++const List<QuestionDef> surveyFlow = [
++  QuestionDef(
++    qid: 'QS1',
++    label: '언제까지 준비가 필요하신가요?',
++    choices: [
++      Choice(value: 'soon', text: '2주 이내'),
++      Choice(value: 'month1', text: '1개월 이내'),
++      Choice(value: 'flex', text: '유연함'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'QS2',
++    label: '어떤 정보가 가장 궁금하신가요?',
++    choices: [
++      Choice(value: 'elig', text: '자격'),
++      Choice(value: 'limit', text: '한도'),
++      Choice(value: 'docs', text: '서류/절차'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'QS3',
++    label: '주 관심 지역을 선택해 주세요.',
++    choices: [
++      Choice(value: 'metro', text: '수도권'),
++      Choice(value: 'metrocity', text: '광역시'),
++      Choice(value: 'other', text: '기타'),
++    ],
++  ),
++];
++
++// Intake flow (A1..S1)
++const List<QuestionDef> intakeFlow = [
++  QuestionDef(
++    qid: 'A1',
++    label: '현재 무주택이며 세대주이신가요?',
++    choices: [
++      Choice(value: 'owner', text: '무주택·세대주'),
++      Choice(value: 'member', text: '무주택·세대원'),
++      Choice(value: 'onehome', text: '1주택'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'A2',
++    label: '혼인/부양 상태를 선택해 주세요.',
++    choices: [
++      Choice(value: 'single', text: '미혼'),
++      Choice(value: 'newly', text: '신혼(혼인 7년 이내)'),
++      Choice(value: 'children', text: '자녀 있음'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'A3',
++    label: '소득 형태를 선택해 주세요.',
++    choices: [
++      Choice(value: 'work', text: '근로'),
++      Choice(value: 'biz', text: '사업'),
++      Choice(value: 'etc', text: '기타'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'A4',
++    label: '연간 소득 구간을 선택해 주세요.',
++    choices: [
++      Choice(value: 'inc1', text: '내부 구간 1'),
++      Choice(value: 'inc2', text: '내부 구간 2'),
++      Choice(value: 'inc3', text: '내부 구간 3'),
++      Choice(value: 'inc4', text: '내부 구간 4'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'A5',
++    label: '현재 재직/사업 기간은 얼마나 되나요?',
++    choices: [
++      Choice(value: 'm0_6', text: '0~6개월'),
++      Choice(value: 'm7_12', text: '7~12개월'),
++      Choice(value: 'm13_24', text: '13~24개월'),
++      Choice(value: 'm24p', text: '24개월 이상'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'A6',
++    label: '보유 중인 대출/보증이 있나요?',
++    choices: [
++      Choice(value: 'jeonse', text: '전세보증'),
++      Choice(value: 'mtg', text: '주담대'),
++      Choice(value: 'credit', text: '신용'),
++      Choice(value: 'none', text: '없음'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'A7',
++    label: '최근 연체·회생·파산·면책 이력이 있나요?',
++    choices: [
++      Choice(value: 'credit_ok', text: '문제 없음'),
++      Choice(value: 'credit_recent', text: '최근 연체'),
++      Choice(value: 'credit_severe', text: '장기연체/회생/파산/면책'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'P1',
++    label: '주택 유형을 선택해 주세요.',
++    choices: [
++      Choice(value: 'apt', text: '아파트'),
++      Choice(value: 'officetel', text: '오피스텔'),
++      Choice(value: 'multifam', text: '다가구'),
++      Choice(value: 'villa', text: '연립·다세대'),
++      Choice(value: 'one_room', text: '원룸'),
++      Choice(value: 'etc', text: '기타'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'P2',
++    label: '전용면적 범위를 선택해 주세요.',
++    choices: [
++      Choice(value: 'fa_le40', text: '≤ 40㎡'),
++      Choice(value: 'fa_41_60', text: '41–60㎡'),
++      Choice(value: 'fa_61_85', text: '61–85㎡'),
++      Choice(value: 'fa_gt85', text: '85㎡ 초과'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'P3',
++    label: '지역을 선택해 주세요.',
++    choices: [
++      Choice(value: 'metro', text: '수도권'),
++      Choice(value: 'metrocity', text: '광역시'),
++      Choice(value: 'other', text: '기타'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'P4',
++    label: '전세보증금(또는 보증금+월세)을 알려주세요.',
++    choices: [
++      Choice(value: 'dep_le1', text: '1억 이하'),
++      Choice(value: 'dep_1_2', text: '1~2억'),
++      Choice(value: 'dep_2_3', text: '2~3억'),
++      Choice(value: 'dep_gt3', text: '3억 이상'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'P5',
++    label: '계약 상태를 알려주세요.',
++    choices: [
++      Choice(value: 'pre', text: '계약 전'),
++      Choice(value: 'precontract', text: '가계약'),
++      Choice(value: 'contract', text: '본계약'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'P6',
++    label: '입주 예정 시점을 알려주세요.',
++    choices: [
++      Choice(value: 'w1', text: '1주 내'),
++      Choice(value: 'w2_4', text: '2~4주'),
++      Choice(value: 'm1_3', text: '1~3개월'),
++      Choice(value: 'm3p', text: '3개월+'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'P7',
++    label: '등기상 근저당이 있나요?',
++    choices: [
++      Choice(value: 'encumbrance_yes', text: '있음'),
++      Choice(value: 'encumbrance_no', text: '없음'),
++    ],
++  ),
++  QuestionDef(
++    qid: 'S1',
++    label: '우대/특례에 해당되나요?',
++    choices: [
++      Choice(value: 'youth', text: '청년'),
++      Choice(value: 'newly', text: '신혼'),
++      Choice(value: 'multi', text: '다자녀'),
++      Choice(value: 'lowinc', text: '저소득'),
++      Choice(value: 'none', text: '해당 없음'),
++    ],
++  ),
++];
++
+-- 
+2.39.5 (Apple Git-154)
+
+
+From c59ccf02c658c93a5d70fd170bc88f1986faf6f1 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 12:17:38 +0900
+Subject: [PATCH 13/22] refactor(bloc): use domain survey/intake flows; remove
+ hardcoded flow definitions from Cubit
+
+---
+ .../conversation/bloc/conversation_cubit.dart | 189 +-----------------
+ 1 file changed, 2 insertions(+), 187 deletions(-)
+
+diff --git a/lib/features/conversation/bloc/conversation_cubit.dart b/lib/features/conversation/bloc/conversation_cubit.dart
+index c72e099..1af9b3d 100644
+--- a/lib/features/conversation/bloc/conversation_cubit.dart
++++ b/lib/features/conversation/bloc/conversation_cubit.dart
+@@ -3,6 +3,7 @@ import 'package:meta/meta.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
+ import '../../../common/analytics/analytics.dart';
+ import '../../conversation/domain/models.dart';
++import '../../conversation/domain/question_flow.dart' as qf;
+ 
+ enum ConversationPhase { survey, intake, qna }
+ 
+@@ -82,7 +83,7 @@ class ConversationCubit extends Cubit<ConversationState> {
+   }
+ 
+   void _emitQuestion({required ConversationPhase phase, required int step}) {
+-    final list = phase == ConversationPhase.survey ? _surveyFlow : _flow;
++    final list = phase == ConversationPhase.survey ? qf.surveyFlow : qf.intakeFlow;
+     final q = list[step];
+     final cq = ConversationQuestion(
+       qid: q.qid,
+@@ -226,190 +227,4 @@ class ConversationCubit extends Cubit<ConversationState> {
+ 
+   bool _isSurveyQid(String qid) => qid.startsWith('QS');
+ 
+-  // Question flow (moved from UI)
+-  static final List<_Q> _flow = [
+-    _Q(
+-      qid: 'A1',
+-      label: '현재 무주택이며 세대주이신가요?',
+-      choices: const [
+-        Choice(value: 'owner', text: '무주택·세대주'),
+-        Choice(value: 'member', text: '무주택·세대원'),
+-        Choice(value: 'onehome', text: '1주택'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'A2',
+-      label: '혼인/부양 상태를 선택해 주세요.',
+-      choices: const [
+-        Choice(value: 'single', text: '미혼'),
+-        Choice(value: 'newly', text: '신혼(혼인 7년 이내)'),
+-        Choice(value: 'children', text: '자녀 있음'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'A3',
+-      label: '소득 형태를 선택해 주세요.',
+-      choices: const [
+-        Choice(value: 'work', text: '근로'),
+-        Choice(value: 'biz', text: '사업'),
+-        Choice(value: 'etc', text: '기타'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'A4',
+-      label: '연간 소득 구간을 선택해 주세요.',
+-      choices: const [
+-        Choice(value: 'inc1', text: '내부 구간 1'),
+-        Choice(value: 'inc2', text: '내부 구간 2'),
+-        Choice(value: 'inc3', text: '내부 구간 3'),
+-        Choice(value: 'inc4', text: '내부 구간 4'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'A5',
+-      label: '현재 재직/사업 기간은 얼마나 되나요?',
+-      choices: const [
+-        Choice(value: 'm0_6', text: '0~6개월'),
+-        Choice(value: 'm7_12', text: '7~12개월'),
+-        Choice(value: 'm13_24', text: '13~24개월'),
+-        Choice(value: 'm24p', text: '24개월 이상'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'A6',
+-      label: '보유 중인 대출/보증이 있나요?',
+-      choices: const [
+-        Choice(value: 'jeonse', text: '전세보증'),
+-        Choice(value: 'mtg', text: '주담대'),
+-        Choice(value: 'credit', text: '신용'),
+-        Choice(value: 'none', text: '없음'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'A7',
+-      label: '최근 연체·회생·파산·면책 이력이 있나요?',
+-      choices: const [
+-        Choice(value: 'credit_ok', text: '문제 없음'),
+-        Choice(value: 'credit_recent', text: '최근 연체'),
+-        Choice(value: 'credit_severe', text: '장기연체/회생/파산/면책'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'P1',
+-      label: '주택 유형을 선택해 주세요.',
+-      choices: const [
+-        Choice(value: 'apt', text: '아파트'),
+-        Choice(value: 'officetel', text: '오피스텔'),
+-        Choice(value: 'multifam', text: '다가구'),
+-        Choice(value: 'villa', text: '연립·다세대'),
+-        Choice(value: 'one_room', text: '원룸'),
+-        Choice(value: 'etc', text: '기타'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'P2',
+-      label: '전용면적 범위를 선택해 주세요.',
+-      choices: const [
+-        Choice(value: 'fa_le40', text: '≤ 40㎡'),
+-        Choice(value: 'fa_41_60', text: '41–60㎡'),
+-        Choice(value: 'fa_61_85', text: '61–85㎡'),
+-        Choice(value: 'fa_gt85', text: '85㎡ 초과'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'P3',
+-      label: '지역을 선택해 주세요.',
+-      choices: const [
+-        Choice(value: 'metro', text: '수도권'),
+-        Choice(value: 'metrocity', text: '광역시'),
+-        Choice(value: 'other', text: '기타'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'P4',
+-      label: '전세보증금(또는 보증금+월세)을 알려주세요.',
+-      choices: const [
+-        Choice(value: 'dep_le1', text: '1억 이하'),
+-        Choice(value: 'dep_1_2', text: '1~2억'),
+-        Choice(value: 'dep_2_3', text: '2~3억'),
+-        Choice(value: 'dep_gt3', text: '3억 이상'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'P5',
+-      label: '계약 상태를 알려주세요.',
+-      choices: const [
+-        Choice(value: 'pre', text: '계약 전'),
+-        Choice(value: 'precontract', text: '가계약'),
+-        Choice(value: 'contract', text: '본계약'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'P6',
+-      label: '입주 예정 시점을 알려주세요.',
+-      choices: const [
+-        Choice(value: 'w1', text: '1주 내'),
+-        Choice(value: 'w2_4', text: '2~4주'),
+-        Choice(value: 'm1_3', text: '1~3개월'),
+-        Choice(value: 'm3p', text: '3개월+'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'P7',
+-      label: '등기상 근저당이 있나요?',
+-      choices: const [
+-        Choice(value: 'encumbrance_yes', text: '있음'),
+-        Choice(value: 'encumbrance_no', text: '없음'),
+-      ],
+-    ),
+-    _Q(
+-      qid: 'S1',
+-      label: '우대/특례에 해당되나요?',
+-      choices: const [
+-        Choice(value: 'youth', text: '청년'),
+-        Choice(value: 'newly', text: '신혼'),
+-        Choice(value: 'multi', text: '다자녀'),
+-        Choice(value: 'lowinc', text: '저소득'),
+-        Choice(value: 'none', text: '해당 없음'),
+-      ],
+-    ),
+-  ];
+-
+-  static final List<_Q> _surveyFlow = [
+-    const _Q(
+-      qid: 'QS1',
+-      label: '언제까지 준비가 필요하신가요?',
+-      choices: [
+-        Choice(value: 'soon', text: '2주 이내'),
+-        Choice(value: 'month1', text: '1개월 이내'),
+-        Choice(value: 'flex', text: '유연함'),
+-      ],
+-    ),
+-    const _Q(
+-      qid: 'QS2',
+-      label: '어떤 정보가 가장 궁금하신가요?',
+-      choices: [
+-        Choice(value: 'elig', text: '자격'),
+-        Choice(value: 'limit', text: '한도'),
+-        Choice(value: 'docs', text: '서류/절차'),
+-      ],
+-    ),
+-    const _Q(
+-      qid: 'QS3',
+-      label: '주 관심 지역을 선택해 주세요.',
+-      choices: [
+-        Choice(value: 'metro', text: '수도권'),
+-        Choice(value: 'metrocity', text: '광역시'),
+-        Choice(value: 'other', text: '기타'),
+-      ],
+-    ),
+-  ];
+-}
+-
+-@immutable
+-class _Q {
+-  final String qid;
+-  final String label;
+-  final List<Choice> choices;
+-  const _Q({required this.qid, required this.label, required this.choices});
+ }
+-- 
+2.39.5 (Apple Git-154)
+
+
+From e62b2a8f07cb4bc0b53302b83666fd61f6d76887 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 12:18:13 +0900
+Subject: [PATCH 14/22] fix(bloc): replace leftover _flow/_surveyFlow
+ references with domain flows; drop flutter/foundation import
+
+---
+ lib/features/conversation/bloc/conversation_cubit.dart | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/lib/features/conversation/bloc/conversation_cubit.dart b/lib/features/conversation/bloc/conversation_cubit.dart
+index 1af9b3d..0bdbe6e 100644
+--- a/lib/features/conversation/bloc/conversation_cubit.dart
++++ b/lib/features/conversation/bloc/conversation_cubit.dart
+@@ -1,4 +1,3 @@
+-import 'package:flutter/foundation.dart';
+ import 'package:meta/meta.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
+ import '../../../common/analytics/analytics.dart';
+@@ -55,14 +54,14 @@ class ConversationCubit extends Cubit<ConversationState> {
+   void answer(String qid, String value) {
+     final phase = state.phase;
+     _answers[qid] = value;
+-    final list = phase == ConversationPhase.survey ? _surveyFlow : _flow;
++    final list = phase == ConversationPhase.survey ? qf.surveyFlow : qf.intakeFlow;
+     if (_step < list.length - 1) {
+       _step += 1;
+       _emitQuestion(phase: phase, step: _step);
+     } else {
+       if (phase == ConversationPhase.survey) {
+         final surveyDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
+-        Analytics.instance.quickSurveyComplete(_surveyFlow.length, surveyDuration);
++        Analytics.instance.quickSurveyComplete(qf.surveyFlow.length, surveyDuration);
+         // Transition to intake
+         _step = 0;
+         _phaseStartedAt = DateTime.now();
+@@ -174,7 +173,7 @@ class ConversationCubit extends Cubit<ConversationState> {
+   void _emitResult(ConversationResult result,
+       {required bool hasUnknown, required String statusKey, List<Reason>? overrideReasons}) {
+     final intakeDuration = DateTime.now().difference(_phaseStartedAt).inMilliseconds;
+-    Analytics.instance.intakeComplete(_flow.length, intakeDuration, hasUnknown, statusKey);
++    Analytics.instance.intakeComplete(qf.intakeFlow.length, intakeDuration, hasUnknown, statusKey);
+     Analytics.instance.rulingShown(statusKey);
+     final r = overrideReasons == null
+         ? result
+-- 
+2.39.5 (Apple Git-154)
+
+
+From d628596c61e5d2c1d85220bc367a32d9ba4945c1 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 12:18:18 +0900
+Subject: [PATCH 15/22] chore(deps): add meta package for @immutable in non-UI
+ layers
+
+---
+ pubspec.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/pubspec.yaml b/pubspec.yaml
+index 41697e8..f2363e1 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -41,6 +41,7 @@ dependencies:
+   # Immutable models and unions
+   freezed: ^2.5.7
+   freezed_annotation: ^2.4.4
++  meta: ^1.12.0
+   
+   # JSON serialization
+   json_annotation: ^4.9.0
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 18fc754a2f43537e5d0df3755cf42926a75f85ba Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 12:23:25 +0900
+Subject: [PATCH 16/22] refactor(ui): extract SuggestionsPanel and
+ ChatComposer; replace inline suggestions/composer in ConversationPage
+
+---
+ .../conversation/ui/conversation_page.dart    | 109 ++++--------------
+ lib/ui/components/chat_composer.dart          |  64 ++++++++++
+ lib/ui/components/suggestions_panel.dart      |  32 +++++
+ 3 files changed, 116 insertions(+), 89 deletions(-)
+ create mode 100644 lib/ui/components/chat_composer.dart
+ create mode 100644 lib/ui/components/suggestions_panel.dart
+
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 35c66b9..06b9c0f 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -8,6 +8,8 @@ import '../../../ui/components/typing_indicator.dart';
+ import '../../../ui/components/ad_slot.dart';
+ import '../../../common/analytics/analytics.dart';
+ import '../../../ui/components/appear.dart';
++import '../../../ui/components/suggestions_panel.dart';
++import '../../../ui/components/chat_composer.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
+ import '../../conversation/bloc/chat_cubit.dart';
+ import '../../conversation/bloc/conversation_cubit.dart';
+@@ -104,9 +106,9 @@ class _ConversationPageState extends State<ConversationPage> {
+ 
+   void _showSuggestionsAndAds() {
+     _rows.add(_Row.suggestions(const [
+-      _Suggestion('한도 추정하기', '한도는 소득/보증금/지역 등에 따라 달라집니다. 내부 기준으로 개요를 안내드릴게요.'),
+-      _Suggestion('서류 체크리스트', '기본 서류는 신분증, 가족·혼인관계, 소득 증빙입니다. 발급처와 순서를 안내해요.'),
+-      _Suggestion('확인 방법 보기', '세대주/보증금/근저당 확인 방법을 알려드릴게요.'),
++      SuggestionItem('한도 추정하기', '한도는 소득/보증금/지역 등에 따라 달라집니다. 내부 기준으로 개요를 안내드릴게요.'),
++      SuggestionItem('서류 체크리스트', '기본 서류는 신분증, 가족·혼인관계, 소득 증빙입니다. 발급처와 순서를 안내해요.'),
++      SuggestionItem('확인 방법 보기', '세대주/보증금/근저당 확인 방법을 알려드릴게요.'),
+     ]));
+     _rows.add(_Row.ad(const AdSlot(placement: AdPlacement.resultBottom)));
+     setState(() {
+@@ -307,25 +309,17 @@ class _ConversationPageState extends State<ConversationPage> {
+                         delay: Duration(milliseconds: 50),
+                         child: Padding(
+                           padding: EdgeInsets.only(bottom: spacing.x3),
+-                          child: Wrap(
+-                            spacing: spacing.x2,
+-                            runSpacing: spacing.x2,
+-                            children: [
+-                              for (final s in row.suggestions!)
+-                                ActionChip(
+-                                  avatar: const Icon(Icons.tips_and_updates, size: 18),
+-                                  label: Text(s.label),
+-                                  onPressed: () {
+-                                    _appendUserText(s.label);
+-                                    _rows.add(_Row.botRich(ChatBubble(
+-                                      role: ChatRole.bot,
+-                                      content: s.botReply,
+-                                    )));
+-                                    Analytics.instance.nextStepClick(s.label);
+-                                    setState(() {});
+-                                  },
+-                                ),
+-                            ],
++                          child: SuggestionsPanel(
++                            suggestions: row.suggestions!,
++                            onTap: (s) {
++                              _appendUserText(s.label);
++                              _rows.add(_Row.botRich(ChatBubble(
++                                role: ChatRole.bot,
++                                content: s.botReply,
++                              )));
++                              Analytics.instance.nextStepClick(s.label);
++                              setState(() {});
++                            },
+                           ),
+                         ),
+                       );
+@@ -349,7 +343,7 @@ class _ConversationPageState extends State<ConversationPage> {
+                 },
+               ),
+             ),
+-            _Composer(
++            ChatComposer(
+               controller: _composer,
+               onSend: () => _onSend(context),
+               enabled: !_awaitingChoice,
+@@ -371,66 +365,7 @@ class _ConversationPageState extends State<ConversationPage> {
+   // Flows and survey handling are provided by ConversationCubit.
+ }
+ 
+-class _Composer extends StatelessWidget {
+-  final TextEditingController controller;
+-  final VoidCallback onSend;
+-  final bool enabled;
+-  const _Composer({required this.controller, required this.onSend, required this.enabled});
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    final spacing = context.spacing;
+-    final cs = Theme.of(context).colorScheme;
+-    final radius = BorderRadius.circular(22);
+-    return Container(
+-      padding: EdgeInsets.fromLTRB(spacing.x3, spacing.x2, spacing.x3, spacing.x2),
+-      decoration: BoxDecoration(
+-        color: cs.surface,
+-        border: Border(top: BorderSide(color: cs.outlineVariant)),
+-      ),
+-      child: Row(
+-        children: [
+-          Expanded(
+-            child: Material(
+-              elevation: enabled ? 2 : 0,
+-              color: cs.surface,
+-              borderRadius: radius,
+-              child: TextField(
+-                controller: controller,
+-                enabled: enabled,
+-                decoration: InputDecoration(
+-                  hintText: enabled ? '질문을 입력하세요…' : '선택지에서 답변해 주세요',
+-                  isDense: true,
+-                  filled: true,
+-                  fillColor: cs.surfaceVariant,
+-                  contentPadding: EdgeInsets.symmetric(horizontal: spacing.x3, vertical: spacing.x2),
+-                  border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+-                ),
+-                onSubmitted: (_) => onSend(),
+-              ),
+-            ),
+-          ),
+-          SizedBox(width: spacing.x2),
+-          AnimatedScale(
+-            scale: enabled ? 1.0 : 0.96,
+-            duration: const Duration(milliseconds: 150),
+-            curve: Curves.easeOut,
+-            child: Material(
+-              color: enabled ? cs.primary : cs.surfaceVariant,
+-              elevation: enabled ? 3 : 0,
+-              shape: const CircleBorder(),
+-              child: IconButton(
+-                onPressed: enabled ? onSend : null,
+-                icon: Icon(Icons.send, color: enabled ? cs.onPrimary : cs.onSurfaceVariant),
+-                tooltip: '보내기',
+-              ),
+-            ),
+-          ),
+-        ],
+-      ),
+-    );
+-  }
+-}
++// _Composer extracted to ui/components/chat_composer.dart as ChatComposer
+ 
+ // UI no longer declares a _Question; ConversationCubit provides question data.
+ 
+@@ -445,7 +380,7 @@ class _Row {
+   final ResultCard? resultCard;
+   final Widget? richWidget;
+   final Widget? adWidget;
+-  final List<_Suggestion>? suggestions;
++  final List<SuggestionItem>? suggestions;
+   final int? index;
+   final int? total;
+   final bool? isSurvey;
+@@ -537,10 +472,6 @@ class _Row {
+         isSurvey = null;
+ }
+ 
+-class _Suggestion {
+-  final String label;
+-  final String botReply;
+-  const _Suggestion(this.label, this.botReply);
+-}
++// _Suggestion extracted to ui/components/suggestions_panel.dart as SuggestionItem
+ 
+ // Phase state is tracked in ConversationCubit; no local enum needed here.
+diff --git a/lib/ui/components/chat_composer.dart b/lib/ui/components/chat_composer.dart
+new file mode 100644
+index 0000000..93dcd0d
+--- /dev/null
++++ b/lib/ui/components/chat_composer.dart
+@@ -0,0 +1,64 @@
++import 'package:flutter/material.dart';
++import '../theme/app_theme.dart';
++
++class ChatComposer extends StatelessWidget {
++  final TextEditingController controller;
++  final VoidCallback onSend;
++  final bool enabled;
++  const ChatComposer({super.key, required this.controller, required this.onSend, required this.enabled});
++
++  @override
++  Widget build(BuildContext context) {
++    final spacing = context.spacing;
++    final cs = Theme.of(context).colorScheme;
++    final radius = BorderRadius.circular(22);
++    return Container(
++      padding: EdgeInsets.fromLTRB(spacing.x3, spacing.x2, spacing.x3, spacing.x2),
++      decoration: BoxDecoration(
++        color: cs.surface,
++        border: Border(top: BorderSide(color: cs.outlineVariant)),
++      ),
++      child: Row(
++        children: [
++          Expanded(
++            child: Material(
++              elevation: enabled ? 2 : 0,
++              color: cs.surface,
++              borderRadius: radius,
++              child: TextField(
++                controller: controller,
++                enabled: enabled,
++                decoration: InputDecoration(
++                  hintText: enabled ? '질문을 입력하세요…' : '선택지에서 답변해 주세요',
++                  isDense: true,
++                  filled: true,
++                  fillColor: cs.surfaceVariant,
++                  contentPadding: EdgeInsets.symmetric(horizontal: spacing.x3, vertical: spacing.x2),
++                  border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
++                ),
++                onSubmitted: (_) => onSend(),
++              ),
++            ),
++          ),
++          SizedBox(width: spacing.x2),
++          AnimatedScale(
++            scale: enabled ? 1.0 : 0.96,
++            duration: const Duration(milliseconds: 150),
++            curve: Curves.easeOut,
++            child: Material(
++              color: enabled ? cs.primary : cs.surfaceVariant,
++              elevation: enabled ? 3 : 0,
++              shape: const CircleBorder(),
++              child: IconButton(
++                onPressed: enabled ? onSend : null,
++                icon: Icon(Icons.send, color: enabled ? cs.onPrimary : cs.onSurfaceVariant),
++                tooltip: '보내기',
++              ),
++            ),
++          ),
++        ],
++      ),
++    );
++  }
++}
++
+diff --git a/lib/ui/components/suggestions_panel.dart b/lib/ui/components/suggestions_panel.dart
+new file mode 100644
+index 0000000..4d32e1c
+--- /dev/null
++++ b/lib/ui/components/suggestions_panel.dart
+@@ -0,0 +1,32 @@
++import 'package:flutter/material.dart';
++import '../theme/app_theme.dart';
++
++class SuggestionItem {
++  final String label;
++  final String botReply;
++  const SuggestionItem(this.label, this.botReply);
++}
++
++class SuggestionsPanel extends StatelessWidget {
++  final List<SuggestionItem> suggestions;
++  final ValueChanged<SuggestionItem>? onTap;
++  const SuggestionsPanel({super.key, required this.suggestions, this.onTap});
++
++  @override
++  Widget build(BuildContext context) {
++    final spacing = context.spacing;
++    return Wrap(
++      spacing: spacing.x2,
++      runSpacing: spacing.x2,
++      children: [
++        for (final s in suggestions)
++          ActionChip(
++            avatar: const Icon(Icons.tips_and_updates, size: 18),
++            label: Text(s.label),
++            onPressed: onTap == null ? null : () => onTap!(s),
++          ),
++      ],
++    );
++  }
++}
++
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 5a9bfc975b2cd50391a9bfd9d14760098f82b6fe Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 16:19:31 +0900
+Subject: [PATCH 17/22] chore(web): add scripts to serve/package Flutter web
+ build and deployment guide for local Chrome
+
+---
+ docs/docs/DEPLOY_LOCAL_WEB.md | 41 +++++++++++++++++++++++++++++++++++
+ scripts/package_web.sh        | 21 ++++++++++++++++++
+ scripts/serve_web.cmd         | 14 ++++++++++++
+ scripts/serve_web.sh          | 15 +++++++++++++
+ 4 files changed, 91 insertions(+)
+ create mode 100644 docs/docs/DEPLOY_LOCAL_WEB.md
+ create mode 100644 scripts/package_web.sh
+ create mode 100644 scripts/serve_web.cmd
+ create mode 100644 scripts/serve_web.sh
+
+diff --git a/docs/docs/DEPLOY_LOCAL_WEB.md b/docs/docs/DEPLOY_LOCAL_WEB.md
+new file mode 100644
+index 0000000..2167146
+--- /dev/null
++++ b/docs/docs/DEPLOY_LOCAL_WEB.md
+@@ -0,0 +1,41 @@
++## 로컬에서 Chrome으로 실행/전달하기
++
++목표: Flutter Web 빌드를 받아, 상대방이 간단히 로컬에서 열어볼 수 있도록 준비합니다.
++
++중요: Flutter Web은 `file://`(더블클릭) 방식으로 바로 여는 것을 권장하지 않습니다. 브라우저 보안 정책/서비스워커/CanvasKit(WASM) 이슈로 실패할 수 있어, 간단한 정적 서버로 띄우는 방식을 권장합니다.
++
++권장 옵션 A) 정적 서버로 실행(가장 쉬움)
++1) 웹 빌드
++   - `flutter build web --web-renderer html --pwa-strategy=none`
++     - HTML 렌더러 사용(로컬 호스팅 호환성 ↑)
++     - PWA 서비스워커 비활성화(로컬 캐싱/경로 이슈 ↓)
++2) 로컬 서버 실행
++   - macOS/Linux: `bash scripts/serve_web.sh` (기본 8080)
++   - Windows: `scripts\serve_web.cmd` (기본 8080)
++3) 접속: http://localhost:8080
++
++권장 옵션 B) 패키징해서 전달(수신자도 서버 없이 실행 스크립트만)
++1) 패키징
++   - `bash scripts/package_web.sh`
++   - 산출물: `dist/geonsaehelper_web.zip`
++2) 전달 방법
++   - zip을 전달하고, 수신자에게 다음 중 하나 안내:
++     - macOS/Linux: 압축 해제 후 `python3 -m http.server 8080 -d web` 실행 → http://localhost:8080
++     - Windows: `py -3 -m http.server 8080 -d web` 실행 → http://localhost:8080
++
++옵션 C) Chrome을 파일 모드로 강제 실행(비권장)
++- 일부 환경에서 아래 플래그로 가능하나, WASM/Fetch 제한 등으로 실패 가능성이 큼.
++  - Chrome 실행 시: `--allow-file-access-from-files --disable-web-security`
++- 추가로 Flutter Web의 PWA와 CanvasKit을 비활성화해야 할 수 있음.
++- 실무 전달용으로는 A/B 옵션을 권장합니다.
++
++대안) 데스크톱 앱으로 전달
++- 완전 오프라인/더블클릭 실행이 필요하다면 Flutter 데스크톱 빌드 권장.
++  - macOS: `flutter build macos`
++  - Windows: `flutter build windows`
++  - 생성된 바이너리를 전달하면 브라우저/서버 없이 실행 가능합니다.
++
++참고
++- API 통신이 필요한 기능은 로컬에서 실패할 수 있습니다. Mock 모드(기본값)로 데모하거나, API 서버 주소를 내부 네트워크에서 접근 가능한 값으로 지정해 주세요.
++  - API 모드 실행 예시: `--dart-define=USE_API_CHAT=true --dart-define=CHAT_API_BASE=http://localhost:8080/api`
++
+diff --git a/scripts/package_web.sh b/scripts/package_web.sh
+new file mode 100644
+index 0000000..6533e15
+--- /dev/null
++++ b/scripts/package_web.sh
+@@ -0,0 +1,21 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++OUT="dist/web"
++ZIP="dist/geonsaehelper_web.zip"
++
++rm -rf dist
++mkdir -p dist
++
++echo "Building Flutter web (HTML renderer, no PWA SW)..."
++flutter build web --web-renderer html --pwa-strategy=none
++
++echo "Packaging build/web to $ZIP"
++mkdir -p "$OUT"
++cp -R build/web/* "$OUT"/
++cd dist
++zip -r "$(basename "$ZIP")" web >/dev/null
++cd - >/dev/null
++
++echo "Done. Deliver dist/geonsaehelper_web.zip to recipients."
++
+diff --git a/scripts/serve_web.cmd b/scripts/serve_web.cmd
+new file mode 100644
+index 0000000..df941b2
+--- /dev/null
++++ b/scripts/serve_web.cmd
+@@ -0,0 +1,14 @@
++@echo off
++setlocal ENABLEDELAYEDEXPANSION
++
++set PORT=%PORT%
++if "%PORT%"=="" set PORT=8080
++
++if not exist build\web (
++  echo [!] build\web not found. Run: flutter build web --web-renderer html --pwa-strategy=none
++  exit /b 1
++)
++
++echo Serving build\web at http://localhost:%PORT% (Ctrl+C to stop)
++py -3 -m http.server %PORT% -d build\web
++
+diff --git a/scripts/serve_web.sh b/scripts/serve_web.sh
+new file mode 100644
+index 0000000..d74f333
+--- /dev/null
++++ b/scripts/serve_web.sh
+@@ -0,0 +1,15 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++PORT="
++${PORT:-8080}"
++DIR="build/web"
++
++if [ ! -d "$DIR" ]; then
++  echo "[!] $DIR not found. Run: flutter build web --web-renderer html --pwa-strategy=none"
++  exit 1
++fi
++
++echo "Serving $DIR at http://localhost:${PORT} (Ctrl+C to stop)"
++python3 -m http.server "$PORT" -d "$DIR"
++
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 1ae5ed09dab53f07474d169e4b0a33d3c5a4f68c Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 16:44:06 +0900
+Subject: [PATCH 18/22] =?UTF-8?q?=EA=B0=88=EB=AC=B4=EB=A6=AC?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ docs/docs/ARCHITECTURE.md                     | 186 +++---
+ .../conversation/ui/conversation_page.dart    | 564 ++++++++++--------
+ pubspec.lock                                  |  18 +-
+ 3 files changed, 409 insertions(+), 359 deletions(-)
+
+diff --git a/docs/docs/ARCHITECTURE.md b/docs/docs/ARCHITECTURE.md
+index b382a1d..f7d4129 100644
+--- a/docs/docs/ARCHITECTURE.md
++++ b/docs/docs/ARCHITECTURE.md
+@@ -1,22 +1,28 @@
+-# Project Architecture Guide
+-
+-## 개요
+-- 목표: 기능 단위로 확장 가능한 구조를 간결하게 유지합니다.
+-- 패턴: Flutter + BLoC(`flutter_bloc`) + Domain 모델 + Repository(+선택: Local/Remote).
+-- 원칙: UI → BLoC → Domain → Repository → DataSource 단방향 의존. 생성 파일(`*.freezed.dart`, `*.g.dart`)은 수정 금지.
+-
+-> 본 문서는 우리 제품 맥락(HUG 예비판정 + RAG Q&A)에 맞춘 이상적 구조를 정의합니다.
+-
+-## 디렉터리 구조(권장)
++# Architecture Guide
++
++## TL;DR
++- 레이어: `UI → BLoC → Domain → Repository → DataSource`의 단방향 의존만 허용합니다.
++- BLoC는 도메인 타입만 사용하며 Flutter/Material에 의존하지 않습니다.
++- ‘모름’은 항상 불가(정보 부족)로 귀결하고, 사유는 `ReasonKind.unknown`으로 표시합니다.
++- 결과는 TL;DR → 사유 → 다음 단계 → last_verified 순으로 노출합니다(30일 초과 시 배지).
++- RAG: 내부 문서만 근거. 응답에는 `{docId, sectionKey}`와 `last_verified`를 포함합니다.
++
++## 원칙
++- 단방향 의존: `UI → BLoC → Domain → Repository → DataSource`.
++- 관심사 분리: UI는 표현, BLoC는 상태/흐름, Domain은 규칙/값, Data는 I/O.
++- 순수 도메인: Domain은 프레임워크(Flutter/Material) 비의존, 값 객체 중심.
++- 테스트 우선: 도메인 규칙과 상태 전이를 단위 테스트 가능하게 설계.
++
++## 디렉터리 구조
+ ```
+ lib/
+   features/
+     <feature>/
+-      ui/    # 화면/위젯
+-      bloc/  # Cubit/Bloc, State
+-      domain/# 도메인 모델/타입(Flutter 의존 금지)
+-      data/  # Repository interface + impl, 매퍼, remote/local data sources
+-  common/    # 공용 테마/토큰/유틸/측정(Analytics)
++      ui/      # 화면/위젯(표현)
++      bloc/    # Cubit/Bloc, State(도메인만 참조)
++      domain/  # 도메인 모델/타입/규칙(순수 Dart)
++      data/    # Repository 인터페이스/구현, Remote/Local DS, 매퍼
++  common/      # 테마/토큰/유틸/측정(Analytics)
+ ```
+ 예시
+ ```
+@@ -26,95 +32,55 @@ lib/features/conversation/domain/models.dart
+ lib/features/conversation/data/chat_repository.dart
+ ```
+ 
+-### 의존성 매트릭스(허용 방향)
+-- `ui` → `bloc`, `domain`, `common`
+-- `bloc` → `domain`, `data`(interface만)
+-- `domain` → (없음; 순수 Dart 타입)
+-- `data` → `domain`(interface/모델), `common`(로깅 선택)
+-- `common` → (테마/토큰/로깅 등)
+-
+-금지 사항
+-- `bloc`에서 Flutter UI 타입/아이콘 사용 금지(Material import X)
+-- `ui` 타입을 `bloc`/`data`에서 import 금지(ResultCard, IntakeQuestion 등)
+-- Domain에 플랫폼/프레임워크 의존 금지(순수 값 객체)
++### 의존성 규칙
++- 허용: `ui → bloc|domain|common`, `bloc → domain|data(인터페이스)`, `data → domain|common`.
++- 금지: bloc에서 UI 타입/아이콘 사용, ui 타입을 bloc/data에서 import, domain의 플랫폼 의존.
+ 
+-## 샘플(축약): Domain + Cubit + Repository
++## 타입/모델(도메인)
++- 목적: UI와 분리된 결정/사유/선택지 표현.
++- 예시
+ ```dart
+-// domain/models.dart
+ enum RulingStatus { possible, notPossibleInfo, notPossibleDisq }
+ enum ReasonKind { met, unmet, unknown, warning }
+ class Reason { final String text; final ReasonKind kind; const Reason(this.text, this.kind); }
+ class Choice { final String value; final String text; const Choice({required this.value, required this.text}); }
++```
+ 
+-// bloc/conversation_cubit.dart (발췌)
+-class ConversationCubit extends Cubit<ConversationState> {
+-  void answer(String qid, String value) { /* 상태 전이/판정 */ }
+-  void _evaluateAndEmit() {
+-    // ‘모름’ 처리 → notPossibleInfo, ReasonKind.unknown
+-    // 결격 우선 → notPossibleDisq, ReasonKind.unmet
+-    // 가능 → possible, ReasonKind.met/warning
+-  }
++### Freezed 사용 가이드
++- 사용처: bloc state(합타입), data(API/DTO), domain(값 동등성/사본 필요 시).
++- 생성: `dart run build_runner build --delete-conflicting-outputs`.
++- 예시(발췌)
++```dart
++// bloc state union
++@freezed
++class ChatState with _$ChatState {
++  const factory ChatState.idle() = _Idle;
++  const factory ChatState.loading() = _Loading;
++  const factory ChatState.success(BotReply reply) = _Success;
++  const factory ChatState.error(String message) = _Error;
+ }
+ 
+-// ui/result_card.dart (발췌)
+-// UI는 ReasonKind → 아이콘/색/텍스트를 매핑(프레젠테이션 책임)
+-IconData _icon(ReasonKind k) => switch (k) {
+-  ReasonKind.met => Icons.check_circle,
+-  ReasonKind.unmet => Icons.cancel,
+-  ReasonKind.warning => Icons.warning_amber,
+-  ReasonKind.unknown => Icons.help_outline,
+-};
++// data json
++@freezed
++class BotReply with _$BotReply {
++  const factory BotReply({required String content, @Default(<ChatCitation>[]) List<ChatCitation> citations, required String lastVerified}) = _BotReply;
++  factory BotReply.fromJson(Map<String, dynamic> json) => _$BotReplyFromJson(json);
++}
+ ```
+ 
+-## 아키텍처 결정(핵심)
+-- 의존성 주입: `main.dart`에서 `RepositoryProvider`/`BlocProvider`로 주입. API/Mock은 Env로 스위치(`USE_API_CHAT`).
+-- 도메인 경계: 도메인 타입은 Flutter/Material/Icons 비의존. UI 매핑은 컴포넌트 내부에서 수행.
+-- 오류/결과: 인프라 예외 → 도메인 에러로 변환 후 Cubit에서 사용자 메시지 표준화.
+-- 규칙 엔진(예비판정): 우선순위 C1(결격) → C2(필수 확인/모름) → C3(조건/경고). Cubit 내부에서 도메인 ReasonKind로만 판단.
+-- 데이터 소스: Repository 아래 Local/Remote 분리. 캐시/리트라이/백오프는 Repository에서 관리.
+-- 네비게이션: 화면 로직은 UI에서 최소화. BLoC 상태 전이에 기반해 UI 조합.
++## 상태 관리(BLoC/Cubit)
++- 선택 기준: 단순 흐름은 Cubit, 복합 이벤트/효과는 Bloc.
++- 금지: IconData/색상 등 UI 세부 로직 포함.
++- 권장: 입력 검증/규칙 판단/단계 전이는 Cubit에서 도메인 타입으로만 처리.
++- Analytics: 사용자 인터랙션 시점(UI) 또는 공통 Observer로 수집(세부는 MEASUREMENT_PLAN.md).
+ 
+-## 필수 명령어
+-- 의존성: `flutter pub get`
+-- 코드 생성: `dart run build_runner build --delete-conflicting-outputs`
+-- 정적 분석/포맷: `flutter analyze` / `dart format .`
+-- 테스트/실행: `flutter test` / `flutter run -d chrome`
++## 데이터 계층(Repository/DS)
++- Repository: 인터페이스로 도메인 친화 API 설계, 구현은 Remote/Local DS로 위임.
++- Remote: API 호출/에러 변환/정규화. Local: 캐시/설정/키체인 등.
++- 토글: `USE_API_CHAT` 등 Env로 API/Mock 전환.
+ 
+-## 필수 라이브러리
+-- flutter_bloc: BLoC 상태 관리 및 UI 연동
+-- freezed, freezed_annotation: 불변 모델/합타입 정의
+-- build_runner: 코드 생성 실행기(Freezed/JSON)
+-- json_annotation, json_serializable: 모델 직렬화/역직렬화
+-- sqflite, path: 로컬 DB 저장소 구현
+-- intl: 숫자/날짜/통화 포맷
+-- uuid: 고유 ID 생성
+-- flutter_masked_text2: 입력 포맷팅(마스킹)
+-- flutter_lints: 린트 규칙(analysis_options.yaml)
+-- flutter_test: 위젯/단위 테스트 프레임워크
+-
+-## Conversation(챗봇/예비판정) 가이드(본 프로젝트 특화)
+-- Intake 플로우: 질문 A1..A7, P1..P7, S1. 각 질문에는 ‘모름’ 제공. Cubit이 질문/단계 전환을 소유(UI는 표시만).
+-- ‘모름’ 처리: 하나라도 포함되면 최종 판정은 `notPossibleInfo`(정보 부족). ReasonKind.unknown으로 사유 표기.
+-- 결과 카드: TL;DR → 사유(충족/미충족/확인불가/주의) → 다음 단계 → last_verified. 30일 초과 시 ‘정보 최신성 확인 필요’ 배지.
+-- Chat(Q&A): `ChatCubit` → `ChatRepository(Api/Mock)` 호출. RAG 정책 준수(내부 문서만, {docId, sectionKey} 유지, 외부 링크 금지).
+-- 출처/최신성: 응답에는 citations와 last_verified 포함. UI에서 Chip/Badge로 노출.
+-- 계측: `Analytics`는 UI 상호작용 시점에 배치. 핵심 이벤트는 MEASUREMENT_PLAN.md 준수.
+-
+-## 테스트 전략
+-- 도메인: 규칙/판정 로직 단위 테스트(경계값, ‘모름’, 결격 우선순위). 시간 의존성은 주입 또는 고정 Clock 사용.
+-- BLoC/Cubit: 상태 전이 테스트(mock repository). 성공/실패/로딩/‘모름’ 분기 검증.
+-- UI: 위젯 테스트(컴포넌트 API 계약 검증, 접근성 키/레이블 확인). 스냅샷 보단 의미 기반 검사.
+-
+-## Do / Don’t
+-- Do: UI는 Domain→프레젠테이션 매핑만 담당. 비즈니스 판단은 Cubit/도메인.
+-- Do: BLoC는 Flutter/Material에 의존하지 않음. Domain 타입만 사용.
+-- Do: Repository 인터페이스는 Domain 관점으로 설계. 구현은 DataSource 캡슐화.
+-- Don’t: Cubit에서 아이콘/색상 등 UI 세부 정의 금지.
+-- Don’t: 외부 링크/추정 제공 금지(RAG 정책). 불확실 시 ‘확인불가’ 처리.
+-
+-## DI/부트스트랩(예시)
++## DI/부트스트랩
+ ```dart
+-// main.dart
+ const useApi = bool.fromEnvironment('USE_API_CHAT', defaultValue: false);
+ return RepositoryProvider<ChatRepository>(
+   create: (_) => useApi ? ApiChatRepository() : MockChatRepository(),
+@@ -122,6 +88,46 @@ return RepositoryProvider<ChatRepository>(
+ );
+ ```
+ 
++## Feature 규칙(Conversation 특화)
++- Intake: A1..A7, P1..P7, S1. 모든 질문에 ‘모름’ 제공.
++- 우선순위: C1(결격) → C2(필수/모름) → C3(조건/경고).
++- ‘모름’: 하나라도 있으면 최종 `notPossibleInfo`, 사유는 `ReasonKind.unknown`.
++- ResultCard: TL;DR → 사유 → 다음 단계 → last_verified. 30일 초과 시 배지.
++
++## RAG(내부 근거) 규칙 요약
++- 내부 문서만 근거, 외부 링크 금지.
++- 출처 메타: `{docId, sectionKey}` 유지.
++- 불확실 시 ‘확인불가’로 응답(추정 금지).
++
++## 측정(Analytics)
++- 핵심 이벤트: `intake_start`, `intake_answer`, `intake_complete`, `ruling_shown`, `reasons_expand`, `next_step_click`, `qna_ask`, `qna_answer`, `feedback_thumb`, `correction_request`.
++- 위치: UI 인터랙션 직후 또는 결과 표시 시점. 상세 스키마는 MEASUREMENT_PLAN.md.
++
++## 테스트 전략
++- 도메인: 규칙/경계/‘모름’/결격 우선순위 테스트.
++- Cubit/Bloc: 상태 전이(성공/실패/로딩/모름) + Repository mock.
++- UI: 위젯 API 계약/접근성 키/표시값 검증. 스냅샷 남용 금지.
++
++## 스타일/네이밍(요약)
++- 파일: `snake_case.dart` / 클래스: `PascalCase` / 메서드·필드: `lowerCamelCase`.
++- 폴더: `features/<feature>/{ui,bloc,domain,data}`.
++- 테스트: 소스 경로 미러, 예) `test/ui/components/result_card_test.dart`.
++- 린트: `analysis_options.yaml` 준수. 포맷: `dart format .`.
++
++## 체크리스트(리뷰/PR 전)
++- [ ] `flutter analyze` 경고/에러 없음(Deprecated는 별도 이슈화).
++- [ ] BLoC가 UI/Material에 의존하지 않음.
++- [ ] ‘모름’ → `notPossibleInfo` 일관, last_verified 표기.
++- [ ] RAG 준수(내부 근거만, citations 포함).
++- [ ] 테스트 통과 및 주요 분기 케이스 추가.
++- [ ] 문서/토큰/사양 변경 시 관련 문서 업데이트.
++
++## 개발 명령어(요약)
++- 의존성: `flutter pub get`
++- 코드 생성: `dart run build_runner build --delete-conflicting-outputs`
++- 정적 분석/포맷: `flutter analyze` / `dart format .`
++- 테스트/실행: `flutter test` / `flutter run -d chrome`
++
+ ### Freezed 사용 가이드(권장 패턴)
+ - 언제 쓰나: 합타입(State)·불변 값 객체·JSON 직렬화가 필요한 경우.
+ - 어디에 쓰나: bloc(state union), data(API/DTO), 필요 시 domain(값 동등성/`copyWith` 필요할 때).
+diff --git a/lib/features/conversation/ui/conversation_page.dart b/lib/features/conversation/ui/conversation_page.dart
+index 06b9c0f..b652a66 100644
+--- a/lib/features/conversation/ui/conversation_page.dart
++++ b/lib/features/conversation/ui/conversation_page.dart
+@@ -1,20 +1,21 @@
+ import 'package:flutter/material.dart';
++import 'package:flutter_bloc/flutter_bloc.dart';
++
++import '../../../common/analytics/analytics.dart';
++import '../../../ui/components/ad_slot.dart';
++import '../../../ui/components/appear.dart';
+ import '../../../ui/components/chat_bubble.dart';
++import '../../../ui/components/chat_composer.dart';
+ import '../../../ui/components/intake_question.dart';
+-import '../../../ui/components/result_card.dart';
+-import '../../../ui/theme/app_theme.dart';
+ import '../../../ui/components/progress_inline.dart';
+-import '../../../ui/components/typing_indicator.dart';
+-import '../../../ui/components/ad_slot.dart';
+-import '../../../common/analytics/analytics.dart';
+-import '../../../ui/components/appear.dart';
++import '../../../ui/components/result_card.dart';
+ import '../../../ui/components/suggestions_panel.dart';
+-import '../../../ui/components/chat_composer.dart';
+-import 'package:flutter_bloc/flutter_bloc.dart';
++import '../../../ui/components/typing_indicator.dart';
++import '../../../ui/theme/app_theme.dart';
+ import '../../conversation/bloc/chat_cubit.dart';
+ import '../../conversation/bloc/conversation_cubit.dart';
+-import '../../conversation/data/chat_repository.dart';
+ import '../../conversation/data/chat_models.dart';
++import '../../conversation/data/chat_repository.dart';
+ import '../../conversation/domain/models.dart' as domain;
+ 
+ class ConversationPage extends StatefulWidget {
+@@ -70,14 +71,16 @@ class _ConversationPageState extends State<ConversationPage> {
+     bool isSurvey = false,
+   }) {
+     setState(() {
+-      _rows.add(_Row.intake(
+-        qid: qid,
+-        label: label,
+-        choices: choices,
+-        index: index,
+-        total: total,
+-        isSurvey: isSurvey,
+-      ));
++      _rows.add(
++        _Row.intake(
++          qid: qid,
++          label: label,
++          choices: choices,
++          index: index,
++          total: total,
++          isSurvey: isSurvey,
++        ),
++      );
+       _awaitingChoice = true;
+     });
+     _scheduleScroll();
+@@ -105,11 +108,19 @@ class _ConversationPageState extends State<ConversationPage> {
+   // Flow evaluation now fully handled by ConversationCubit
+ 
+   void _showSuggestionsAndAds() {
+-    _rows.add(_Row.suggestions(const [
+-      SuggestionItem('한도 추정하기', '한도는 소득/보증금/지역 등에 따라 달라집니다. 내부 기준으로 개요를 안내드릴게요.'),
+-      SuggestionItem('서류 체크리스트', '기본 서류는 신분증, 가족·혼인관계, 소득 증빙입니다. 발급처와 순서를 안내해요.'),
+-      SuggestionItem('확인 방법 보기', '세대주/보증금/근저당 확인 방법을 알려드릴게요.'),
+-    ]));
++    _rows.add(
++      _Row.suggestions(const [
++        SuggestionItem(
++          '한도 추정하기',
++          '한도는 소득/보증금/지역 등에 따라 달라집니다. 내부 기준으로 개요를 안내드릴게요.',
++        ),
++        SuggestionItem(
++          '서류 체크리스트',
++          '기본 서류는 신분증, 가족·혼인관계, 소득 증빙입니다. 발급처와 순서를 안내해요.',
++        ),
++        SuggestionItem('확인 방법 보기', '세대주/보증금/근저당 확인 방법을 알려드릴게요.'),
++      ]),
++    );
+     _rows.add(_Row.ad(const AdSlot(placement: AdPlacement.resultBottom)));
+     setState(() {
+       _awaitingChoice = false;
+@@ -154,23 +165,19 @@ class _ConversationPageState extends State<ConversationPage> {
+ 
+   void _replaceTypingWithReply(int typingIndex, BotReply reply) {
+     // Convert model citations to UI component citations
+-    final cites = reply.citations
+-        .map((c) => Citation(c.docId, c.sectionKey))
+-        .toList();
+-    _rows[typingIndex] = _Row.botRich(ChatBubble(
+-      role: ChatRole.bot,
+-      content: reply.content,
+-      citations: cites,
+-    ));
++    final cites =
++        reply.citations.map((c) => Citation(c.docId, c.sectionKey)).toList();
++    _rows[typingIndex] = _Row.botRich(
++      ChatBubble(role: ChatRole.bot, content: reply.content, citations: cites),
++    );
+     setState(() {});
+     _scheduleScroll();
+   }
+ 
+   void _replaceTypingWithError(int typingIndex, String message) {
+-    _rows[typingIndex] = _Row.botRich(ChatBubble(
+-      role: ChatRole.bot,
+-      content: message,
+-    ));
++    _rows[typingIndex] = _Row.botRich(
++      ChatBubble(role: ChatRole.bot, content: message),
++    );
+     setState(() {});
+     _scheduleScroll();
+   }
+@@ -180,7 +187,10 @@ class _ConversationPageState extends State<ConversationPage> {
+     final spacing = context.spacing;
+     return MultiBlocProvider(
+       providers: [
+-        BlocProvider<ChatCubit>(create: (ctx) => ChatCubit(RepositoryProvider.of<ChatRepository>(ctx))),
++        BlocProvider<ChatCubit>(
++          create:
++              (ctx) => ChatCubit(RepositoryProvider.of<ChatRepository>(ctx)),
++        ),
+         BlocProvider<ConversationCubit>(create: (_) => ConversationCubit()),
+       ],
+       child: Builder(
+@@ -195,164 +205,192 @@ class _ConversationPageState extends State<ConversationPage> {
+             listeners: [
+               BlocListener<ChatCubit, ChatState>(
+                 listener: (context, state) {
+-              state.maybeWhen(
+-                success: (reply) {
+-                  if (_typingRowIndex != null) {
+-                    _replaceTypingWithReply(_typingRowIndex!, reply);
+-                    Analytics.instance
+-                        .qnaAnswer(true, reply.lastVerified.isEmpty ? '2025-09-02' : reply.lastVerified);
+-                    _typingRowIndex = null;
+-                  }
++                  state.maybeWhen(
++                    success: (reply) {
++                      if (_typingRowIndex != null) {
++                        _replaceTypingWithReply(_typingRowIndex!, reply);
++                        Analytics.instance.qnaAnswer(
++                          true,
++                          reply.lastVerified.isEmpty
++                              ? '2025-09-02'
++                              : reply.lastVerified,
++                        );
++                        _typingRowIndex = null;
++                      }
++                    },
++                    error: (msg) {
++                      if (_typingRowIndex != null) {
++                        _replaceTypingWithError(_typingRowIndex!, msg);
++                        _typingRowIndex = null;
++                      }
++                    },
++                    orElse: () {},
++                  );
+                 },
+-                error: (msg) {
+-                  if (_typingRowIndex != null) {
+-                    _replaceTypingWithError(_typingRowIndex!, msg);
+-                    _typingRowIndex = null;
++              ),
++              BlocListener<ConversationCubit, ConversationState>(
++                listener: (context, state) {
++                  if (state.message != null && state.message!.isNotEmpty) {
++                    _appendBotText(state.message!);
+                   }
+-                },
+-                orElse: () {},
+-              );
+-            },
+-          ),
+-          BlocListener<ConversationCubit, ConversationState>(
+-            listener: (context, state) {
+-              if (state.message != null && state.message!.isNotEmpty) {
+-                _appendBotText(state.message!);
+-              }
+-              if (state.question != null) {
+-                _appendQuestion(
+-                  state.question!.qid,
+-                  state.question!.label,
+-                  state.question!.choices,
+-                  index: state.question!.index,
+-                  total: state.question!.total,
+-                  isSurvey: state.question!.isSurvey,
+-                );
+-              }
+-              if (state.result != null) {
+-                _rows.add(_Row.result(ResultCard(
+-                  status: state.result!.status,
+-                  tldr: state.result!.tldr,
+-                  reasons: state.result!.reasons,
+-                  nextSteps: state.result!.nextSteps,
+-                  lastVerified: state.result!.lastVerified,
+-                )));
+-                setState(() {});
+-                _showSuggestionsAndAds();
+-              }
+-              setState(() => _awaitingChoice = state.awaitingChoice);
+-              _scheduleScroll();
+-            },
+-          ),
+-        ],
+-        child: Scaffold(
+-          appBar: AppBar(title: const Text('대화형 예비판정')),
+-          body: SafeArea(
+-            child: Column(
+-              children: [
+-            Expanded(
+-              child: ListView.builder(
+-                controller: _scroll,
+-                padding: EdgeInsets.all(spacing.x4),
+-                itemCount: _rows.length,
+-                itemBuilder: (context, index) {
+-                  final row = _rows[index];
+-                  switch (row.type) {
+-                    case _RowType.botText:
+-                      return Appear(
+-                        delay: Duration(milliseconds: 40),
+-                        child: Padding(
+-                          padding: EdgeInsets.only(bottom: spacing.x3),
+-                          child: ChatBubble(role: ChatRole.bot, content: row.text ?? ''),
+-                        ),
+-                      );
+-                    case _RowType.userText:
+-                      return Appear(
+-                        delay: Duration(milliseconds: 40),
+-                        child: Padding(
+-                          padding: EdgeInsets.only(bottom: spacing.x3),
+-                          child: ChatBubble(role: ChatRole.user, content: row.text ?? ''),
+-                        ),
+-                      );
+-                    case _RowType.intake:
+-                      return Appear(
+-                        delay: Duration(milliseconds: 60),
+-                        child: Padding(
+-                          padding: EdgeInsets.only(bottom: spacing.x4),
+-                          child: Column(
+-                            crossAxisAlignment: CrossAxisAlignment.start,
+-                            children: [
+-                              ProgressInline(current: row.index ?? 1, total: row.total ?? 1, showBar: true),
+-                              SizedBox(height: spacing.x1),
+-                              IntakeQuestion(
+-                                qid: row.qid!,
+-                                label: row.label!,
+-                                options: row.choices!,
+-                                showUnknown: true,
+-        onChanged: (v) => _onChoiceSelected(context, row.qid!, v),
+-      ),
+-                            ],
+-                          ),
+-                        ),
+-                      );
+-                    case _RowType.ad:
+-                      return Appear(
+-                        delay: Duration(milliseconds: 80),
+-                        child: Padding(
+-                          padding: EdgeInsets.only(bottom: spacing.x4),
+-                          child: row.adWidget!,
+-                        ),
+-                      );
+-                    case _RowType.suggestions:
+-                      return Appear(
+-                        duration: const Duration(milliseconds: 120),
+-                        delay: Duration(milliseconds: 50),
+-                        child: Padding(
+-                          padding: EdgeInsets.only(bottom: spacing.x3),
+-                          child: SuggestionsPanel(
+-                            suggestions: row.suggestions!,
+-                            onTap: (s) {
+-                              _appendUserText(s.label);
+-                              _rows.add(_Row.botRich(ChatBubble(
+-                                role: ChatRole.bot,
+-                                content: s.botReply,
+-                              )));
+-                              Analytics.instance.nextStepClick(s.label);
+-                              setState(() {});
+-                            },
+-                          ),
+-                        ),
+-                      );
+-                    case _RowType.result:
+-                      return Appear(
+-                        child: Padding(
+-                          padding: EdgeInsets.only(bottom: spacing.x4),
+-                          child: row.resultCard!,
+-                        ),
+-                      );
+-                    case _RowType.botRich:
+-                      return Appear(
+-                        delay: Duration(milliseconds: 50),
+-                        duration: const Duration(milliseconds: 120),
+-                        child: Padding(
+-                          padding: EdgeInsets.only(bottom: spacing.x3),
+-                          child: row.richWidget!,
++                  if (state.question != null) {
++                    _appendQuestion(
++                      state.question!.qid,
++                      state.question!.label,
++                      state.question!.choices,
++                      index: state.question!.index,
++                      total: state.question!.total,
++                      isSurvey: state.question!.isSurvey,
++                    );
++                  }
++                  if (state.result != null) {
++                    _rows.add(
++                      _Row.result(
++                        ResultCard(
++                          status: state.result!.status,
++                          tldr: state.result!.tldr,
++                          reasons: state.result!.reasons,
++                          nextSteps: state.result!.nextSteps,
++                          lastVerified: state.result!.lastVerified,
+                         ),
+-                      );
++                      ),
++                    );
++                    setState(() {});
++                    _showSuggestionsAndAds();
+                   }
++                  setState(() => _awaitingChoice = state.awaitingChoice);
++                  _scheduleScroll();
+                 },
+               ),
++            ],
++            child: Scaffold(
++              appBar: AppBar(title: const Text('대화형 예비판정')),
++              body: SafeArea(
++                child: Column(
++                  children: [
++                    Expanded(
++                      child: ListView.builder(
++                        controller: _scroll,
++                        padding: EdgeInsets.all(spacing.x4),
++                        itemCount: _rows.length,
++                        itemBuilder: (context, index) {
++                          final row = _rows[index];
++                          switch (row.type) {
++                            case _RowType.botText:
++                              return Appear(
++                                delay: Duration(milliseconds: 40),
++                                child: Padding(
++                                  padding: EdgeInsets.only(bottom: spacing.x3),
++                                  child: ChatBubble(
++                                    role: ChatRole.bot,
++                                    content: row.text ?? '',
++                                  ),
++                                ),
++                              );
++                            case _RowType.userText:
++                              return Appear(
++                                delay: Duration(milliseconds: 40),
++                                child: Padding(
++                                  padding: EdgeInsets.only(bottom: spacing.x3),
++                                  child: ChatBubble(
++                                    role: ChatRole.user,
++                                    content: row.text ?? '',
++                                  ),
++                                ),
++                              );
++                            case _RowType.intake:
++                              return Appear(
++                                delay: Duration(milliseconds: 60),
++                                child: Padding(
++                                  padding: EdgeInsets.only(bottom: spacing.x4),
++                                  child: Column(
++                                    crossAxisAlignment:
++                                        CrossAxisAlignment.start,
++                                    children: [
++                                      ProgressInline(
++                                        current: row.index ?? 1,
++                                        total: row.total ?? 1,
++                                        showBar: true,
++                                      ),
++                                      SizedBox(height: spacing.x1),
++                                      IntakeQuestion(
++                                        qid: row.qid!,
++                                        label: row.label!,
++                                        options: row.choices!,
++                                        showUnknown: true,
++                                        onChanged:
++                                            (v) => _onChoiceSelected(
++                                              context,
++                                              row.qid!,
++                                              v,
++                                            ),
++                                      ),
++                                    ],
++                                  ),
++                                ),
++                              );
++                            case _RowType.ad:
++                              return Appear(
++                                delay: Duration(milliseconds: 80),
++                                child: Padding(
++                                  padding: EdgeInsets.only(bottom: spacing.x4),
++                                  child: row.adWidget!,
++                                ),
++                              );
++                            case _RowType.suggestions:
++                              return Appear(
++                                duration: const Duration(milliseconds: 120),
++                                delay: Duration(milliseconds: 50),
++                                child: Padding(
++                                  padding: EdgeInsets.only(bottom: spacing.x3),
++                                  child: SuggestionsPanel(
++                                    suggestions: row.suggestions!,
++                                    onTap: (s) {
++                                      _appendUserText(s.label);
++                                      _rows.add(
++                                        _Row.botRich(
++                                          ChatBubble(
++                                            role: ChatRole.bot,
++                                            content: s.botReply,
++                                          ),
++                                        ),
++                                      );
++                                      Analytics.instance.nextStepClick(s.label);
++                                      setState(() {});
++                                    },
++                                  ),
++                                ),
++                              );
++                            case _RowType.result:
++                              return Appear(
++                                child: Padding(
++                                  padding: EdgeInsets.only(bottom: spacing.x4),
++                                  child: row.resultCard!,
++                                ),
++                              );
++                            case _RowType.botRich:
++                              return Appear(
++                                delay: Duration(milliseconds: 50),
++                                duration: const Duration(milliseconds: 120),
++                                child: Padding(
++                                  padding: EdgeInsets.only(bottom: spacing.x3),
++                                  child: row.richWidget!,
++                                ),
++                              );
++                          }
++                        },
++                      ),
++                    ),
++                    ChatComposer(
++                      controller: _composer,
++                      onSend: () => _onSend(context),
++                      enabled: !_awaitingChoice,
++                    ),
++                  ],
++                ),
++              ),
+             ),
+-            ChatComposer(
+-              controller: _composer,
+-              onSend: () => _onSend(context),
+-              enabled: !_awaitingChoice,
+-            ),
+-          ],
+-        ),
+-      ),
+-    ),
+-      );
++          );
+         },
+       ),
+     );
+@@ -386,90 +424,96 @@ class _Row {
+   final bool? isSurvey;
+ 
+   _Row.bot(this.text)
+-      : type = _RowType.botText,
+-        qid = null,
+-        label = null,
+-        choices = null,
+-        resultCard = null,
+-        richWidget = null,
+-        adWidget = null,
+-        suggestions = null,
+-        index = null,
+-        total = null,
+-        isSurvey = null;
++    : type = _RowType.botText,
++      qid = null,
++      label = null,
++      choices = null,
++      resultCard = null,
++      richWidget = null,
++      adWidget = null,
++      suggestions = null,
++      index = null,
++      total = null,
++      isSurvey = null;
+ 
+   _Row.user(this.text)
+-      : type = _RowType.userText,
+-        qid = null,
+-        label = null,
+-        choices = null,
+-        resultCard = null,
+-        richWidget = null,
+-        adWidget = null,
+-        suggestions = null,
+-        index = null,
+-        total = null,
+-        isSurvey = null;
+-
+-  _Row.intake({required this.qid, required this.label, required this.choices, this.index, this.total, this.isSurvey})
+-      : type = _RowType.intake,
+-        text = null,
+-        resultCard = null,
+-        richWidget = null,
+-        adWidget = null,
+-        suggestions = null;
++    : type = _RowType.userText,
++      qid = null,
++      label = null,
++      choices = null,
++      resultCard = null,
++      richWidget = null,
++      adWidget = null,
++      suggestions = null,
++      index = null,
++      total = null,
++      isSurvey = null;
++
++  _Row.intake({
++    required this.qid,
++    required this.label,
++    required this.choices,
++    this.index,
++    this.total,
++    this.isSurvey,
++  }) : type = _RowType.intake,
++       text = null,
++       resultCard = null,
++       richWidget = null,
++       adWidget = null,
++       suggestions = null;
+ 
+   _Row.result(this.resultCard)
+-      : type = _RowType.result,
+-        text = null,
+-        qid = null,
+-        label = null,
+-        choices = null,
+-        richWidget = null,
+-        adWidget = null,
+-        suggestions = null,
+-        index = null,
+-        total = null,
+-        isSurvey = null;
++    : type = _RowType.result,
++      text = null,
++      qid = null,
++      label = null,
++      choices = null,
++      richWidget = null,
++      adWidget = null,
++      suggestions = null,
++      index = null,
++      total = null,
++      isSurvey = null;
+ 
+   _Row.botRich(this.richWidget)
+-      : type = _RowType.botRich,
+-        text = null,
+-        qid = null,
+-        label = null,
+-        choices = null,
+-        resultCard = null,
+-        adWidget = null,
+-        suggestions = null,
+-        index = null,
+-        total = null,
+-        isSurvey = null;
++    : type = _RowType.botRich,
++      text = null,
++      qid = null,
++      label = null,
++      choices = null,
++      resultCard = null,
++      adWidget = null,
++      suggestions = null,
++      index = null,
++      total = null,
++      isSurvey = null;
+ 
+   _Row.ad(this.adWidget)
+-      : type = _RowType.ad,
+-        text = null,
+-        qid = null,
+-        label = null,
+-        choices = null,
+-        resultCard = null,
+-        richWidget = null,
+-        suggestions = null,
+-        index = null,
+-        total = null,
+-        isSurvey = null;
++    : type = _RowType.ad,
++      text = null,
++      qid = null,
++      label = null,
++      choices = null,
++      resultCard = null,
++      richWidget = null,
++      suggestions = null,
++      index = null,
++      total = null,
++      isSurvey = null;
+ 
+   _Row.suggestions(this.suggestions)
+-      : type = _RowType.suggestions,
+-        text = null,
+-        qid = null,
+-        label = null,
+-        choices = null,
+-        resultCard = null,
+-        richWidget = null,
+-        adWidget = null,
+-        index = null,
+-        total = null,
+-        isSurvey = null;
++    : type = _RowType.suggestions,
++      text = null,
++      qid = null,
++      label = null,
++      choices = null,
++      resultCard = null,
++      richWidget = null,
++      adWidget = null,
++      index = null,
++      total = null,
++      isSurvey = null;
+ }
+ 
+ // _Suggestion extracted to ui/components/suggestions_panel.dart as SuggestionItem
+diff --git a/pubspec.lock b/pubspec.lock
+index 00e0b15..563ea0d 100644
+--- a/pubspec.lock
++++ b/pubspec.lock
+@@ -29,10 +29,10 @@ packages:
+     dependency: transitive
+     description:
+       name: async
+-      sha256: d2872f9c19731c2e5f10444b14686eb7cc85c76274bd6c16e1816bff9a3bab63
++      sha256: "758e6d74e971c3e5aceb4110bfd6698efc7f501675bcfe0c775459a8140750eb"
+       url: "https://pub.dev"
+     source: hosted
+-    version: "2.12.0"
++    version: "2.13.0"
+   bloc:
+     dependency: transitive
+     description:
+@@ -189,10 +189,10 @@ packages:
+     dependency: transitive
+     description:
+       name: fake_async
+-      sha256: "6a95e56b2449df2273fd8c45a662d6947ce1ebb7aafe80e550a3f68297f3cacc"
++      sha256: "5368f224a74523e8d2e7399ea1638b37aecfca824a3cc4dfdf77bf1fa905ac44"
+       url: "https://pub.dev"
+     source: hosted
+-    version: "1.3.2"
++    version: "1.3.3"
+   ffi:
+     dependency: transitive
+     description:
+@@ -348,10 +348,10 @@ packages:
+     dependency: transitive
+     description:
+       name: leak_tracker
+-      sha256: c35baad643ba394b40aac41080300150a4f08fd0fd6a10378f8f7c6bc161acec
++      sha256: "6bb818ecbdffe216e81182c2f0714a2e62b593f4a4f13098713ff1685dfb6ab0"
+       url: "https://pub.dev"
+     source: hosted
+-    version: "10.0.8"
++    version: "10.0.9"
+   leak_tracker_flutter_testing:
+     dependency: transitive
+     description:
+@@ -401,7 +401,7 @@ packages:
+     source: hosted
+     version: "0.11.1"
+   meta:
+-    dependency: transitive
++    dependency: "direct main"
+     description:
+       name: meta
+       sha256: e3641ec5d63ebf0d9b41bd43201a66e3fc79a65db5f61fc181f04cd27aab950c
+@@ -689,10 +689,10 @@ packages:
+     dependency: transitive
+     description:
+       name: vm_service
+-      sha256: "0968250880a6c5fe7edc067ed0a13d4bae1577fe2771dcf3010d52c4a9d3ca14"
++      sha256: ddfa8d30d89985b96407efce8acbdd124701f96741f2d981ca860662f1c0dc02
+       url: "https://pub.dev"
+     source: hosted
+-    version: "14.3.1"
++    version: "15.0.0"
+   watcher:
+     dependency: transitive
+     description:
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 90683cedc8b13b13aa52152e4e662632a754749a Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 17:43:09 +0900
+Subject: [PATCH 19/22] =?UTF-8?q?=EC=8A=A4=ED=94=8C=EB=9E=98=EC=8B=9C=20?=
+ =?UTF-8?q?=EC=9D=B4=EB=AF=B8=EC=A7=80=20v1?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ lib/features/splash/ui/splash_page.dart | 214 ++++++++++++++++++++++++
+ lib/main.dart                           |   3 +-
+ 2 files changed, 216 insertions(+), 1 deletion(-)
+ create mode 100644 lib/features/splash/ui/splash_page.dart
+
+diff --git a/lib/features/splash/ui/splash_page.dart b/lib/features/splash/ui/splash_page.dart
+new file mode 100644
+index 0000000..f1be101
+--- /dev/null
++++ b/lib/features/splash/ui/splash_page.dart
+@@ -0,0 +1,214 @@
++import 'dart:math' as math;
++import 'package:flutter/material.dart';
++import '../../../ui/theme/app_theme.dart';
++import '../../shell/ui/app_shell.dart';
++
++class SplashPage extends StatefulWidget {
++  const SplashPage({super.key});
++  @override
++  State<SplashPage> createState() => _SplashPageState();
++}
++
++class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
++  late final AnimationController _ctrl;
++  late final Animation<double> _fadeIn;
++  late final Animation<double> _scaleUp;
++  late final Animation<double> _slideUp;
++
++  @override
++  void initState() {
++    super.initState();
++    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
++    _fadeIn = CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.5, curve: Curves.easeOut));
++    _scaleUp = Tween<double>(begin: 0.86, end: 1.0).animate(
++      CurvedAnimation(parent: _ctrl, curve: const Interval(0.15, 0.75, curve: Curves.easeOutBack)),
++    );
++    _slideUp = Tween<double>(begin: 16, end: 0).animate(
++      CurvedAnimation(parent: _ctrl, curve: const Interval(0.35, 1.0, curve: Curves.easeOut)),
++    );
++    _ctrl.forward();
++    _ctrl.addStatusListener((s) {
++      if (s == AnimationStatus.completed) {
++        Future.delayed(const Duration(milliseconds: 250), () {
++          if (!mounted) return;
++          Navigator.of(context).pushReplacement(
++            PageRouteBuilder(
++              transitionDuration: const Duration(milliseconds: 350),
++              pageBuilder: (_, __, ___) => const AppShell(),
++              transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
++            ),
++          );
++        });
++      }
++    });
++  }
++
++  @override
++  void dispose() {
++    _ctrl.dispose();
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final spacing = context.spacing;
++    final cs = Theme.of(context).colorScheme;
++    final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
++    final subStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant);
++
++    return Scaffold(
++      body: Container(
++        decoration: BoxDecoration(
++          gradient: LinearGradient(
++            begin: Alignment.topCenter,
++            end: Alignment.bottomCenter,
++            colors: [cs.surface, cs.surface.withOpacity(0.98), cs.surface],
++          ),
++        ),
++        child: SafeArea(
++          child: Center(
++            child: AnimatedBuilder(
++              animation: _ctrl,
++              builder: (context, _) {
++                return Column(
++                  mainAxisAlignment: MainAxisAlignment.center,
++                  children: [
++                    // Logo mark: chat bubble + home glyph with gentle motion
++                    Transform.translate(
++                      offset: Offset(0, _slideUp.value),
++                      child: Transform.scale(
++                        scale: _scaleUp.value,
++                        child: _LogoMark(opacity: _fadeIn.value),
++                      ),
++                    ),
++                    SizedBox(height: spacing.x3),
++                    Opacity(
++                      opacity: _fadeIn.value,
++                      child: Column(
++                        children: [
++                          Text('전세자금대출 도우미', style: titleStyle, textAlign: TextAlign.center),
++                          SizedBox(height: spacing.x1),
++                          Text('HUG 예비판정 · 내부 근거 Q&A', style: subStyle, textAlign: TextAlign.center),
++                        ],
++                      ),
++                    ),
++                  ],
++                );
++              },
++            ),
++          ),
++        ),
++      ),
++    );
++  }
++}
++
++class _LogoMark extends StatelessWidget {
++  final double opacity;
++  const _LogoMark({required this.opacity});
++
++  @override
++  Widget build(BuildContext context) {
++    final cs = Theme.of(context).colorScheme;
++    final spacing = context.spacing;
++    final size = 96.0;
++
++    return Semantics(
++      label: '앱 로고',
++      child: Stack(
++        clipBehavior: Clip.none,
++        alignment: Alignment.center,
++        children: [
++          // soft blob backdrop
++          Opacity(
++            opacity: 0.12 * opacity,
++            child: Container(
++              width: size * 1.6,
++              height: size * 1.1,
++              decoration: BoxDecoration(
++                color: cs.primary,
++                borderRadius: BorderRadius.circular(28),
++                boxShadow: [
++                  BoxShadow(color: cs.primary.withOpacity(0.15), blurRadius: 24, spreadRadius: 4),
++                ],
++              ),
++            ),
++          ),
++          // chat bubble circle
++          _Pill(
++            w: size,
++            h: size * 0.68,
++            color: cs.primaryContainer,
++            child: Row(
++              mainAxisAlignment: MainAxisAlignment.center,
++              children: [
++                Icon(Icons.chat_bubble_rounded, color: cs.onPrimaryContainer),
++                SizedBox(width: spacing.x1),
++                Icon(Icons.home_rounded, color: cs.onPrimaryContainer),
++              ],
++            ),
++          ),
++          // floating dot accents
++          Positioned(
++            right: -8,
++            top: -6,
++            child: _Dot(color: cs.primary, size: 10 * opacity),
++          ),
++          Positioned(
++            left: -10,
++            bottom: -8,
++            child: _Dot(color: cs.tertiary, size: 14 * opacity),
++          ),
++          // subtle rotation
++          Positioned.fill(
++            child: IgnorePointer(
++              child: Transform.rotate(
++                angle: (1 - opacity) * (math.pi / 96),
++                child: const SizedBox.shrink(),
++              ),
++            ),
++          ),
++        ],
++      ),
++    );
++  }
++}
++
++class _Pill extends StatelessWidget {
++  final double w;
++  final double h;
++  final Color color;
++  final Widget child;
++  const _Pill({required this.w, required this.h, required this.color, required this.child});
++  @override
++  Widget build(BuildContext context) {
++    return Container(
++      width: w,
++      height: h,
++      decoration: BoxDecoration(
++        color: color,
++        borderRadius: BorderRadius.circular(h / 2),
++      ),
++      alignment: Alignment.center,
++      child: child,
++    );
++  }
++}
++
++class _Dot extends StatelessWidget {
++  final Color color;
++  final double size;
++  const _Dot({required this.color, required this.size});
++  @override
++  Widget build(BuildContext context) {
++    return Container(
++      width: size,
++      height: size,
++      decoration: BoxDecoration(
++        color: color,
++        shape: BoxShape.circle,
++      ),
++    );
++  }
++}
++
+diff --git a/lib/main.dart b/lib/main.dart
+index 8086fe6..04d23d4 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -1,6 +1,7 @@
+ import 'package:flutter/material.dart';
+ import 'ui/theme/app_theme.dart';
+ import 'features/shell/ui/app_shell.dart';
++import 'features/splash/ui/splash_page.dart';
+ import 'features/conversation/data/chat_repository.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
+ 
+@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
+         theme: buildAppTheme(Brightness.light),
+         darkTheme: buildAppTheme(Brightness.dark),
+         themeMode: ThemeMode.system,
+-        home: const AppShell(),
++        home: const SplashPage(),
+       ),
+     );
+   }
+-- 
+2.39.5 (Apple Git-154)
+
+
+From 59f2aa5bc98d4f6732715ee0a57de58401f28718 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 17:47:45 +0900
+Subject: [PATCH 20/22] feat(splash): add configurable animated splash
+ (Lottie/SVG/Image) with JSON config; docs for customization
+
+---
+ assets/splash/config.json                     | 12 +++
+ assets/splash/logo.svg                        | 15 ++++
+ docs/docs/SPLASH_GUIDE.md                     | 58 +++++++++++++
+ lib/features/splash/domain/splash_config.dart | 68 +++++++++++++++
+ lib/features/splash/ui/splash_page.dart       | 83 +++++++++++++------
+ pubspec.yaml                                  |  6 ++
+ 6 files changed, 218 insertions(+), 24 deletions(-)
+ create mode 100644 assets/splash/config.json
+ create mode 100644 assets/splash/logo.svg
+ create mode 100644 docs/docs/SPLASH_GUIDE.md
+ create mode 100644 lib/features/splash/domain/splash_config.dart
+
+diff --git a/assets/splash/config.json b/assets/splash/config.json
+new file mode 100644
+index 0000000..fb1314e
+--- /dev/null
++++ b/assets/splash/config.json
+@@ -0,0 +1,12 @@
++{
++  "durationMs": 1200,
++  "nextDelayMs": 250,
++  "title": "전세자금대출 도우미",
++  "subtitle": "HUG 예비판정 · 내부 근거 Q&A",
++  "animation": {
++    "type": "svg",
++    "lightAsset": "assets/splash/logo.svg",
++    "darkAsset": "assets/splash/logo.svg"
++  }
++}
++
+diff --git a/assets/splash/logo.svg b/assets/splash/logo.svg
+new file mode 100644
+index 0000000..5db86c8
+--- /dev/null
++++ b/assets/splash/logo.svg
+@@ -0,0 +1,15 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
++  <defs>
++    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
++      <stop offset="0%" stop-color="#3B82F6"/>
++      <stop offset="100%" stop-color="#2563EB"/>
++    </linearGradient>
++  </defs>
++  <g fill="none" fill-rule="evenodd">
++    <rect x="16" y="34" width="96" height="56" rx="16" fill="url(#g)"/>
++    <path d="M44 104c12-4 20-10 24-18-22 0-38-4-44-16 2 18 8 28 20 34z" fill="#90CAF9" opacity=".45"/>
++    <path d="M58 58h12v8H58zM76 58h12v8H76zM40 58h12v8H40z" fill="#fff"/>
++    <path d="M88 44l-8-8-8 8" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
++  </g>
++</svg>
++
+diff --git a/docs/docs/SPLASH_GUIDE.md b/docs/docs/SPLASH_GUIDE.md
+new file mode 100644
+index 0000000..fb05337
+--- /dev/null
++++ b/docs/docs/SPLASH_GUIDE.md
+@@ -0,0 +1,58 @@
++## Splash(Animated) — 구성/커스터마이즈 가이드
++
++목표: 라이브러리 기반(Lottie/SVG/이미지)으로 쉽게 교체·유지보수 가능한 스플래시를 제공합니다.
++
++구성 요소
++- 코드: `lib/features/splash/ui/splash_page.dart`
++- 설정: `assets/splash/config.json`
++- 도메인: `lib/features/splash/domain/splash_config.dart`
++- 에셋: `assets/splash/` (Lottie JSON, SVG, PNG 등)
++
++의존성
++- `lottie`: Lottie JSON 애니메이션 재생
++- `flutter_svg`: SVG 렌더링
++
++설정 파일(config.json)
++```json
++{
++  "durationMs": 1200,
++  "nextDelayMs": 250,
++  "title": "전세자금대출 도우미",
++  "subtitle": "HUG 예비판정 · 내부 근거 Q&A",
++  "animation": {
++    "type": "svg", // svg | lottie | image
++    "lightAsset": "assets/splash/logo.svg",
++    "darkAsset": "assets/splash/logo.svg"
++  }
++}
++```
++
++변경 방법
++1) Lottie로 교체
++   - `assets/splash/intro.json` 추가(디자이너 제공 파일)
++   - `config.json`의 `animation`을 다음과 같이 수정:
++     ```json
++     "animation": {
++       "type": "lottie",
++       "lightAsset": "assets/splash/intro.json",
++       "darkAsset": "assets/splash/intro.json"
++     }
++     ```
++2) SVG로 교체
++   - `assets/splash/logo.svg` 교체 또는 다른 파일 추가 후 경로 변경
++   - `type`을 `svg`로 유지
++3) PNG/JPG로 교체
++   - `assets/splash/logo.png` 추가
++   - `type: "image"`, `lightAsset/darkAsset`에 파일 경로 지정
++
++애니메이션 타이밍 조정
++- `durationMs`: 스플래시 애니메이션 총 시간
++- `nextDelayMs`: 전환(AppShell로)까지의 대기 시간
++
++전환 효과
++- 현재는 페이드 전환(FadeTransition). 필요 시 `SplashPage`의 `PageRouteBuilder`에서 전환 효과 변경 가능.
++
++주의
++- 첫 프레임(네이티브 스플래시)이 필요할 경우 `flutter_native_splash` 패키지로 네이티브 런치 스크린을 구성하고, 본 애니메이션은 그 뒤에 표시하는 것을 권장합니다.
++- 웹 배포 시 Lottie JSON은 동일 경로로 번들되며, 상대 경로가 유효해야 합니다.
++
+diff --git a/lib/features/splash/domain/splash_config.dart b/lib/features/splash/domain/splash_config.dart
+new file mode 100644
+index 0000000..aa39310
+--- /dev/null
++++ b/lib/features/splash/domain/splash_config.dart
+@@ -0,0 +1,68 @@
++import 'dart:convert';
++import 'package:flutter/services.dart' show rootBundle;
++
++enum SplashAnimationType { lottie, svg, image }
++
++class SplashAnimationConfig {
++  final SplashAnimationType type;
++  final String lightAsset;
++  final String darkAsset;
++  const SplashAnimationConfig({required this.type, required this.lightAsset, required this.darkAsset});
++}
++
++class SplashConfig {
++  final int durationMs;
++  final int nextDelayMs;
++  final String title;
++  final String subtitle;
++  final SplashAnimationConfig animation;
++
++  const SplashConfig({
++    required this.durationMs,
++    required this.nextDelayMs,
++    required this.title,
++    required this.subtitle,
++    required this.animation,
++  });
++
++  static const SplashConfig fallback = SplashConfig(
++    durationMs: 1200,
++    nextDelayMs: 250,
++    title: '전세자금대출 도우미',
++    subtitle: 'HUG 예비판정 · 내부 근거 Q&A',
++    animation: SplashAnimationConfig(
++      type: SplashAnimationType.svg,
++      lightAsset: 'assets/splash/logo.svg',
++      darkAsset: 'assets/splash/logo.svg',
++    ),
++  );
++
++  static Future<SplashConfig> load([String path = 'assets/splash/config.json']) async {
++    try {
++      final raw = await rootBundle.loadString(path);
++      final map = jsonDecode(raw) as Map<String, dynamic>;
++      final anim = map['animation'] as Map<String, dynamic>?;
++      final typeStr = (anim?['type'] as String? ?? 'svg').toLowerCase();
++      final type = switch (typeStr) {
++        'lottie' => SplashAnimationType.lottie,
++        'svg' => SplashAnimationType.svg,
++        'image' => SplashAnimationType.image,
++        _ => SplashAnimationType.svg,
++      };
++      return SplashConfig(
++        durationMs: (map['durationMs'] as num?)?.toInt() ?? fallback.durationMs,
++        nextDelayMs: (map['nextDelayMs'] as num?)?.toInt() ?? fallback.nextDelayMs,
++        title: (map['title'] as String?) ?? fallback.title,
++        subtitle: (map['subtitle'] as String?) ?? fallback.subtitle,
++        animation: SplashAnimationConfig(
++          type: type,
++          lightAsset: (anim?['lightAsset'] as String?) ?? fallback.animation.lightAsset,
++          darkAsset: (anim?['darkAsset'] as String?) ?? fallback.animation.darkAsset,
++        ),
++      );
++    } catch (_) {
++      return fallback;
++    }
++  }
++}
++
+diff --git a/lib/features/splash/ui/splash_page.dart b/lib/features/splash/ui/splash_page.dart
+index f1be101..a3a7605 100644
+--- a/lib/features/splash/ui/splash_page.dart
++++ b/lib/features/splash/ui/splash_page.dart
+@@ -1,7 +1,10 @@
+ import 'dart:math' as math;
+ import 'package:flutter/material.dart';
++import 'package:flutter_svg/flutter_svg.dart';
++import 'package:lottie/lottie.dart';
+ import '../../../ui/theme/app_theme.dart';
+ import '../../shell/ui/app_shell.dart';
++import '../domain/splash_config.dart';
+ 
+ class SplashPage extends StatefulWidget {
+   const SplashPage({super.key});
+@@ -14,11 +17,20 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
+   late final Animation<double> _fadeIn;
+   late final Animation<double> _scaleUp;
+   late final Animation<double> _slideUp;
++  SplashConfig _config = SplashConfig.fallback;
+ 
+   @override
+   void initState() {
+     super.initState();
+-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
++    SplashConfig.load().then((cfg) {
++      if (!mounted) return;
++      setState(() => _config = cfg);
++      _initAnim(cfg);
++    });
++  }
++
++  void _initAnim(SplashConfig cfg) {
++    _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: cfg.durationMs));
+     _fadeIn = CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.5, curve: Curves.easeOut));
+     _scaleUp = Tween<double>(begin: 0.86, end: 1.0).animate(
+       CurvedAnimation(parent: _ctrl, curve: const Interval(0.15, 0.75, curve: Curves.easeOutBack)),
+@@ -29,7 +41,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
+     _ctrl.forward();
+     _ctrl.addStatusListener((s) {
+       if (s == AnimationStatus.completed) {
+-        Future.delayed(const Duration(milliseconds: 250), () {
++        Future.delayed(Duration(milliseconds: cfg.nextDelayMs), () {
+           if (!mounted) return;
+           Navigator.of(context).pushReplacement(
+             PageRouteBuilder(
+@@ -73,12 +85,12 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
+                 return Column(
+                   mainAxisAlignment: MainAxisAlignment.center,
+                   children: [
+-                    // Logo mark: chat bubble + home glyph with gentle motion
++                    // Logo/animation
+                     Transform.translate(
+                       offset: Offset(0, _slideUp.value),
+                       child: Transform.scale(
+                         scale: _scaleUp.value,
+-                        child: _LogoMark(opacity: _fadeIn.value),
++                        child: _AnimatedMark(opacity: _fadeIn.value, config: _config),
+                       ),
+                     ),
+                     SizedBox(height: spacing.x3),
+@@ -86,9 +98,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
+                       opacity: _fadeIn.value,
+                       child: Column(
+                         children: [
+-                          Text('전세자금대출 도우미', style: titleStyle, textAlign: TextAlign.center),
++                          Text(_config.title, style: titleStyle, textAlign: TextAlign.center),
+                           SizedBox(height: spacing.x1),
+-                          Text('HUG 예비판정 · 내부 근거 Q&A', style: subStyle, textAlign: TextAlign.center),
++                          Text(_config.subtitle, style: subStyle, textAlign: TextAlign.center),
+                         ],
+                       ),
+                     ),
+@@ -103,15 +115,18 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
+   }
+ }
+ 
+-class _LogoMark extends StatelessWidget {
++class _AnimatedMark extends StatelessWidget {
+   final double opacity;
+-  const _LogoMark({required this.opacity});
++  final SplashConfig config;
++  const _AnimatedMark({required this.opacity, required this.config});
+ 
+   @override
+   Widget build(BuildContext context) {
+     final cs = Theme.of(context).colorScheme;
+     final spacing = context.spacing;
+-    final size = 96.0;
++    final size = 112.0;
++    final isDark = Theme.of(context).brightness == Brightness.dark;
++    final asset = isDark ? config.animation.darkAsset : config.animation.lightAsset;
+ 
+     return Semantics(
+       label: '앱 로고',
+@@ -134,20 +149,8 @@ class _LogoMark extends StatelessWidget {
+               ),
+             ),
+           ),
+-          // chat bubble circle
+-          _Pill(
+-            w: size,
+-            h: size * 0.68,
+-            color: cs.primaryContainer,
+-            child: Row(
+-              mainAxisAlignment: MainAxisAlignment.center,
+-              children: [
+-                Icon(Icons.chat_bubble_rounded, color: cs.onPrimaryContainer),
+-                SizedBox(width: spacing.x1),
+-                Icon(Icons.home_rounded, color: cs.onPrimaryContainer),
+-              ],
+-            ),
+-          ),
++          // animation content
++          _contentByType(config.animation.type, asset, cs, spacing, size),
+           // floating dot accents
+           Positioned(
+             right: -8,
+@@ -172,6 +175,39 @@ class _LogoMark extends StatelessWidget {
+       ),
+     );
+   }
++
++  Widget _contentByType(SplashAnimationType type, String asset, ColorScheme cs, dynamic spacing, double size) {
++    switch (type) {
++      case SplashAnimationType.lottie:
++        return SizedBox(
++          width: size,
++          height: size,
++          child: Lottie.asset(asset, fit: BoxFit.contain, repeat: true),
++        );
++      case SplashAnimationType.svg:
++        return _Pill(
++          w: size,
++          h: size * 0.68,
++          color: cs.primaryContainer,
++          child: Row(
++            mainAxisAlignment: MainAxisAlignment.center,
++            children: [
++              SvgPicture.asset(asset, width: size * 0.44, colorFilter: ColorFilter.mode(cs.onPrimaryContainer, BlendMode.srcIn)),
++            ],
++          ),
++        );
++      case SplashAnimationType.image:
++        return _Pill(
++          w: size,
++          h: size * 0.68,
++          color: cs.primaryContainer,
++          child: ClipRRect(
++            borderRadius: BorderRadius.circular(size * 0.34),
++            child: Image.asset(asset, width: size * 0.56, height: size * 0.56, fit: BoxFit.contain),
++          ),
++        );
++    }
++  }
+ }
+ 
+ class _Pill extends StatelessWidget {
+@@ -211,4 +247,3 @@ class _Dot extends StatelessWidget {
+     );
+   }
+ }
+-
+diff --git a/pubspec.yaml b/pubspec.yaml
+index f2363e1..9107747 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -51,6 +51,10 @@ dependencies:
+   
+   # HTTP client (API)
+   http: ^1.2.2
++  
++  # Splash/graphics
++  flutter_svg: ^2.0.10+1
++  lottie: ^3.1.3
+ 
+ dev_dependencies:
+   flutter_test:
+@@ -77,6 +81,8 @@ flutter:
+   # included with your application, so that you can use the icons in
+   # the material Icons class.
+   uses-material-design: true
++  assets:
++    - assets/splash/
+ 
+   # To add assets to your application, add an assets section, like this:
+   # assets:
+-- 
+2.39.5 (Apple Git-154)
+
+
+From d761c9a9ca4a42111a2ee31c4e2f39a1cad89c3d Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 17:52:13 +0900
+Subject: [PATCH 21/22] =?UTF-8?q?=EC=8A=A4=ED=94=8C=EB=9E=98=EC=8B=9C=20v2?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ lib/features/splash/ui/splash_page.dart |  7 ++-
+ lib/main.dart                           |  1 -
+ pubspec.lock                            | 82 ++++++++++++++++++++++++-
+ 3 files changed, 86 insertions(+), 4 deletions(-)
+
+diff --git a/lib/features/splash/ui/splash_page.dart b/lib/features/splash/ui/splash_page.dart
+index a3a7605..4609657 100644
+--- a/lib/features/splash/ui/splash_page.dart
++++ b/lib/features/splash/ui/splash_page.dart
+@@ -22,10 +22,12 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
+   @override
+   void initState() {
+     super.initState();
++    // Initialize with fallback config immediately to avoid uninitialized controller.
++    _initAnim(_config);
++    // Load external config asynchronously; update labels/assets when ready.
+     SplashConfig.load().then((cfg) {
+       if (!mounted) return;
+       setState(() => _config = cfg);
+-      _initAnim(cfg);
+     });
+   }
+ 
+@@ -41,7 +43,8 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
+     _ctrl.forward();
+     _ctrl.addStatusListener((s) {
+       if (s == AnimationStatus.completed) {
+-        Future.delayed(Duration(milliseconds: cfg.nextDelayMs), () {
++        final delayMs = _config.nextDelayMs;
++        Future.delayed(Duration(milliseconds: delayMs), () {
+           if (!mounted) return;
+           Navigator.of(context).pushReplacement(
+             PageRouteBuilder(
+diff --git a/lib/main.dart b/lib/main.dart
+index 04d23d4..4bba23a 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -1,6 +1,5 @@
+ import 'package:flutter/material.dart';
+ import 'ui/theme/app_theme.dart';
+-import 'features/shell/ui/app_shell.dart';
+ import 'features/splash/ui/splash_page.dart';
+ import 'features/conversation/data/chat_repository.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
+diff --git a/pubspec.lock b/pubspec.lock
+index 563ea0d..4bbdc8c 100644
+--- a/pubspec.lock
++++ b/pubspec.lock
+@@ -17,6 +17,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "7.7.1"
++  archive:
++    dependency: transitive
++    description:
++      name: archive
++      sha256: "2fde1607386ab523f7a36bb3e7edb43bd58e6edaf2ffb29d8a6d578b297fdbbd"
++      url: "https://pub.dev"
++    source: hosted
++    version: "4.0.7"
+   args:
+     dependency: transitive
+     description:
+@@ -238,6 +246,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "5.0.0"
++  flutter_svg:
++    dependency: "direct main"
++    description:
++      name: flutter_svg
++      sha256: b9c2ad5872518a27507ab432d1fb97e8813b05f0fc693f9d40fad06d073e0678
++      url: "https://pub.dev"
++    source: hosted
++    version: "2.2.1"
+   flutter_test:
+     dependency: "direct dev"
+     description: flutter
+@@ -384,6 +400,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.3.0"
++  lottie:
++    dependency: "direct main"
++    description:
++      name: lottie
++      sha256: c5fa04a80a620066c15cf19cc44773e19e9b38e989ff23ea32e5903ef1015950
++      url: "https://pub.dev"
++    source: hosted
++    version: "3.3.1"
+   matcher:
+     dependency: transitive
+     description:
+@@ -440,6 +464,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.9.1"
++  path_parsing:
++    dependency: transitive
++    description:
++      name: path_parsing
++      sha256: "883402936929eac138ee0a45da5b0f2c80f89913e6dc3bf77eb65b84b409c6ca"
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.1.0"
+   path_provider_linux:
+     dependency: transitive
+     description:
+@@ -464,6 +496,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.3.0"
++  petitparser:
++    dependency: transitive
++    description:
++      name: petitparser
++      sha256: "1a97266a94f7350d30ae522c0af07890c70b8e62c71e8e3920d1db4d23c057d1"
++      url: "https://pub.dev"
++    source: hosted
++    version: "7.0.1"
+   platform:
+     dependency: transitive
+     description:
+@@ -488,6 +528,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.5.1"
++  posix:
++    dependency: transitive
++    description:
++      name: posix
++      sha256: "6323a5b0fa688b6a010df4905a56b00181479e6d10534cecfecede2aa55add61"
++      url: "https://pub.dev"
++    source: hosted
++    version: "6.0.3"
+   provider:
+     dependency: transitive
+     description:
+@@ -677,6 +725,30 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.4.0"
++  vector_graphics:
++    dependency: transitive
++    description:
++      name: vector_graphics
++      sha256: a4f059dc26fc8295b5921376600a194c4ec7d55e72f2fe4c7d2831e103d461e6
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.1.19"
++  vector_graphics_codec:
++    dependency: transitive
++    description:
++      name: vector_graphics_codec
++      sha256: "99fd9fbd34d9f9a32efd7b6a6aae14125d8237b10403b422a6a6dfeac2806146"
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.1.13"
++  vector_graphics_compiler:
++    dependency: transitive
++    description:
++      name: vector_graphics_compiler
++      sha256: d354a7ec6931e6047785f4db12a1f61ec3d43b207fc0790f863818543f8ff0dc
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.1.19"
+   vector_math:
+     dependency: transitive
+     description:
+@@ -733,6 +805,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.1.0"
++  xml:
++    dependency: transitive
++    description:
++      name: xml
++      sha256: "971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025"
++      url: "https://pub.dev"
++    source: hosted
++    version: "6.6.1"
+   yaml:
+     dependency: transitive
+     description:
+@@ -742,5 +822,5 @@ packages:
+     source: hosted
+     version: "3.1.3"
+ sdks:
+-  dart: ">=3.7.2 <4.0.0"
++  dart: ">=3.8.0 <4.0.0"
+   flutter: ">=3.29.0"
+-- 
+2.39.5 (Apple Git-154)
+
+
+From f159669065acab5ef966f087733ffdd12e1032f0 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Thu, 4 Sep 2025 17:54:08 +0900
+Subject: [PATCH 22/22] feat(splash-native): add flutter_native_splash config
+ and web index changes; Android/iOS assets are generated locally via tool
+
+---
+ .../res/drawable-night-v21/background.png     | Bin 0 -> 69 bytes
+ .../drawable-night-v21/launch_background.xml  |   6 ++
+ .../main/res/drawable-night/background.png    | Bin 0 -> 69 bytes
+ .../res/drawable-night/launch_background.xml  |   6 ++
+ .../src/main/res/drawable-v21/background.png  | Bin 0 -> 69 bytes
+ .../res/drawable-v21/launch_background.xml    |  12 +--
+ .../app/src/main/res/drawable/background.png  | Bin 0 -> 69 bytes
+ .../main/res/drawable/launch_background.xml   |  12 +--
+ .../src/main/res/values-night-v31/styles.xml  |  20 ++++
+ .../app/src/main/res/values-night/styles.xml  |   4 +
+ .../app/src/main/res/values-v31/styles.xml    |  20 ++++
+ android/app/src/main/res/values/styles.xml    |   4 +
+ docs/docs/SPLASH_GUIDE.md                     |  27 ++++-
+ .../LaunchBackground.imageset/Contents.json   |  22 +++++
+ .../LaunchBackground.imageset/background.png  | Bin 0 -> 69 bytes
+ .../darkbackground.png                        | Bin 0 -> 69 bytes
+ .../LaunchImage.imageset/Contents.json        |  10 +-
+ .../LaunchImage.imageset/LaunchImage.png      | Bin 68 -> 69 bytes
+ .../LaunchImage.imageset/LaunchImage@2x.png   | Bin 68 -> 69 bytes
+ .../LaunchImage.imageset/LaunchImage@3x.png   | Bin 68 -> 69 bytes
+ ios/Runner/Base.lproj/LaunchScreen.storyboard |  15 ++-
+ ios/Runner/Info.plist                         |  92 +++++++++---------
+ pubspec.lock                                  |  48 +++++++++
+ pubspec.yaml                                  |  18 ++++
+ web/index.html                                |  85 ++++++++++++++--
+ 25 files changed, 320 insertions(+), 81 deletions(-)
+ create mode 100644 android/app/src/main/res/drawable-night-v21/background.png
+ create mode 100644 android/app/src/main/res/drawable-night-v21/launch_background.xml
+ create mode 100644 android/app/src/main/res/drawable-night/background.png
+ create mode 100644 android/app/src/main/res/drawable-night/launch_background.xml
+ create mode 100644 android/app/src/main/res/drawable-v21/background.png
+ create mode 100644 android/app/src/main/res/drawable/background.png
+ create mode 100644 android/app/src/main/res/values-night-v31/styles.xml
+ create mode 100644 android/app/src/main/res/values-v31/styles.xml
+ create mode 100644 ios/Runner/Assets.xcassets/LaunchBackground.imageset/Contents.json
+ create mode 100644 ios/Runner/Assets.xcassets/LaunchBackground.imageset/background.png
+ create mode 100644 ios/Runner/Assets.xcassets/LaunchBackground.imageset/darkbackground.png
+
+diff --git a/android/app/src/main/res/drawable-night-v21/background.png b/android/app/src/main/res/drawable-night-v21/background.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..843dd11a3bd0a3469b202086a7ccef6e31f20a22
+GIT binary patch
+literal 69
+zcmeAS@N?(olHy`uVBq!ia0vp^j3CUx1SBVv2j2ryJf1F&Ar*6yA3l4?&cG1EpglwO
+RxC&65!PC{xWt~$(69B`F503x<
+
+literal 0
+HcmV?d00001
+
+diff --git a/android/app/src/main/res/drawable-night-v21/launch_background.xml b/android/app/src/main/res/drawable-night-v21/launch_background.xml
+new file mode 100644
+index 0000000..f88598c
+--- /dev/null
++++ b/android/app/src/main/res/drawable-night-v21/launch_background.xml
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="utf-8"?>
++<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
++    <item>
++        <bitmap android:gravity="fill" android:src="@drawable/background"/>
++    </item>
++</layer-list>
+diff --git a/android/app/src/main/res/drawable-night/background.png b/android/app/src/main/res/drawable-night/background.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..843dd11a3bd0a3469b202086a7ccef6e31f20a22
+GIT binary patch
+literal 69
+zcmeAS@N?(olHy`uVBq!ia0vp^j3CUx1SBVv2j2ryJf1F&Ar*6yA3l4?&cG1EpglwO
+RxC&65!PC{xWt~$(69B`F503x<
+
+literal 0
+HcmV?d00001
+
+diff --git a/android/app/src/main/res/drawable-night/launch_background.xml b/android/app/src/main/res/drawable-night/launch_background.xml
+new file mode 100644
+index 0000000..f88598c
+--- /dev/null
++++ b/android/app/src/main/res/drawable-night/launch_background.xml
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="utf-8"?>
++<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
++    <item>
++        <bitmap android:gravity="fill" android:src="@drawable/background"/>
++    </item>
++</layer-list>
+diff --git a/android/app/src/main/res/drawable-v21/background.png b/android/app/src/main/res/drawable-v21/background.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..8e21404806af591e5f4e4ac12eddcde9d2602abe
+GIT binary patch
+literal 69
+zcmeAS@N?(olHy`uVBq!ia0vp^j3CUx1SBVv2j2ryJf1F&Ar*6yfBye(&%nmV%p~xY
+RaWhby!PC{xWt~$(69CA855WKc
+
+literal 0
+HcmV?d00001
+
+diff --git a/android/app/src/main/res/drawable-v21/launch_background.xml b/android/app/src/main/res/drawable-v21/launch_background.xml
+index f74085f..f88598c 100644
+--- a/android/app/src/main/res/drawable-v21/launch_background.xml
++++ b/android/app/src/main/res/drawable-v21/launch_background.xml
+@@ -1,12 +1,6 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<!-- Modify this file to customize your launch splash screen -->
+ <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+-    <item android:drawable="?android:colorBackground" />
+-
+-    <!-- You can insert your own image assets here -->
+-    <!-- <item>
+-        <bitmap
+-            android:gravity="center"
+-            android:src="@mipmap/launch_image" />
+-    </item> -->
++    <item>
++        <bitmap android:gravity="fill" android:src="@drawable/background"/>
++    </item>
+ </layer-list>
+diff --git a/android/app/src/main/res/drawable/background.png b/android/app/src/main/res/drawable/background.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..8e21404806af591e5f4e4ac12eddcde9d2602abe
+GIT binary patch
+literal 69
+zcmeAS@N?(olHy`uVBq!ia0vp^j3CUx1SBVv2j2ryJf1F&Ar*6yfBye(&%nmV%p~xY
+RaWhby!PC{xWt~$(69CA855WKc
+
+literal 0
+HcmV?d00001
+
+diff --git a/android/app/src/main/res/drawable/launch_background.xml b/android/app/src/main/res/drawable/launch_background.xml
+index 304732f..f88598c 100644
+--- a/android/app/src/main/res/drawable/launch_background.xml
++++ b/android/app/src/main/res/drawable/launch_background.xml
+@@ -1,12 +1,6 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<!-- Modify this file to customize your launch splash screen -->
+ <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+-    <item android:drawable="@android:color/white" />
+-
+-    <!-- You can insert your own image assets here -->
+-    <!-- <item>
+-        <bitmap
+-            android:gravity="center"
+-            android:src="@mipmap/launch_image" />
+-    </item> -->
++    <item>
++        <bitmap android:gravity="fill" android:src="@drawable/background"/>
++    </item>
+ </layer-list>
+diff --git a/android/app/src/main/res/values-night-v31/styles.xml b/android/app/src/main/res/values-night-v31/styles.xml
+new file mode 100644
+index 0000000..107b4ef
+--- /dev/null
++++ b/android/app/src/main/res/values-night-v31/styles.xml
+@@ -0,0 +1,20 @@
++<?xml version="1.0" encoding="utf-8"?>
++<resources>
++    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is on -->
++    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
++        <item name="android:forceDarkAllowed">false</item>
++        <item name="android:windowFullscreen">false</item>
++        <item name="android:windowDrawsSystemBarBackgrounds">false</item>
++        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
++        <item name="android:windowSplashScreenBackground">#0B0C0F</item>
++    </style>
++    <!-- Theme applied to the Android Window as soon as the process has started.
++         This theme determines the color of the Android Window while your
++         Flutter UI initializes, as well as behind your Flutter UI while its
++         running.
++         
++         This Theme is only used starting with V2 of Flutter's Android embedding. -->
++    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
++        <item name="android:windowBackground">?android:colorBackground</item>
++    </style>
++</resources>
+diff --git a/android/app/src/main/res/values-night/styles.xml b/android/app/src/main/res/values-night/styles.xml
+index 06952be..dbc9ea9 100644
+--- a/android/app/src/main/res/values-night/styles.xml
++++ b/android/app/src/main/res/values-night/styles.xml
+@@ -5,6 +5,10 @@
+         <!-- Show a splash screen on the activity. Automatically removed when
+              the Flutter engine draws its first frame -->
+         <item name="android:windowBackground">@drawable/launch_background</item>
++        <item name="android:forceDarkAllowed">false</item>
++        <item name="android:windowFullscreen">false</item>
++        <item name="android:windowDrawsSystemBarBackgrounds">false</item>
++        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+     </style>
+     <!-- Theme applied to the Android Window as soon as the process has started.
+          This theme determines the color of the Android Window while your
+diff --git a/android/app/src/main/res/values-v31/styles.xml b/android/app/src/main/res/values-v31/styles.xml
+new file mode 100644
+index 0000000..5d70448
+--- /dev/null
++++ b/android/app/src/main/res/values-v31/styles.xml
+@@ -0,0 +1,20 @@
++<?xml version="1.0" encoding="utf-8"?>
++<resources>
++    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is off -->
++    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
++        <item name="android:forceDarkAllowed">false</item>
++        <item name="android:windowFullscreen">false</item>
++        <item name="android:windowDrawsSystemBarBackgrounds">false</item>
++        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
++        <item name="android:windowSplashScreenBackground">#FFFFFF</item>
++    </style>
++    <!-- Theme applied to the Android Window as soon as the process has started.
++         This theme determines the color of the Android Window while your
++         Flutter UI initializes, as well as behind your Flutter UI while its
++         running.
++         
++         This Theme is only used starting with V2 of Flutter's Android embedding. -->
++    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
++        <item name="android:windowBackground">?android:colorBackground</item>
++    </style>
++</resources>
+diff --git a/android/app/src/main/res/values/styles.xml b/android/app/src/main/res/values/styles.xml
+index cb1ef88..0d1fa8f 100644
+--- a/android/app/src/main/res/values/styles.xml
++++ b/android/app/src/main/res/values/styles.xml
+@@ -5,6 +5,10 @@
+         <!-- Show a splash screen on the activity. Automatically removed when
+              the Flutter engine draws its first frame -->
+         <item name="android:windowBackground">@drawable/launch_background</item>
++        <item name="android:forceDarkAllowed">false</item>
++        <item name="android:windowFullscreen">false</item>
++        <item name="android:windowDrawsSystemBarBackgrounds">false</item>
++        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+     </style>
+     <!-- Theme applied to the Android Window as soon as the process has started.
+          This theme determines the color of the Android Window while your
+diff --git a/docs/docs/SPLASH_GUIDE.md b/docs/docs/SPLASH_GUIDE.md
+index fb05337..e8e47bc 100644
+--- a/docs/docs/SPLASH_GUIDE.md
++++ b/docs/docs/SPLASH_GUIDE.md
+@@ -52,7 +52,30 @@
+ 전환 효과
+ - 현재는 페이드 전환(FadeTransition). 필요 시 `SplashPage`의 `PageRouteBuilder`에서 전환 효과 변경 가능.
+ 
++네이티브 스플래시(첫 프레임) 추가 — flutter_native_splash
++1) 설정(pubspec.yaml)
++   ```yaml
++   dev_dependencies:
++     flutter_native_splash: ^2.4.1
++
++   flutter_native_splash:
++     color: "#FFFFFF"
++     color_dark: "#0B0C0F"
++     android: true
++     ios: true
++     web: true
++     # Desktop은 필요 시 추가
++     android_12:
++       color: "#FFFFFF"
++       color_dark: "#0B0C0F"
++   ```
++2) 실행
++   - `flutter pub get`
++   - `dart run flutter_native_splash:create`
++3) 결과
++   - Android/iOS/웹에 초기 빈 화면(색상) 스플래시 적용 → Flutter 위젯 트리 준비 동안 공백화면 방지
++   - 앱 진입 후, 이 문서의 Animated SplashPage가 이어서 표시됨
++
+ 주의
+-- 첫 프레임(네이티브 스플래시)이 필요할 경우 `flutter_native_splash` 패키지로 네이티브 런치 스크린을 구성하고, 본 애니메이션은 그 뒤에 표시하는 것을 권장합니다.
++- Android/iOS의 생성된 이미지 파일(PNG)은 환경에 따라 Git에 바로 커밋되지 않을 수 있습니다(권한/보안 이슈). 생성 스텝은 로컬에서 재실행 가능합니다.
+ - 웹 배포 시 Lottie JSON은 동일 경로로 번들되며, 상대 경로가 유효해야 합니다.
+-
+diff --git a/ios/Runner/Assets.xcassets/LaunchBackground.imageset/Contents.json b/ios/Runner/Assets.xcassets/LaunchBackground.imageset/Contents.json
+new file mode 100644
+index 0000000..8bb185b
+--- /dev/null
++++ b/ios/Runner/Assets.xcassets/LaunchBackground.imageset/Contents.json
+@@ -0,0 +1,22 @@
++{
++  "images" : [
++    {
++      "filename" : "background.png",
++      "idiom" : "universal"
++    },
++    {
++      "appearances" : [
++        {
++          "appearance" : "luminosity",
++          "value" : "dark"
++        }
++      ],
++      "filename" : "darkbackground.png",
++      "idiom" : "universal"
++    }
++  ],
++  "info" : {
++    "author" : "xcode",
++    "version" : 1
++  }
++}
+diff --git a/ios/Runner/Assets.xcassets/LaunchBackground.imageset/background.png b/ios/Runner/Assets.xcassets/LaunchBackground.imageset/background.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..8e21404806af591e5f4e4ac12eddcde9d2602abe
+GIT binary patch
+literal 69
+zcmeAS@N?(olHy`uVBq!ia0vp^j3CUx1SBVv2j2ryJf1F&Ar*6yfBye(&%nmV%p~xY
+RaWhby!PC{xWt~$(69CA855WKc
+
+literal 0
+HcmV?d00001
+
+diff --git a/ios/Runner/Assets.xcassets/LaunchBackground.imageset/darkbackground.png b/ios/Runner/Assets.xcassets/LaunchBackground.imageset/darkbackground.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..843dd11a3bd0a3469b202086a7ccef6e31f20a22
+GIT binary patch
+literal 69
+zcmeAS@N?(olHy`uVBq!ia0vp^j3CUx1SBVv2j2ryJf1F&Ar*6yA3l4?&cG1EpglwO
+RxC&65!PC{xWt~$(69B`F503x<
+
+literal 0
+HcmV?d00001
+
+diff --git a/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json b/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json
+index 0bedcf2..00cabce 100644
+--- a/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json
++++ b/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json
+@@ -1,23 +1,23 @@
+ {
+   "images" : [
+     {
+-      "idiom" : "universal",
+       "filename" : "LaunchImage.png",
++      "idiom" : "universal",
+       "scale" : "1x"
+     },
+     {
+-      "idiom" : "universal",
+       "filename" : "LaunchImage@2x.png",
++      "idiom" : "universal",
+       "scale" : "2x"
+     },
+     {
+-      "idiom" : "universal",
+       "filename" : "LaunchImage@3x.png",
++      "idiom" : "universal",
+       "scale" : "3x"
+     }
+   ],
+   "info" : {
+-    "version" : 1,
+-    "author" : "xcode"
++    "author" : "xcode",
++    "version" : 1
+   }
+ }
+diff --git a/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png b/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png
+index 9da19eacad3b03bb08bbddbbf4ac48dd78b3d838..e815fd621f1968ac104bc8b687d1d19a818d00a8 100644
+GIT binary patch
+delta 49
+zcmZ>9ogk^h#K6EXp*;8=kmB)laSW-Llbo240OW}<u>Ml_t_QLhJYD@<);T3K0RSgn
+B3{?OC
+
+delta 48
+zcmZ>DnINgn!oa|=RfdNNNO60*IEGZrN&a=7fq{vgk!hBUVIfeM!PC{xWt~$(69Dx?
+B3j_cF
+
+diff --git a/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png b/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png
+index 9da19eacad3b03bb08bbddbbf4ac48dd78b3d838..e815fd621f1968ac104bc8b687d1d19a818d00a8 100644
+GIT binary patch
+delta 49
+zcmZ>9ogk^h#K6EXp*;8=kmB)laSW-Llbo240OW}<u>Ml_t_QLhJYD@<);T3K0RSgn
+B3{?OC
+
+delta 48
+zcmZ>DnINgn!oa|=RfdNNNO60*IEGZrN&a=7fq{vgk!hBUVIfeM!PC{xWt~$(69Dx?
+B3j_cF
+
+diff --git a/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png b/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png
+index 9da19eacad3b03bb08bbddbbf4ac48dd78b3d838..e815fd621f1968ac104bc8b687d1d19a818d00a8 100644
+GIT binary patch
+delta 49
+zcmZ>9ogk^h#K6EXp*;8=kmB)laSW-Llbo240OW}<u>Ml_t_QLhJYD@<);T3K0RSgn
+B3{?OC
+
+delta 48
+zcmZ>DnINgn!oa|=RfdNNNO60*IEGZrN&a=7fq{vgk!hBUVIfeM!PC{xWt~$(69Dx?
+B3j_cF
+
+diff --git a/ios/Runner/Base.lproj/LaunchScreen.storyboard b/ios/Runner/Base.lproj/LaunchScreen.storyboard
+index f2e259c..55c0cae 100644
+--- a/ios/Runner/Base.lproj/LaunchScreen.storyboard
++++ b/ios/Runner/Base.lproj/LaunchScreen.storyboard
+@@ -16,13 +16,19 @@
+                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
+                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                         <subviews>
+-                            <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" image="LaunchImage" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-Ey4">
+-                            </imageView>
++                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleToFill" image="LaunchBackground" translatesAutoresizingMaskIntoConstraints="NO" id="tWc-Dq-wcI"/>
++                            <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" image="LaunchImage" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-Ey4"></imageView>
+                         </subviews>
+                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                         <constraints>
+-                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="1a2-6s-vTC"/>
+-                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="4X2-HB-R7a"/>
++                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="3T2-ad-Qdv"/>
++                            <constraint firstItem="tWc-Dq-wcI" firstAttribute="bottom" secondItem="Ze5-6b-2t3" secondAttribute="bottom" id="RPx-PI-7Xg"/>
++                            <constraint firstItem="tWc-Dq-wcI" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="SdS-ul-q2q"/>
++                            <constraint firstAttribute="trailing" secondItem="tWc-Dq-wcI" secondAttribute="trailing" id="Swv-Gf-Rwn"/>
++                            <constraint firstAttribute="trailing" secondItem="YRO-k0-Ey4" secondAttribute="trailing" id="TQA-XW-tRk"/>
++                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="bottom" secondItem="Ze5-6b-2t3" secondAttribute="bottom" id="duK-uY-Gun"/>
++                            <constraint firstItem="tWc-Dq-wcI" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="kV7-tw-vXt"/>
++                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="xPn-NY-SIU"/>
+                         </constraints>
+                     </view>
+                 </viewController>
+@@ -33,5 +39,6 @@
+     </scenes>
+     <resources>
+         <image name="LaunchImage" width="168" height="185"/>
++        <image name="LaunchBackground" width="1" height="1"/>
+     </resources>
+ </document>
+diff --git a/ios/Runner/Info.plist b/ios/Runner/Info.plist
+index b3bffdd..b901539 100644
+--- a/ios/Runner/Info.plist
++++ b/ios/Runner/Info.plist
+@@ -1,49 +1,51 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+ <plist version="1.0">
+-<dict>
+-	<key>CFBundleDevelopmentRegion</key>
+-	<string>$(DEVELOPMENT_LANGUAGE)</string>
+-	<key>CFBundleDisplayName</key>
+-	<string>Geonsaehelper</string>
+-	<key>CFBundleExecutable</key>
+-	<string>$(EXECUTABLE_NAME)</string>
+-	<key>CFBundleIdentifier</key>
+-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+-	<key>CFBundleInfoDictionaryVersion</key>
+-	<string>6.0</string>
+-	<key>CFBundleName</key>
+-	<string>geonsaehelper</string>
+-	<key>CFBundlePackageType</key>
+-	<string>APPL</string>
+-	<key>CFBundleShortVersionString</key>
+-	<string>$(FLUTTER_BUILD_NAME)</string>
+-	<key>CFBundleSignature</key>
+-	<string>????</string>
+-	<key>CFBundleVersion</key>
+-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+-	<key>LSRequiresIPhoneOS</key>
+-	<true/>
+-	<key>UILaunchStoryboardName</key>
+-	<string>LaunchScreen</string>
+-	<key>UIMainStoryboardFile</key>
+-	<string>Main</string>
+-	<key>UISupportedInterfaceOrientations</key>
+-	<array>
+-		<string>UIInterfaceOrientationPortrait</string>
+-		<string>UIInterfaceOrientationLandscapeLeft</string>
+-		<string>UIInterfaceOrientationLandscapeRight</string>
+-	</array>
+-	<key>UISupportedInterfaceOrientations~ipad</key>
+-	<array>
+-		<string>UIInterfaceOrientationPortrait</string>
+-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+-		<string>UIInterfaceOrientationLandscapeLeft</string>
+-		<string>UIInterfaceOrientationLandscapeRight</string>
+-	</array>
+-	<key>CADisableMinimumFrameDurationOnPhone</key>
+-	<true/>
+-	<key>UIApplicationSupportsIndirectInputEvents</key>
+-	<true/>
+-</dict>
++	<dict>
++		<key>CFBundleDevelopmentRegion</key>
++		<string>$(DEVELOPMENT_LANGUAGE)</string>
++		<key>CFBundleDisplayName</key>
++		<string>Geonsaehelper</string>
++		<key>CFBundleExecutable</key>
++		<string>$(EXECUTABLE_NAME)</string>
++		<key>CFBundleIdentifier</key>
++		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
++		<key>CFBundleInfoDictionaryVersion</key>
++		<string>6.0</string>
++		<key>CFBundleName</key>
++		<string>geonsaehelper</string>
++		<key>CFBundlePackageType</key>
++		<string>APPL</string>
++		<key>CFBundleShortVersionString</key>
++		<string>$(FLUTTER_BUILD_NAME)</string>
++		<key>CFBundleSignature</key>
++		<string>????</string>
++		<key>CFBundleVersion</key>
++		<string>$(FLUTTER_BUILD_NUMBER)</string>
++		<key>LSRequiresIPhoneOS</key>
++		<true/>
++		<key>UILaunchStoryboardName</key>
++		<string>LaunchScreen</string>
++		<key>UIMainStoryboardFile</key>
++		<string>Main</string>
++		<key>UISupportedInterfaceOrientations</key>
++		<array>
++			<string>UIInterfaceOrientationPortrait</string>
++			<string>UIInterfaceOrientationLandscapeLeft</string>
++			<string>UIInterfaceOrientationLandscapeRight</string>
++		</array>
++		<key>UISupportedInterfaceOrientations~ipad</key>
++		<array>
++			<string>UIInterfaceOrientationPortrait</string>
++			<string>UIInterfaceOrientationPortraitUpsideDown</string>
++			<string>UIInterfaceOrientationLandscapeLeft</string>
++			<string>UIInterfaceOrientationLandscapeRight</string>
++		</array>
++		<key>CADisableMinimumFrameDurationOnPhone</key>
++		<true/>
++		<key>UIApplicationSupportsIndirectInputEvents</key>
++		<true/>
++		<key>UIStatusBarHidden</key>
++		<false/>
++	</dict>
+ </plist>
+diff --git a/pubspec.lock b/pubspec.lock
+index 4bbdc8c..a9ba171 100644
+--- a/pubspec.lock
++++ b/pubspec.lock
+@@ -17,6 +17,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "7.7.1"
++  ansicolor:
++    dependency: transitive
++    description:
++      name: ansicolor
++      sha256: "50e982d500bc863e1d703448afdbf9e5a72eb48840a4f766fa361ffd6877055f"
++      url: "https://pub.dev"
++    source: hosted
++    version: "2.0.3"
+   archive:
+     dependency: transitive
+     description:
+@@ -177,6 +185,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "3.0.6"
++  csslib:
++    dependency: transitive
++    description:
++      name: csslib
++      sha256: "09bad715f418841f976c77db72d5398dc1253c21fb9c0c7f0b0b985860b2d58e"
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.0.2"
+   cupertino_icons:
+     dependency: "direct main"
+     description:
+@@ -246,6 +262,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "5.0.0"
++  flutter_native_splash:
++    dependency: "direct dev"
++    description:
++      name: flutter_native_splash
++      sha256: "8321a6d11a8d13977fa780c89de8d257cce3d841eecfb7a4cadffcc4f12d82dc"
++      url: "https://pub.dev"
++    source: hosted
++    version: "2.4.6"
+   flutter_svg:
+     dependency: "direct main"
+     description:
+@@ -304,6 +328,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.3.2"
++  html:
++    dependency: transitive
++    description:
++      name: html
++      sha256: "6d1264f2dffa1b1101c25a91dff0dc2daee4c18e87cd8538729773c073dbf602"
++      url: "https://pub.dev"
++    source: hosted
++    version: "0.15.6"
+   http:
+     dependency: "direct main"
+     description:
+@@ -328,6 +360,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "4.1.2"
++  image:
++    dependency: transitive
++    description:
++      name: image
++      sha256: "4e973fcf4caae1a4be2fa0a13157aa38a8f9cb049db6529aa00b4d71abc4d928"
++      url: "https://pub.dev"
++    source: hosted
++    version: "4.5.4"
+   io:
+     dependency: transitive
+     description:
+@@ -725,6 +765,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.4.0"
++  universal_io:
++    dependency: transitive
++    description:
++      name: universal_io
++      sha256: "1722b2dcc462b4b2f3ee7d188dad008b6eb4c40bbd03a3de451d82c78bba9aad"
++      url: "https://pub.dev"
++    source: hosted
++    version: "2.2.2"
+   vector_graphics:
+     dependency: transitive
+     description:
+diff --git a/pubspec.yaml b/pubspec.yaml
+index 9107747..02040b2 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -70,6 +70,7 @@ dev_dependencies:
+   # Code generation
+   build_runner: ^2.4.13
+   json_serializable: ^6.8.0
++  flutter_native_splash: ^2.4.1
+ 
+ # For information on the generic Dart part of this file, see the
+ # following page: https://dart.dev/tools/pub/pubspec
+@@ -84,6 +85,23 @@ flutter:
+   assets:
+     - assets/splash/
+ 
++flutter_native_splash:
++  # Base colors (light/dark)
++  color: "#FFFFFF"
++  color_dark: "#0B0C0F"
++
++  # Platforms
++  android: true
++  ios: true
++  web: true
++  # Desktop platforms are not configured in this profile
++
++  # Android 12 specific
++  android_12:
++    color: "#FFFFFF"
++    color_dark: "#0B0C0F"
++
++
+   # To add assets to your application, add an assets section, like this:
+   # assets:
+   #   - images/a_dot_burr.jpeg
+diff --git a/web/index.html b/web/index.html
+index 423dc61..32adb96 100644
+--- a/web/index.html
++++ b/web/index.html
+@@ -1,6 +1,4 @@
+-<!DOCTYPE html>
+-<html>
+-<head>
++<!DOCTYPE html><html><head>
+   <!--
+     If you are serving your web app in a path other than the root, change the
+     href value below to reflect the base path you are serving from.
+@@ -27,12 +25,85 @@
+   <link rel="apple-touch-icon" href="icons/Icon-192.png">
+ 
+   <!-- Favicon -->
+-  <link rel="icon" type="image/png" href="favicon.png"/>
++  <link rel="icon" type="image/png" href="favicon.png">
+ 
+   <title>geonsaehelper</title>
+   <link rel="manifest" href="manifest.json">
++  <style id="splash-screen-style">
++    html {
++      height: 100%
++    }
++
++    body {
++      margin: 0;
++      min-height: 100%;
++      background-color: #FFFFFF;
++          background-size: 100% 100%;
++    }
++
++    .center {
++      margin: 0;
++      position: absolute;
++      top: 50%;
++      left: 50%;
++      -ms-transform: translate(-50%, -50%);
++      transform: translate(-50%, -50%);
++    }
++
++    .contain {
++      display:block;
++      width:100%; height:100%;
++      object-fit: contain;
++    }
++
++    .stretch {
++      display:block;
++      width:100%; height:100%;
++    }
++
++    .cover {
++      display:block;
++      width:100%; height:100%;
++      object-fit: cover;
++    }
++
++    .bottom {
++      position: absolute;
++      bottom: 0;
++      left: 50%;
++      -ms-transform: translate(-50%, 0);
++      transform: translate(-50%, 0);
++    }
++
++    .bottomLeft {
++      position: absolute;
++      bottom: 0;
++      left: 0;
++    }
++
++    .bottomRight {
++      position: absolute;
++      bottom: 0;
++      right: 0;
++    }
++
++    @media (prefers-color-scheme: dark) {
++      body {
++        background-color: #0B0C0F;
++          }
++    }
++  </style>
++  <script id="splash-screen-script">
++    function removeSplashFromWeb() {
++      document.getElementById("splash")?.remove();
++      document.getElementById("splash-branding")?.remove();
++      document.body.style.background = "transparent";
++    }
++  </script>
++  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+ </head>
+ <body>
+-  <script src="flutter_bootstrap.js" async></script>
+-</body>
+-</html>
++  <script src="flutter_bootstrap.js" async=""></script>
++
++
++</body></html>
+\ No newline at end of file
+-- 
+2.39.5 (Apple Git-154)
+
