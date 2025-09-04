@@ -1,22 +1,28 @@
-# Project Architecture Guide
+# Architecture Guide
 
-## 개요
-- 목표: 기능 단위로 확장 가능한 구조를 간결하게 유지합니다.
-- 패턴: Flutter + BLoC(`flutter_bloc`) + Domain 모델 + Repository(+선택: Local/Remote).
-- 원칙: UI → BLoC → Domain → Repository → DataSource 단방향 의존. 생성 파일(`*.freezed.dart`, `*.g.dart`)은 수정 금지.
+## TL;DR
+- 레이어: `UI → BLoC → Domain → Repository → DataSource`의 단방향 의존만 허용합니다.
+- BLoC는 도메인 타입만 사용하며 Flutter/Material에 의존하지 않습니다.
+- ‘모름’은 항상 불가(정보 부족)로 귀결하고, 사유는 `ReasonKind.unknown`으로 표시합니다.
+- 결과는 TL;DR → 사유 → 다음 단계 → last_verified 순으로 노출합니다(30일 초과 시 배지).
+- RAG: 내부 문서만 근거. 응답에는 `{docId, sectionKey}`와 `last_verified`를 포함합니다.
 
-> 본 문서는 우리 제품 맥락(HUG 예비판정 + RAG Q&A)에 맞춘 이상적 구조를 정의합니다.
+## 원칙
+- 단방향 의존: `UI → BLoC → Domain → Repository → DataSource`.
+- 관심사 분리: UI는 표현, BLoC는 상태/흐름, Domain은 규칙/값, Data는 I/O.
+- 순수 도메인: Domain은 프레임워크(Flutter/Material) 비의존, 값 객체 중심.
+- 테스트 우선: 도메인 규칙과 상태 전이를 단위 테스트 가능하게 설계.
 
-## 디렉터리 구조(권장)
+## 디렉터리 구조
 ```
 lib/
   features/
     <feature>/
-      ui/    # 화면/위젯
-      bloc/  # Cubit/Bloc, State
-      domain/# 도메인 모델/타입(Flutter 의존 금지)
-      data/  # Repository interface + impl, 매퍼, remote/local data sources
-  common/    # 공용 테마/토큰/유틸/측정(Analytics)
+      ui/      # 화면/위젯(표현)
+      bloc/    # Cubit/Bloc, State(도메인만 참조)
+      domain/  # 도메인 모델/타입/규칙(순수 Dart)
+      data/    # Repository 인터페이스/구현, Remote/Local DS, 매퍼
+  common/      # 테마/토큰/유틸/측정(Analytics)
 ```
 예시
 ```
@@ -26,101 +32,101 @@ lib/features/conversation/domain/models.dart
 lib/features/conversation/data/chat_repository.dart
 ```
 
-### 의존성 매트릭스(허용 방향)
-- `ui` → `bloc`, `domain`, `common`
-- `bloc` → `domain`, `data`(interface만)
-- `domain` → (없음; 순수 Dart 타입)
-- `data` → `domain`(interface/모델), `common`(로깅 선택)
-- `common` → (테마/토큰/로깅 등)
+### 의존성 규칙
+- 허용: `ui → bloc|domain|common`, `bloc → domain|data(인터페이스)`, `data → domain|common`.
+- 금지: bloc에서 UI 타입/아이콘 사용, ui 타입을 bloc/data에서 import, domain의 플랫폼 의존.
 
-금지 사항
-- `bloc`에서 Flutter UI 타입/아이콘 사용 금지(Material import X)
-- `ui` 타입을 `bloc`/`data`에서 import 금지(ResultCard, IntakeQuestion 등)
-- Domain에 플랫폼/프레임워크 의존 금지(순수 값 객체)
-
-## 샘플(축약): Domain + Cubit + Repository
+## 타입/모델(도메인)
+- 목적: UI와 분리된 결정/사유/선택지 표현.
+- 예시
 ```dart
-// domain/models.dart
 enum RulingStatus { possible, notPossibleInfo, notPossibleDisq }
 enum ReasonKind { met, unmet, unknown, warning }
 class Reason { final String text; final ReasonKind kind; const Reason(this.text, this.kind); }
 class Choice { final String value; final String text; const Choice({required this.value, required this.text}); }
-
-// bloc/conversation_cubit.dart (발췌)
-class ConversationCubit extends Cubit<ConversationState> {
-  void answer(String qid, String value) { /* 상태 전이/판정 */ }
-  void _evaluateAndEmit() {
-    // ‘모름’ 처리 → notPossibleInfo, ReasonKind.unknown
-    // 결격 우선 → notPossibleDisq, ReasonKind.unmet
-    // 가능 → possible, ReasonKind.met/warning
-  }
-}
-
-// ui/result_card.dart (발췌)
-// UI는 ReasonKind → 아이콘/색/텍스트를 매핑(프레젠테이션 책임)
-IconData _icon(ReasonKind k) => switch (k) {
-  ReasonKind.met => Icons.check_circle,
-  ReasonKind.unmet => Icons.cancel,
-  ReasonKind.warning => Icons.warning_amber,
-  ReasonKind.unknown => Icons.help_outline,
-};
 ```
 
-## 아키텍처 결정(핵심)
-- 의존성 주입: `main.dart`에서 `RepositoryProvider`/`BlocProvider`로 주입. API/Mock은 Env로 스위치(`USE_API_CHAT`).
-- 도메인 경계: 도메인 타입은 Flutter/Material/Icons 비의존. UI 매핑은 컴포넌트 내부에서 수행.
-- 오류/결과: 인프라 예외 → 도메인 에러로 변환 후 Cubit에서 사용자 메시지 표준화.
-- 규칙 엔진(예비판정): 우선순위 C1(결격) → C2(필수 확인/모름) → C3(조건/경고). Cubit 내부에서 도메인 ReasonKind로만 판단.
-- 데이터 소스: Repository 아래 Local/Remote 분리. 캐시/리트라이/백오프는 Repository에서 관리.
-- 네비게이션: 화면 로직은 UI에서 최소화. BLoC 상태 전이에 기반해 UI 조합.
-
-## 필수 명령어
-- 의존성: `flutter pub get`
-- 코드 생성: `dart run build_runner build --delete-conflicting-outputs`
-- 정적 분석/포맷: `flutter analyze` / `dart format .`
-- 테스트/실행: `flutter test` / `flutter run -d chrome`
-
-## 필수 라이브러리
-- flutter_bloc: BLoC 상태 관리 및 UI 연동
-- freezed, freezed_annotation: 불변 모델/합타입 정의
-- build_runner: 코드 생성 실행기(Freezed/JSON)
-- json_annotation, json_serializable: 모델 직렬화/역직렬화
-- sqflite, path: 로컬 DB 저장소 구현
-- intl: 숫자/날짜/통화 포맷
-- uuid: 고유 ID 생성
-- flutter_masked_text2: 입력 포맷팅(마스킹)
-- flutter_lints: 린트 규칙(analysis_options.yaml)
-- flutter_test: 위젯/단위 테스트 프레임워크
-
-## Conversation(챗봇/예비판정) 가이드(본 프로젝트 특화)
-- Intake 플로우: 질문 A1..A7, P1..P7, S1. 각 질문에는 ‘모름’ 제공. Cubit이 질문/단계 전환을 소유(UI는 표시만).
-- ‘모름’ 처리: 하나라도 포함되면 최종 판정은 `notPossibleInfo`(정보 부족). ReasonKind.unknown으로 사유 표기.
-- 결과 카드: TL;DR → 사유(충족/미충족/확인불가/주의) → 다음 단계 → last_verified. 30일 초과 시 ‘정보 최신성 확인 필요’ 배지.
-- Chat(Q&A): `ChatCubit` → `ChatRepository(Api/Mock)` 호출. RAG 정책 준수(내부 문서만, {docId, sectionKey} 유지, 외부 링크 금지).
-- 출처/최신성: 응답에는 citations와 last_verified 포함. UI에서 Chip/Badge로 노출.
-- 계측: `Analytics`는 UI 상호작용 시점에 배치. 핵심 이벤트는 MEASUREMENT_PLAN.md 준수.
-
-## 테스트 전략
-- 도메인: 규칙/판정 로직 단위 테스트(경계값, ‘모름’, 결격 우선순위). 시간 의존성은 주입 또는 고정 Clock 사용.
-- BLoC/Cubit: 상태 전이 테스트(mock repository). 성공/실패/로딩/‘모름’ 분기 검증.
-- UI: 위젯 테스트(컴포넌트 API 계약 검증, 접근성 키/레이블 확인). 스냅샷 보단 의미 기반 검사.
-
-## Do / Don’t
-- Do: UI는 Domain→프레젠테이션 매핑만 담당. 비즈니스 판단은 Cubit/도메인.
-- Do: BLoC는 Flutter/Material에 의존하지 않음. Domain 타입만 사용.
-- Do: Repository 인터페이스는 Domain 관점으로 설계. 구현은 DataSource 캡슐화.
-- Don’t: Cubit에서 아이콘/색상 등 UI 세부 정의 금지.
-- Don’t: 외부 링크/추정 제공 금지(RAG 정책). 불확실 시 ‘확인불가’ 처리.
-
-## DI/부트스트랩(예시)
+### Freezed 사용 가이드
+- 사용처: bloc state(합타입), data(API/DTO), domain(값 동등성/사본 필요 시).
+- 생성: `dart run build_runner build --delete-conflicting-outputs`.
+- 예시(발췌)
 ```dart
-// main.dart
+// bloc state union
+@freezed
+class ChatState with _$ChatState {
+  const factory ChatState.idle() = _Idle;
+  const factory ChatState.loading() = _Loading;
+  const factory ChatState.success(BotReply reply) = _Success;
+  const factory ChatState.error(String message) = _Error;
+}
+
+// data json
+@freezed
+class BotReply with _$BotReply {
+  const factory BotReply({required String content, @Default(<ChatCitation>[]) List<ChatCitation> citations, required String lastVerified}) = _BotReply;
+  factory BotReply.fromJson(Map<String, dynamic> json) => _$BotReplyFromJson(json);
+}
+```
+
+## 상태 관리(BLoC/Cubit)
+- 선택 기준: 단순 흐름은 Cubit, 복합 이벤트/효과는 Bloc.
+- 금지: IconData/색상 등 UI 세부 로직 포함.
+- 권장: 입력 검증/규칙 판단/단계 전이는 Cubit에서 도메인 타입으로만 처리.
+- Analytics: 사용자 인터랙션 시점(UI) 또는 공통 Observer로 수집(세부는 MEASUREMENT_PLAN.md).
+
+## 데이터 계층(Repository/DS)
+- Repository: 인터페이스로 도메인 친화 API 설계, 구현은 Remote/Local DS로 위임.
+- Remote: API 호출/에러 변환/정규화. Local: 캐시/설정/키체인 등.
+- 토글: `USE_API_CHAT` 등 Env로 API/Mock 전환.
+
+## DI/부트스트랩
+```dart
 const useApi = bool.fromEnvironment('USE_API_CHAT', defaultValue: false);
 return RepositoryProvider<ChatRepository>(
   create: (_) => useApi ? ApiChatRepository() : MockChatRepository(),
   child: MaterialApp(/* ... */),
 );
 ```
+
+## Feature 규칙(Conversation 특화)
+- Intake: A1..A7, P1..P7, S1. 모든 질문에 ‘모름’ 제공.
+- 우선순위: C1(결격) → C2(필수/모름) → C3(조건/경고).
+- ‘모름’: 하나라도 있으면 최종 `notPossibleInfo`, 사유는 `ReasonKind.unknown`.
+- ResultCard: TL;DR → 사유 → 다음 단계 → last_verified. 30일 초과 시 배지.
+
+## RAG(내부 근거) 규칙 요약
+- 내부 문서만 근거, 외부 링크 금지.
+- 출처 메타: `{docId, sectionKey}` 유지.
+- 불확실 시 ‘확인불가’로 응답(추정 금지).
+
+## 측정(Analytics)
+- 핵심 이벤트: `intake_start`, `intake_answer`, `intake_complete`, `ruling_shown`, `reasons_expand`, `next_step_click`, `qna_ask`, `qna_answer`, `feedback_thumb`, `correction_request`.
+- 위치: UI 인터랙션 직후 또는 결과 표시 시점. 상세 스키마는 MEASUREMENT_PLAN.md.
+
+## 테스트 전략
+- 도메인: 규칙/경계/‘모름’/결격 우선순위 테스트.
+- Cubit/Bloc: 상태 전이(성공/실패/로딩/모름) + Repository mock.
+- UI: 위젯 API 계약/접근성 키/표시값 검증. 스냅샷 남용 금지.
+
+## 스타일/네이밍(요약)
+- 파일: `snake_case.dart` / 클래스: `PascalCase` / 메서드·필드: `lowerCamelCase`.
+- 폴더: `features/<feature>/{ui,bloc,domain,data}`.
+- 테스트: 소스 경로 미러, 예) `test/ui/components/result_card_test.dart`.
+- 린트: `analysis_options.yaml` 준수. 포맷: `dart format .`.
+
+## 체크리스트(리뷰/PR 전)
+- [ ] `flutter analyze` 경고/에러 없음(Deprecated는 별도 이슈화).
+- [ ] BLoC가 UI/Material에 의존하지 않음.
+- [ ] ‘모름’ → `notPossibleInfo` 일관, last_verified 표기.
+- [ ] RAG 준수(내부 근거만, citations 포함).
+- [ ] 테스트 통과 및 주요 분기 케이스 추가.
+- [ ] 문서/토큰/사양 변경 시 관련 문서 업데이트.
+
+## 개발 명령어(요약)
+- 의존성: `flutter pub get`
+- 코드 생성: `dart run build_runner build --delete-conflicting-outputs`
+- 정적 분석/포맷: `flutter analyze` / `dart format .`
+- 테스트/실행: `flutter test` / `flutter run -d chrome`
 
 ### Freezed 사용 가이드(권장 패턴)
 - 언제 쓰나: 합타입(State)·불변 값 객체·JSON 직렬화가 필요한 경우.
