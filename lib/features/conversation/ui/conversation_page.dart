@@ -27,13 +27,11 @@ class ConversationPage extends StatefulWidget {
 class _ConversationPageState extends State<ConversationPage> {
   final List<ConversationItem> _items = [];
   final TextEditingController _composer = TextEditingController();
-  bool _awaitingChoice = true;
   final ScrollController _scroll = ScrollController();
+  int? _typingItemIndex;
+  bool _hasStarted = false;
 
   static const _unknown = '__unknown__';
-
-  int? _typingItemIndex;
-  bool _didStart = false;
 
   @override
   void initState() {
@@ -80,7 +78,7 @@ class _ConversationPageState extends State<ConversationPage> {
           isSurvey: isSurvey,
         ),
       );
-      _awaitingChoice = true;
+      // Choice state managed by ConversationCubit
     });
     _scheduleScroll();
   }
@@ -104,7 +102,7 @@ class _ConversationPageState extends State<ConversationPage> {
     
     // Update UI and business logic
     _appendUserText(label);
-    setState(() => _awaitingChoice = false);
+    // State managed by ConversationCubit, no local flag needed
     ctx.read<ConversationCubit>().answer(qid, value);
   }
 
@@ -125,9 +123,7 @@ class _ConversationPageState extends State<ConversationPage> {
       ]),
     );
     _items.add(ConversationItem.advertisement(const AdSlot(placement: AdPlacement.resultBottom)));
-    setState(() {
-      _awaitingChoice = false;
-    });
+    // UI state managed automatically by BLoC listener
     _scheduleScroll();
   }
 
@@ -198,8 +194,8 @@ class _ConversationPageState extends State<ConversationPage> {
       ],
       child: Builder(
         builder: (innerCtx) {
-          if (!_didStart) {
-            _didStart = true;
+          if (!_hasStarted) {
+            _hasStarted = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               innerCtx.read<ConversationCubit>().start();
             });
@@ -261,7 +257,7 @@ class _ConversationPageState extends State<ConversationPage> {
                     setState(() {});
                     _showSuggestionsAndAds();
                   }
-                  setState(() => _awaitingChoice = state.awaitingChoice);
+                  // Choice state managed by ConversationCubit
                   _scheduleScroll();
                 },
               ),
@@ -301,10 +297,14 @@ class _ConversationPageState extends State<ConversationPage> {
                         },
                       ),
                     ),
-                    ChatComposer(
-                      controller: _composer,
-                      onSend: () => _onSend(context),
-                      enabled: !_awaitingChoice,
+                    BlocBuilder<ConversationCubit, ConversationState>(
+                      builder: (context, state) {
+                        return ChatComposer(
+                          controller: _composer,
+                          onSend: () => _onSend(context),
+                          enabled: !state.awaitingChoice,
+                        );
+                      },
                     ),
                   ],
                 )),
