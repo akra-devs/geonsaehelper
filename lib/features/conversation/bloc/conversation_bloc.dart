@@ -1,5 +1,5 @@
-import 'package:meta/meta.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../common/analytics/analytics.dart';
 import '../../conversation/domain/models.dart';
 import '../../conversation/domain/constants.dart';
@@ -7,52 +7,25 @@ import '../../conversation/domain/suggestion.dart';
 import '../../conversation/domain/question_flow.dart' as qf;
 import 'conversation_event.dart';
 
+part 'conversation_bloc.freezed.dart';
+
 
 enum ConversationPhase { survey, intake, qna }
 
 // ConversationQuestion and ConversationResult moved to domain models.
 
-@immutable
-class ConversationState {
-  final ConversationPhase phase;
-  final bool awaitingChoice;
-  final ConversationQuestion? question;
-  final ConversationResult? result;
-  final String? message; // optional bot message to show
-  final String? userEcho; // optional user message to echo in UI
-  final String? suggestionReply; // optional bot reply from suggestion
-  final bool resetTriggered; // flag to trigger UI reset
-  
-  const ConversationState({
-    required this.phase,
-    required this.awaitingChoice,
-    this.question,
-    this.result,
-    this.message,
-    this.userEcho,
-    this.suggestionReply,
-    this.resetTriggered = false,
-  });
-
-  ConversationState copyWith({
-    ConversationPhase? phase,
-    bool? awaitingChoice,
+@freezed
+class ConversationState with _$ConversationState {
+  const factory ConversationState({
+    required ConversationPhase phase,
+    required bool awaitingChoice,
     ConversationQuestion? question,
     ConversationResult? result,
-    String? message,
-    String? userEcho,
-    String? suggestionReply,
-    bool? resetTriggered,
-  }) => ConversationState(
-        phase: phase ?? this.phase,
-        awaitingChoice: awaitingChoice ?? this.awaitingChoice,
-        question: question,
-        result: result,
-        message: message,
-        userEcho: userEcho,
-        suggestionReply: suggestionReply,
-        resetTriggered: resetTriggered ?? this.resetTriggered,
-      );
+    String? message, // optional bot message to show
+    String? userEcho, // optional user message to echo in UI
+    String? suggestionReply, // optional bot reply from suggestion
+    @Default(false) bool resetTriggered, // flag to trigger UI reset
+  }) = _ConversationState;
 }
 
 class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
@@ -89,9 +62,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     
     // Emit echo-only state so UI appends just the user message.
     // Do NOT include a question here to avoid duplicate question renders.
-    emit(ConversationState(
-      phase: state.phase,
-      awaitingChoice: state.awaitingChoice,
+    emit(state.copyWith(
       question: null,
       result: null,
       message: null,
@@ -109,9 +80,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     if (suggestion == null) return;
     
     // Emit echo-only state to prevent duplicate question rendering
-    emit(ConversationState(
-      phase: state.phase,
-      awaitingChoice: state.awaitingChoice,
+    emit(state.copyWith(
       question: null,        // Prevent duplicate question rendering
       result: null,          // Clear result as well 
       message: null,
@@ -148,11 +117,9 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         // Transition to intake
         _step = 0;
         _phaseStartedAt = DateTime.now();
-        emit(ConversationState(
+        emit(const ConversationState(
           phase: ConversationPhase.intake,
           awaitingChoice: false,
-          question: null,
-          result: null,
           message: '감사합니다. 답변을 반영해 예비판정을 시작할게요.',
         ));
         Analytics.instance.intakeStart();
@@ -175,7 +142,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       total: list.length,
       isSurvey: phase == ConversationPhase.survey,
     );
-    emit(ConversationState(phase: phase, awaitingChoice: true, question: cq, result: null, message: null));
+    emit(ConversationState(phase: phase, awaitingChoice: true, question: cq));
   }
 
   void _evaluateAndEmit(Emitter<ConversationState> emit) {
@@ -267,9 +234,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     emit(ConversationState(
       phase: ConversationPhase.qna,
       awaitingChoice: false,
-      question: null,
       result: r,
-      message: null,
     ));
   }
 
