@@ -4,7 +4,8 @@
       "Bash(claude mcp add:*)",
       "Bash(flutter pub:*)",
       "Bash(flutter analyze:*)",
-      "Bash(flutter:*)"
+      "Bash(flutter:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

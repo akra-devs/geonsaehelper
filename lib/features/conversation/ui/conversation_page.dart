@@ -3,20 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../common/analytics/analytics.dart';
 import '../../../ui/components/ad_slot.dart';
-import '../../../ui/components/appear.dart';
-import '../../../ui/components/chat_bubble.dart';
 import '../../../ui/components/chat_composer.dart';
-import '../../../ui/components/intake_question.dart';
-import '../../../ui/components/progress_inline.dart';
+import '../../../ui/components/conversation_item_widget.dart';
 import '../../../ui/components/result_card.dart';
 import '../../../ui/components/suggestions_panel.dart';
 import '../../../ui/components/typing_indicator.dart';
+import '../../../ui/components/chat_bubble.dart';
 import '../../../ui/theme/app_theme.dart';
 import '../../conversation/bloc/chat_cubit.dart';
 import '../../conversation/bloc/conversation_cubit.dart';
 import '../../conversation/data/chat_models.dart';
 import '../../conversation/data/chat_repository.dart';
 import '../../conversation/domain/models.dart' as domain;
+import '../domain/conversation_item.dart';
 
 class ConversationPage extends StatefulWidget {
   const ConversationPage({super.key});
@@ -26,7 +25,7 @@ class ConversationPage extends StatefulWidget {
 }
 
 class _ConversationPageState extends State<ConversationPage> {
-  final List<_Row> _rows = [];
+  final List<ConversationItem> _items = [];
   final TextEditingController _composer = TextEditingController();
   bool _awaitingChoice = true;
   final ScrollController _scroll = ScrollController();
@@ -53,12 +52,12 @@ class _ConversationPageState extends State<ConversationPage> {
   }
 
   void _appendBotText(String text) {
-    setState(() => _rows.add(_Row.bot(text)));
+    setState(() => _items.add(ConversationItem.botMessage(text)));
     _scheduleScroll();
   }
 
   void _appendUserText(String text) {
-    setState(() => _rows.add(_Row.user(text)));
+    setState(() => _items.add(ConversationItem.userMessage(text)));
     _scheduleScroll();
   }
 
@@ -71,9 +70,9 @@ class _ConversationPageState extends State<ConversationPage> {
     bool isSurvey = false,
   }) {
     setState(() {
-      _rows.add(
-        _Row.intake(
-          qid: qid,
+      _items.add(
+        ConversationItem.intakeQuestion(
+          questionId: qid,
           label: label,
           choices: choices,
           index: index,
@@ -86,8 +85,10 @@ class _ConversationPageState extends State<ConversationPage> {
     _scheduleScroll();
   }
 
-  void _onChoiceSelected(BuildContext ctx, String qid, String? value) {
+  void _handleChoiceSelection(BuildContext ctx, String qid, String? value) {
     if (value == null) return;
+    
+    // Get display label for the choice
     String label;
     if (value == _unknown) {
       label = '모름';
@@ -100,6 +101,8 @@ class _ConversationPageState extends State<ConversationPage> {
         label = match.isNotEmpty ? match.first.text : value;
       }
     }
+    
+    // Update UI and business logic
     _appendUserText(label);
     setState(() => _awaitingChoice = false);
     ctx.read<ConversationCubit>().answer(qid, value);
@@ -108,8 +111,8 @@ class _ConversationPageState extends State<ConversationPage> {
   // Flow evaluation now fully handled by ConversationCubit
 
   void _showSuggestionsAndAds() {
-    _rows.add(
-      _Row.suggestions(const [
+    _items.add(
+      ConversationItem.suggestions(const [
         SuggestionItem(
           '한도 추정하기',
           '한도는 소득/보증금/지역 등에 따라 달라집니다. 내부 기준으로 개요를 안내드릴게요.',
@@ -121,7 +124,7 @@ class _ConversationPageState extends State<ConversationPage> {
         SuggestionItem('확인 방법 보기', '세대주/보증금/근저당 확인 방법을 알려드릴게요.'),
       ]),
     );
-    _rows.add(_Row.ad(const AdSlot(placement: AdPlacement.resultBottom)));
+    _items.add(ConversationItem.advertisement(const AdSlot(placement: AdPlacement.resultBottom)));
     setState(() {
       _awaitingChoice = false;
     });
@@ -156,8 +159,8 @@ class _ConversationPageState extends State<ConversationPage> {
   }
 
   int _showTyping() {
-    _rows.add(_Row.botRich(const TypingIndicator()));
-    _typingRowIndex = _rows.length - 1;
+    _items.add(ConversationItem.botWidget(const TypingIndicator()));
+    _typingRowIndex = _items.length - 1;
     setState(() {});
     _scheduleScroll();
     return _typingRowIndex!;
@@ -167,7 +170,7 @@ class _ConversationPageState extends State<ConversationPage> {
     // Convert model citations to UI component citations
     final cites =
         reply.citations.map((c) => Citation(c.docId, c.sectionKey)).toList();
-    _rows[typingIndex] = _Row.botRich(
+    _items[typingIndex] = ConversationItem.botWidget(
       ChatBubble(role: ChatRole.bot, content: reply.content, citations: cites),
     );
     setState(() {});
@@ -175,7 +178,7 @@ class _ConversationPageState extends State<ConversationPage> {
   }
 
   void _replaceTypingWithError(int typingIndex, String message) {
-    _rows[typingIndex] = _Row.botRich(
+    _items[typingIndex] = ConversationItem.botWidget(
       ChatBubble(role: ChatRole.bot, content: message),
     );
     setState(() {});
@@ -244,8 +247,8 @@ class _ConversationPageState extends State<ConversationPage> {
                     );
                   }
                   if (state.result != null) {
-                    _rows.add(
-                      _Row.result(
+                    _items.add(
+                      ConversationItem.result(
                         ResultCard(
                           status: state.result!.status,
                           tldr: state.result!.tldr,
@@ -272,112 +275,29 @@ class _ConversationPageState extends State<ConversationPage> {
                       child: ListView.builder(
                         controller: _scroll,
                         padding: EdgeInsets.only(top: spacing.x4, bottom: spacing.x4),
-                        itemCount: _rows.length,
+                        itemCount: _items.length,
                         itemBuilder: (context, index) {
-                          final row = _rows[index];
-                          switch (row.type) {
-                            case _RowType.botText:
-                              return Appear(
-                                delay: Duration(milliseconds: 40),
-                                child: Padding(
-                                  padding: EdgeInsets.only(bottom: spacing.x3),
-                                  child: ChatBubble(
+                          final item = _items[index];
+                          return ConversationItemWidget(
+                            item: item,
+                            onChoiceSelected: (qid, value) {
+                              // Handle choice selection with BLoC logic in parent
+                              _handleChoiceSelection(context, qid, value);
+                            },
+                            onSuggestionTap: (s) {
+                              _appendUserText(s.label);
+                              _items.add(
+                                ConversationItem.botWidget(
+                                  ChatBubble(
                                     role: ChatRole.bot,
-                                    content: row.text ?? '',
+                                    content: s.botReply,
                                   ),
                                 ),
                               );
-                            case _RowType.userText:
-                              return Appear(
-                                delay: Duration(milliseconds: 40),
-                                child: Padding(
-                                  padding: EdgeInsets.only(bottom: spacing.x3),
-                                  child: ChatBubble(
-                                    role: ChatRole.user,
-                                    content: row.text ?? '',
-                                  ),
-                                ),
-                              );
-                            case _RowType.intake:
-                              return Appear(
-                                delay: Duration(milliseconds: 60),
-                                child: Padding(
-                                  padding: EdgeInsets.only(bottom: spacing.x4),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      ProgressInline(
-                                        current: row.index ?? 1,
-                                        total: row.total ?? 1,
-                                        showBar: true,
-                                      ),
-                                      SizedBox(height: spacing.x1),
-                                      IntakeQuestion(
-                                        qid: row.qid!,
-                                        label: row.label!,
-                                        options: row.choices!,
-                                        showUnknown: true,
-                                        onChanged:
-                                            (v) => _onChoiceSelected(
-                                              context,
-                                              row.qid!,
-                                              v,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            case _RowType.ad:
-                              return Appear(
-                                delay: Duration(milliseconds: 80),
-                                child: Padding(
-                                  padding: EdgeInsets.only(bottom: spacing.x4),
-                                  child: row.adWidget!,
-                                ),
-                              );
-                            case _RowType.suggestions:
-                              return Appear(
-                                duration: const Duration(milliseconds: 120),
-                                delay: Duration(milliseconds: 50),
-                                child: Padding(
-                                  padding: EdgeInsets.only(bottom: spacing.x3),
-                                  child: SuggestionsPanel(
-                                    suggestions: row.suggestions!,
-                                    onTap: (s) {
-                                      _appendUserText(s.label);
-                                      _rows.add(
-                                        _Row.botRich(
-                                          ChatBubble(
-                                            role: ChatRole.bot,
-                                            content: s.botReply,
-                                          ),
-                                        ),
-                                      );
-                                      Analytics.instance.nextStepClick(s.label);
-                                      setState(() {});
-                                    },
-                                  ),
-                                ),
-                              );
-                            case _RowType.result:
-                              return Appear(
-                                child: Padding(
-                                  padding: EdgeInsets.only(bottom: spacing.x4),
-                                  child: row.resultCard!,
-                                ),
-                              );
-                            case _RowType.botRich:
-                              return Appear(
-                                delay: Duration(milliseconds: 50),
-                                duration: const Duration(milliseconds: 120),
-                                child: Padding(
-                                  padding: EdgeInsets.only(bottom: spacing.x3),
-                                  child: row.richWidget!,
-                                ),
-                              );
-                          }
+                              Analytics.instance.nextStepClick(s.label);
+                              setState(() {});
+                            },
+                          );
                         },
                       ),
                     ),
@@ -427,115 +347,3 @@ class _CenteredContent extends StatelessWidget {
     );
   }
 }
-enum _RowType { botText, userText, intake, result, botRich, ad, suggestions }
-
-class _Row {
-  final _RowType type;
-  final String? text;
-  final String? qid;
-  final String? label;
-  final List<domain.Choice>? choices;
-  final ResultCard? resultCard;
-  final Widget? richWidget;
-  final Widget? adWidget;
-  final List<SuggestionItem>? suggestions;
-  final int? index;
-  final int? total;
-  final bool? isSurvey;
-
-  _Row.bot(this.text)
-    : type = _RowType.botText,
-      qid = null,
-      label = null,
-      choices = null,
-      resultCard = null,
-      richWidget = null,
-      adWidget = null,
-      suggestions = null,
-      index = null,
-      total = null,
-      isSurvey = null;
-
-  _Row.user(this.text)
-    : type = _RowType.userText,
-      qid = null,
-      label = null,
-      choices = null,
-      resultCard = null,
-      richWidget = null,
-      adWidget = null,
-      suggestions = null,
-      index = null,
-      total = null,
-      isSurvey = null;
-
-  _Row.intake({
-    required this.qid,
-    required this.label,
-    required this.choices,
-    this.index,
-    this.total,
-    this.isSurvey,
-  }) : type = _RowType.intake,
-       text = null,
-       resultCard = null,
-       richWidget = null,
-       adWidget = null,
-       suggestions = null;
-
-  _Row.result(this.resultCard)
-    : type = _RowType.result,
-      text = null,
-      qid = null,
-      label = null,
-      choices = null,
-      richWidget = null,
-      adWidget = null,
-      suggestions = null,
-      index = null,
-      total = null,
-      isSurvey = null;
-
-  _Row.botRich(this.richWidget)
-    : type = _RowType.botRich,
-      text = null,
-      qid = null,
-      label = null,
-      choices = null,
-      resultCard = null,
-      adWidget = null,
-      suggestions = null,
-      index = null,
-      total = null,
-      isSurvey = null;
-
-  _Row.ad(this.adWidget)
-    : type = _RowType.ad,
-      text = null,
-      qid = null,
-      label = null,
-      choices = null,
-      resultCard = null,
-      richWidget = null,
-      suggestions = null,
-      index = null,
-      total = null,
-      isSurvey = null;
-
-  _Row.suggestions(this.suggestions)
-    : type = _RowType.suggestions,
-      text = null,
-      qid = null,
-      label = null,
-      choices = null,
-      resultCard = null,
-      richWidget = null,
-      adWidget = null,
-      index = null,
-      total = null,
-      isSurvey = null;
-}
-
-// _Suggestion extracted to ui/components/suggestions_panel.dart as SuggestionItem
-
-// Phase state is tracked in ConversationCubit; no local enum needed here.
