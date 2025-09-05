@@ -16,12 +16,14 @@ class ConversationState {
   final ConversationQuestion? question;
   final ConversationResult? result;
   final String? message; // optional bot message to show
+  final String? userEcho; // optional user message to echo in UI
   const ConversationState({
     required this.phase,
     required this.awaitingChoice,
     this.question,
     this.result,
     this.message,
+    this.userEcho,
   });
 
   ConversationState copyWith({
@@ -30,12 +32,14 @@ class ConversationState {
     ConversationQuestion? question,
     ConversationResult? result,
     String? message,
+    String? userEcho,
   }) => ConversationState(
         phase: phase ?? this.phase,
         awaitingChoice: awaitingChoice ?? this.awaitingChoice,
         question: question,
         result: result,
         message: message,
+        userEcho: userEcho,
       );
 }
 
@@ -50,6 +54,37 @@ class ConversationCubit extends Cubit<ConversationState> {
   void start() {
     _phaseStartedAt = DateTime.now();
     _emitQuestion(phase: ConversationPhase.survey, step: 0);
+  }
+
+  /// UI-choice handler: resolves display label, emits user echo, then progresses.
+  void selectChoice(String qid, String? value) {
+    if (value == null) return;
+    // Resolve label for echoing in UI
+    String label;
+    if (value == conversationUnknownValue) {
+      label = '모름';
+    } else {
+      final q = state.question;
+      if (q == null) {
+        label = value;
+      } else {
+        final match = q.choices.where((c) => c.value == value);
+        label = match.isNotEmpty ? match.first.text : value;
+      }
+    }
+    // Emit echo for UI to render as user message
+    emit(ConversationState(
+      phase: state.phase,
+      awaitingChoice: state.awaitingChoice,
+      question: state.question,
+      result: state.result,
+      message: null,
+      userEcho: label,
+    ));
+
+    // Log measurement and continue with canonical answer flow
+    Analytics.instance.intakeAnswer(qid, value, value == conversationUnknownValue);
+    answer(qid, value);
   }
 
   void answer(String qid, String value) {

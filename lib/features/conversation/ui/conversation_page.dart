@@ -15,7 +15,6 @@ import '../bloc/conversation_cubit.dart';
 import '../data/chat_models.dart';
 import '../data/chat_repository.dart';
 import 'conversation_item.dart';
-import '../domain/constants.dart';
 import '../domain/models.dart' as domain;
 
 class ConversationPage extends StatefulWidget {
@@ -32,8 +31,7 @@ class _ConversationPageState extends State<ConversationPage> {
   int? _typingItemIndex;
   bool _hasStarted = false;
 
-  // Centralized unknown value constant
-  static const _unknown = conversationUnknownValue;
+  // No local constants; business logic lives in Cubit.
 
   @override
   void initState() {
@@ -86,26 +84,8 @@ class _ConversationPageState extends State<ConversationPage> {
   }
 
   void _handleChoiceSelection(BuildContext ctx, String qid, String? value) {
-    if (value == null) return;
-    
-    // Get display label for the choice
-    String label;
-    if (value == _unknown) {
-      label = '모름';
-    } else {
-      final q = ctx.read<ConversationCubit>().state.question;
-      if (q == null) {
-        label = value;
-      } else {
-        final match = q.choices.where((c) => c.value == value);
-        label = match.isNotEmpty ? match.first.text : value;
-      }
-    }
-    
-    // Update UI and business logic
-    _appendUserText(label);
-    // State managed by ConversationCubit, no local flag needed
-    ctx.read<ConversationCubit>().answer(qid, value);
+    // Delegate to Cubit for label resolution and state emission
+    ctx.read<ConversationCubit>().selectChoice(qid, value);
   }
 
   // Flow evaluation now fully handled by ConversationCubit
@@ -231,6 +211,9 @@ class _ConversationPageState extends State<ConversationPage> {
               ),
               BlocListener<ConversationCubit, ConversationState>(
                 listener: (context, state) {
+                  if (state.userEcho != null && state.userEcho!.isNotEmpty) {
+                    _appendUserText(state.userEcho!);
+                  }
                   if (state.message != null && state.message!.isNotEmpty) {
                     _appendBotText(state.message!);
                   }
