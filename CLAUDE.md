@@ -235,3 +235,6 @@ The `docs/docs/` directory contains comprehensive planning materials:
 - 화면 사양(트리/프롭/상태): `docs/docs/SCREEN_SPECS.md`
 - MVP 종합 기획: `docs/docs/PRODUCT_PLAN_MVP.md`
 - 백로그: `docs/docs/BACKLOG_EPICS_USER_STORIES.md`
+
+**Commit**
+- 하나의 작은 작업 단위 수행후 반드시 git commit을 할 것
