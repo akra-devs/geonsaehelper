@@ -3,19 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../common/analytics/analytics.dart';
 import '../../../ui/components/ad_slot.dart';
+import '../../../ui/components/chat_bubble.dart';
 import '../../../ui/components/chat_composer.dart';
 import '../../../ui/components/conversation_item_widget.dart';
 import '../../../ui/components/result_card.dart';
 import '../../../ui/components/suggestions_panel.dart';
 import '../../../ui/components/typing_indicator.dart';
-import '../../../ui/components/chat_bubble.dart';
 import '../../../ui/theme/app_theme.dart';
-import '../../conversation/bloc/chat_cubit.dart';
-import '../../conversation/bloc/conversation_cubit.dart';
-import '../../conversation/data/chat_models.dart';
-import '../../conversation/data/chat_repository.dart';
-import '../../conversation/domain/models.dart' as domain;
+import '../bloc/chat_cubit.dart';
+import '../bloc/conversation_cubit.dart';
+import '../data/chat_models.dart';
+import '../data/chat_repository.dart';
 import '../domain/conversation_item.dart';
+import '../domain/models.dart' as domain;
 
 class ConversationPage extends StatefulWidget {
   const ConversationPage({super.key});
