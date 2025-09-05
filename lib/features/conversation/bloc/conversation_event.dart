@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../../ui/components/suggestions_panel.dart';
 
 part 'conversation_event.freezed.dart';
 
@@ -11,8 +10,8 @@ class ConversationEvent with _$ConversationEvent {
   /// Event when user selects a choice for a question
   const factory ConversationEvent.choiceSelected(String qid, String value) = ChoiceSelected;
   
-  /// Event when user selects a suggestion item
-  const factory ConversationEvent.suggestionSelected(SuggestionItem suggestion) = SuggestionSelected;
+  /// Event when user selects a suggestion item by ID
+  const factory ConversationEvent.suggestionSelected(String suggestionId) = SuggestionSelected;
   
   /// Event to reset/restart the conversation
   const factory ConversationEvent.reset() = ConversationReset;

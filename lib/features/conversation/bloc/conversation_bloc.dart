@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/analytics/analytics.dart';
 import '../../conversation/domain/models.dart';
 import '../../conversation/domain/constants.dart';
+import '../../conversation/domain/suggestion.dart';
 import '../../conversation/domain/question_flow.dart' as qf;
 import 'conversation_event.dart';
 
@@ -20,6 +21,7 @@ class ConversationState {
   final String? message; // optional bot message to show
   final String? userEcho; // optional user message to echo in UI
   final String? suggestionReply; // optional bot reply from suggestion
+  final bool resetTriggered; // flag to trigger UI reset
   
   const ConversationState({
     required this.phase,
@@ -29,6 +31,7 @@ class ConversationState {
     this.message,
     this.userEcho,
     this.suggestionReply,
+    this.resetTriggered = false,
   });
 
   ConversationState copyWith({
@@ -39,6 +42,7 @@ class ConversationState {
     String? message,
     String? userEcho,
     String? suggestionReply,
+    bool? resetTriggered,
   }) => ConversationState(
         phase: phase ?? this.phase,
         awaitingChoice: awaitingChoice ?? this.awaitingChoice,
@@ -47,6 +51,7 @@ class ConversationState {
         message: message,
         userEcho: userEcho,
         suggestionReply: suggestionReply,
+        resetTriggered: resetTriggered ?? this.resetTriggered,
       );
 }
 
@@ -99,26 +104,34 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
   }
 
   void _onSuggestionSelected(SuggestionSelected event, Emitter<ConversationState> emit) {
-    // Emit user echo and bot reply for suggestion
+    // Get suggestion data by ID from domain layer
+    final suggestion = SuggestionActions.all[event.suggestionId];
+    if (suggestion == null) return;
+    
+    // Emit echo-only state to prevent duplicate question rendering
     emit(ConversationState(
       phase: state.phase,
       awaitingChoice: state.awaitingChoice,
-      question: state.question,
-      result: state.result,
+      question: null,        // Prevent duplicate question rendering
+      result: null,          // Clear result as well 
       message: null,
-      userEcho: event.suggestion.label,
-      suggestionReply: event.suggestion.botReply,
+      userEcho: suggestion.label,
+      suggestionReply: suggestion.botReply,
     ));
     
     // Log analytics
-    Analytics.instance.nextStepClick(event.suggestion.label);
+    Analytics.instance.nextStepClick(suggestion.label);
   }
 
   void _onReset(ConversationReset event, Emitter<ConversationState> emit) {
     _step = 0;
     _answers.clear();
     _phaseStartedAt = DateTime.now();
-    emit(const ConversationState(phase: ConversationPhase.survey, awaitingChoice: false));
+    emit(const ConversationState(
+      phase: ConversationPhase.survey, 
+      awaitingChoice: false,
+      resetTriggered: true,
+    ));
   }
 
   void _answer(Emitter<ConversationState> emit, String qid, String value) {

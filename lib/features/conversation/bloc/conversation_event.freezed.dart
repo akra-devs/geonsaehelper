@@ -21,21 +21,21 @@ mixin _$ConversationEvent {
   TResult when<TResult extends Object?>({
     required TResult Function() started,
     required TResult Function(String qid, String value) choiceSelected,
-    required TResult Function(SuggestionItem suggestion) suggestionSelected,
+    required TResult Function(String suggestionId) suggestionSelected,
     required TResult Function() reset,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? started,
     TResult? Function(String qid, String value)? choiceSelected,
-    TResult? Function(SuggestionItem suggestion)? suggestionSelected,
+    TResult? Function(String suggestionId)? suggestionSelected,
     TResult? Function()? reset,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? started,
     TResult Function(String qid, String value)? choiceSelected,
-    TResult Function(SuggestionItem suggestion)? suggestionSelected,
+    TResult Function(String suggestionId)? suggestionSelected,
     TResult Function()? reset,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
@@ -131,7 +131,7 @@ class _$ConversationStartedImpl implements ConversationStarted {
   TResult when<TResult extends Object?>({
     required TResult Function() started,
     required TResult Function(String qid, String value) choiceSelected,
-    required TResult Function(SuggestionItem suggestion) suggestionSelected,
+    required TResult Function(String suggestionId) suggestionSelected,
     required TResult Function() reset,
   }) {
     return started();
@@ -142,7 +142,7 @@ class _$ConversationStartedImpl implements ConversationStarted {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? started,
     TResult? Function(String qid, String value)? choiceSelected,
-    TResult? Function(SuggestionItem suggestion)? suggestionSelected,
+    TResult? Function(String suggestionId)? suggestionSelected,
     TResult? Function()? reset,
   }) {
     return started?.call();
@@ -153,7 +153,7 @@ class _$ConversationStartedImpl implements ConversationStarted {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? started,
     TResult Function(String qid, String value)? choiceSelected,
-    TResult Function(SuggestionItem suggestion)? suggestionSelected,
+    TResult Function(String suggestionId)? suggestionSelected,
     TResult Function()? reset,
     required TResult orElse(),
   }) {
@@ -287,7 +287,7 @@ class _$ChoiceSelectedImpl implements ChoiceSelected {
   TResult when<TResult extends Object?>({
     required TResult Function() started,
     required TResult Function(String qid, String value) choiceSelected,
-    required TResult Function(SuggestionItem suggestion) suggestionSelected,
+    required TResult Function(String suggestionId) suggestionSelected,
     required TResult Function() reset,
   }) {
     return choiceSelected(qid, value);
@@ -298,7 +298,7 @@ class _$ChoiceSelectedImpl implements ChoiceSelected {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? started,
     TResult? Function(String qid, String value)? choiceSelected,
-    TResult? Function(SuggestionItem suggestion)? suggestionSelected,
+    TResult? Function(String suggestionId)? suggestionSelected,
     TResult? Function()? reset,
   }) {
     return choiceSelected?.call(qid, value);
@@ -309,7 +309,7 @@ class _$ChoiceSelectedImpl implements ChoiceSelected {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? started,
     TResult Function(String qid, String value)? choiceSelected,
-    TResult Function(SuggestionItem suggestion)? suggestionSelected,
+    TResult Function(String suggestionId)? suggestionSelected,
     TResult Function()? reset,
     required TResult orElse(),
   }) {
@@ -378,7 +378,7 @@ abstract class _$$SuggestionSelectedImplCopyWith<$Res> {
     $Res Function(_$SuggestionSelectedImpl) then,
   ) = __$$SuggestionSelectedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({SuggestionItem suggestion});
+  $Res call({String suggestionId});
 }
 
 /// @nodoc
@@ -394,13 +394,13 @@ class __$$SuggestionSelectedImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? suggestion = null}) {
+  $Res call({Object? suggestionId = null}) {
     return _then(
       _$SuggestionSelectedImpl(
-        null == suggestion
-            ? _value.suggestion
-            : suggestion // ignore: cast_nullable_to_non_nullable
-                as SuggestionItem,
+        null == suggestionId
+            ? _value.suggestionId
+            : suggestionId // ignore: cast_nullable_to_non_nullable
+                as String,
       ),
     );
   }
@@ -409,14 +409,14 @@ class __$$SuggestionSelectedImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$SuggestionSelectedImpl implements SuggestionSelected {
-  const _$SuggestionSelectedImpl(this.suggestion);
+  const _$SuggestionSelectedImpl(this.suggestionId);
 
   @override
-  final SuggestionItem suggestion;
+  final String suggestionId;
 
   @override
   String toString() {
-    return 'ConversationEvent.suggestionSelected(suggestion: $suggestion)';
+    return 'ConversationEvent.suggestionSelected(suggestionId: $suggestionId)';
   }
 
   @override
@@ -424,12 +424,12 @@ class _$SuggestionSelectedImpl implements SuggestionSelected {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$SuggestionSelectedImpl &&
-            (identical(other.suggestion, suggestion) ||
-                other.suggestion == suggestion));
+            (identical(other.suggestionId, suggestionId) ||
+                other.suggestionId == suggestionId));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, suggestion);
+  int get hashCode => Object.hash(runtimeType, suggestionId);
 
   /// Create a copy of ConversationEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -447,10 +447,10 @@ class _$SuggestionSelectedImpl implements SuggestionSelected {
   TResult when<TResult extends Object?>({
     required TResult Function() started,
     required TResult Function(String qid, String value) choiceSelected,
-    required TResult Function(SuggestionItem suggestion) suggestionSelected,
+    required TResult Function(String suggestionId) suggestionSelected,
     required TResult Function() reset,
   }) {
-    return suggestionSelected(suggestion);
+    return suggestionSelected(suggestionId);
   }
 
   @override
@@ -458,10 +458,10 @@ class _$SuggestionSelectedImpl implements SuggestionSelected {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? started,
     TResult? Function(String qid, String value)? choiceSelected,
-    TResult? Function(SuggestionItem suggestion)? suggestionSelected,
+    TResult? Function(String suggestionId)? suggestionSelected,
     TResult? Function()? reset,
   }) {
-    return suggestionSelected?.call(suggestion);
+    return suggestionSelected?.call(suggestionId);
   }
 
   @override
@@ -469,12 +469,12 @@ class _$SuggestionSelectedImpl implements SuggestionSelected {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? started,
     TResult Function(String qid, String value)? choiceSelected,
-    TResult Function(SuggestionItem suggestion)? suggestionSelected,
+    TResult Function(String suggestionId)? suggestionSelected,
     TResult Function()? reset,
     required TResult orElse(),
   }) {
     if (suggestionSelected != null) {
-      return suggestionSelected(suggestion);
+      return suggestionSelected(suggestionId);
     }
     return orElse();
   }
@@ -518,10 +518,10 @@ class _$SuggestionSelectedImpl implements SuggestionSelected {
 }
 
 abstract class SuggestionSelected implements ConversationEvent {
-  const factory SuggestionSelected(final SuggestionItem suggestion) =
+  const factory SuggestionSelected(final String suggestionId) =
       _$SuggestionSelectedImpl;
 
-  SuggestionItem get suggestion;
+  String get suggestionId;
 
   /// Create a copy of ConversationEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -575,7 +575,7 @@ class _$ConversationResetImpl implements ConversationReset {
   TResult when<TResult extends Object?>({
     required TResult Function() started,
     required TResult Function(String qid, String value) choiceSelected,
-    required TResult Function(SuggestionItem suggestion) suggestionSelected,
+    required TResult Function(String suggestionId) suggestionSelected,
     required TResult Function() reset,
   }) {
     return reset();
@@ -586,7 +586,7 @@ class _$ConversationResetImpl implements ConversationReset {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? started,
     TResult? Function(String qid, String value)? choiceSelected,
-    TResult? Function(SuggestionItem suggestion)? suggestionSelected,
+    TResult? Function(String suggestionId)? suggestionSelected,
     TResult? Function()? reset,
   }) {
     return reset?.call();
@@ -597,7 +597,7 @@ class _$ConversationResetImpl implements ConversationReset {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? started,
     TResult Function(String qid, String value)? choiceSelected,
-    TResult Function(SuggestionItem suggestion)? suggestionSelected,
+    TResult Function(String suggestionId)? suggestionSelected,
     TResult Function()? reset,
     required TResult orElse(),
   }) {

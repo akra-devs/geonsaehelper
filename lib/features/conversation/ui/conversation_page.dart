@@ -17,6 +17,7 @@ import '../data/chat_models.dart';
 import '../data/chat_repository.dart';
 import 'conversation_item.dart';
 import '../domain/models.dart' as domain;
+import '../domain/suggestion.dart';
 
 class ConversationPage extends StatefulWidget {
   const ConversationPage({super.key});
@@ -91,24 +92,16 @@ class _ConversationPageState extends State<ConversationPage> {
     }
   }
 
-  // Flow evaluation now fully handled by ConversationCubit
+  // Flow evaluation now fully handled by ConversationBloc
 
   void _showSuggestionsAndAds() {
-    _items.add(
-      ConversationItem.suggestions(const [
-        SuggestionItem(
-          '한도 추정하기',
-          '한도는 소득/보증금/지역 등에 따라 달라집니다. 내부 기준으로 개요를 안내드릴게요.',
-        ),
-        SuggestionItem(
-          '서류 체크리스트',
-          '기본 서류는 신분증, 가족·혼인관계, 소득 증빙입니다. 발급처와 순서를 안내해요.',
-        ),
-        SuggestionItem('확인 방법 보기', '세대주/보증금/근저당 확인 방법을 알려드릴게요.'),
-      ]),
-    );
+    // Convert domain SuggestionAction to UI SuggestionItem
+    final suggestionItems = SuggestionActions.list.map((action) => 
+      SuggestionItem(action.label, action.botReply)
+    ).toList();
+    
+    _items.add(ConversationItem.suggestions(suggestionItems));
     _items.add(ConversationItem.advertisement(const AdSlot(placement: AdPlacement.resultBottom)));
-    // UI state managed automatically by BLoC listener
     _scheduleScroll();
   }
 
@@ -214,6 +207,13 @@ class _ConversationPageState extends State<ConversationPage> {
               ),
               BlocListener<ConversationBloc, ConversationState>(
                 listener: (context, state) {
+                  // Handle reset trigger
+                  if (state.resetTriggered) {
+                    _items.clear();
+                    setState(() {});
+                    return;
+                  }
+                  
                   if (state.userEcho != null && state.userEcho!.isNotEmpty) {
                     _appendUserText(state.userEcho!);
                   }
@@ -256,7 +256,6 @@ class _ConversationPageState extends State<ConversationPage> {
                     setState(() {});
                     _showSuggestionsAndAds();
                   }
-                  // Choice state managed by ConversationCubit
                   _scheduleScroll();
                 },
               ),
@@ -276,11 +275,16 @@ class _ConversationPageState extends State<ConversationPage> {
                           return ConversationItemWidget(
                             item: item,
                             onChoiceSelected: (qid, value) {
-                              // Handle choice selection with BLoC logic in parent
+                              // Handle choice selection with Bloc logic
                               _handleChoiceSelection(context, qid, value);
                             },
                             onSuggestionTap: (s) {
-                              context.read<ConversationBloc>().add(ConversationEvent.suggestionSelected(s));
+                              // Find suggestion ID by label
+                              final suggestion = SuggestionActions.list.firstWhere(
+                                (action) => action.label == s.label,
+                                orElse: () => SuggestionActions.limitEstimation,
+                              );
+                              context.read<ConversationBloc>().add(ConversationEvent.suggestionSelected(suggestion.id));
                             },
                           );
                         },
