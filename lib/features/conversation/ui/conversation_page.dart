@@ -10,7 +10,8 @@ import '../../../ui/components/result_card.dart';
 import '../../../ui/components/suggestions_panel.dart';
 import '../../../ui/components/typing_indicator.dart';
 import '../../../ui/theme/app_theme.dart';
-import '../bloc/chat_cubit.dart';
+import '../bloc/chat_bloc.dart';
+import '../bloc/chat_event.dart';
 import '../bloc/conversation_bloc.dart';
 import '../bloc/conversation_event.dart';
 import '../data/chat_models.dart';
@@ -127,9 +128,9 @@ class _ConversationPageState extends State<ConversationPage> {
     _composer.clear();
     _appendUserText(text);
     Analytics.instance.qnaAsk('free', text.length);
-    // Show typing indicator and request completion via Cubit
+    // Show typing indicator and request completion via Bloc
     _typingItemIndex = _showTyping();
-    ctx.read<ChatCubit>().send(text);
+    ctx.read<ChatBloc>().add(ChatEvent.messageSent(text));
   }
 
   int _showTyping() {
@@ -164,9 +165,9 @@ class _ConversationPageState extends State<ConversationPage> {
     final spacing = context.spacing;
     return MultiBlocProvider(
       providers: [
-        BlocProvider<ChatCubit>(
+        BlocProvider<ChatBloc>(
           create:
-              (ctx) => ChatCubit(RepositoryProvider.of<ChatRepository>(ctx)),
+              (ctx) => ChatBloc(RepositoryProvider.of<ChatRepository>(ctx)),
         ),
         BlocProvider<ConversationBloc>(create: (_) => ConversationBloc()),
       ],
@@ -180,7 +181,7 @@ class _ConversationPageState extends State<ConversationPage> {
           }
           return MultiBlocListener(
             listeners: [
-              BlocListener<ChatCubit, ChatState>(
+              BlocListener<ChatBloc, ChatState>(
                 listener: (context, state) {
                   state.maybeWhen(
                     success: (reply) {
