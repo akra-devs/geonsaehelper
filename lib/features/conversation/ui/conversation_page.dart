@@ -11,7 +11,8 @@ import '../../../ui/components/suggestions_panel.dart';
 import '../../../ui/components/typing_indicator.dart';
 import '../../../ui/theme/app_theme.dart';
 import '../bloc/chat_cubit.dart';
-import '../bloc/conversation_cubit.dart';
+import '../bloc/conversation_bloc.dart';
+import '../bloc/conversation_event.dart';
 import '../data/chat_models.dart';
 import '../data/chat_repository.dart';
 import 'conversation_item.dart';
@@ -84,8 +85,10 @@ class _ConversationPageState extends State<ConversationPage> {
   }
 
   void _handleChoiceSelection(BuildContext ctx, String qid, String? value) {
-    // Delegate to Cubit for label resolution and state emission
-    ctx.read<ConversationCubit>().selectChoice(qid, value);
+    // Delegate to Bloc for label resolution and state emission
+    if (value != null) {
+      ctx.read<ConversationBloc>().add(ConversationEvent.choiceSelected(qid, value));
+    }
   }
 
   // Flow evaluation now fully handled by ConversationCubit
@@ -172,14 +175,14 @@ class _ConversationPageState extends State<ConversationPage> {
           create:
               (ctx) => ChatCubit(RepositoryProvider.of<ChatRepository>(ctx)),
         ),
-        BlocProvider<ConversationCubit>(create: (_) => ConversationCubit()),
+        BlocProvider<ConversationBloc>(create: (_) => ConversationBloc()),
       ],
       child: Builder(
         builder: (innerCtx) {
           if (!_hasStarted) {
             _hasStarted = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              innerCtx.read<ConversationCubit>().start();
+              innerCtx.read<ConversationBloc>().add(const ConversationEvent.started());
             });
           }
           return MultiBlocListener(
@@ -209,13 +212,24 @@ class _ConversationPageState extends State<ConversationPage> {
                   );
                 },
               ),
-              BlocListener<ConversationCubit, ConversationState>(
+              BlocListener<ConversationBloc, ConversationState>(
                 listener: (context, state) {
                   if (state.userEcho != null && state.userEcho!.isNotEmpty) {
                     _appendUserText(state.userEcho!);
                   }
                   if (state.message != null && state.message!.isNotEmpty) {
                     _appendBotText(state.message!);
+                  }
+                  if (state.suggestionReply != null && state.suggestionReply!.isNotEmpty) {
+                    _items.add(
+                      ConversationItem.botWidget(
+                        ChatBubble(
+                          role: ChatRole.bot,
+                          content: state.suggestionReply!,
+                        ),
+                      ),
+                    );
+                    setState(() {});
                   }
                   if (state.question != null) {
                     _appendQuestion(
@@ -266,23 +280,13 @@ class _ConversationPageState extends State<ConversationPage> {
                               _handleChoiceSelection(context, qid, value);
                             },
                             onSuggestionTap: (s) {
-                              _appendUserText(s.label);
-                              _items.add(
-                                ConversationItem.botWidget(
-                                  ChatBubble(
-                                    role: ChatRole.bot,
-                                    content: s.botReply,
-                                  ),
-                                ),
-                              );
-                              Analytics.instance.nextStepClick(s.label);
-                              setState(() {});
+                              context.read<ConversationBloc>().add(ConversationEvent.suggestionSelected(s));
                             },
                           );
                         },
                       ),
                     ),
-                    BlocBuilder<ConversationCubit, ConversationState>(
+                    BlocBuilder<ConversationBloc, ConversationState>(
                       builder: (context, state) {
                         return ChatComposer(
                           controller: _composer,
