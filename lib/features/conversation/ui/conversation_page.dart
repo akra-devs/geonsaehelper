@@ -32,7 +32,7 @@ class _ConversationPageState extends State<ConversationPage> {
 
   static const _unknown = '__unknown__';
 
-  int? _typingRowIndex;
+  int? _typingItemIndex;
   bool _didStart = false;
 
   @override
@@ -154,16 +154,16 @@ class _ConversationPageState extends State<ConversationPage> {
     _appendUserText(text);
     Analytics.instance.qnaAsk('free', text.length);
     // Show typing indicator and request completion via Cubit
-    _typingRowIndex = _showTyping();
+    _typingItemIndex = _showTyping();
     ctx.read<ChatCubit>().send(text);
   }
 
   int _showTyping() {
     _items.add(ConversationItem.botWidget(const TypingIndicator()));
-    _typingRowIndex = _items.length - 1;
+    _typingItemIndex = _items.length - 1;
     setState(() {});
     _scheduleScroll();
-    return _typingRowIndex!;
+    return _typingItemIndex!;
   }
 
   void _replaceTypingWithReply(int typingIndex, BotReply reply) {
@@ -210,21 +210,21 @@ class _ConversationPageState extends State<ConversationPage> {
                 listener: (context, state) {
                   state.maybeWhen(
                     success: (reply) {
-                      if (_typingRowIndex != null) {
-                        _replaceTypingWithReply(_typingRowIndex!, reply);
+                      if (_typingItemIndex != null) {
+                        _replaceTypingWithReply(_typingItemIndex!, reply);
                         Analytics.instance.qnaAnswer(
                           true,
                           reply.lastVerified.isEmpty
                               ? '2025-09-02'
                               : reply.lastVerified,
                         );
-                        _typingRowIndex = null;
+                        _typingItemIndex = null;
                       }
                     },
                     error: (msg) {
-                      if (_typingRowIndex != null) {
-                        _replaceTypingWithError(_typingRowIndex!, msg);
-                        _typingRowIndex = null;
+                      if (_typingItemIndex != null) {
+                        _replaceTypingWithError(_typingItemIndex!, msg);
+                        _typingItemIndex = null;
                       }
                     },
                     orElse: () {},
