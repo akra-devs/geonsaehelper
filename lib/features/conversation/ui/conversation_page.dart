@@ -14,7 +14,8 @@ import '../bloc/chat_cubit.dart';
 import '../bloc/conversation_cubit.dart';
 import '../data/chat_models.dart';
 import '../data/chat_repository.dart';
-import '../domain/conversation_item.dart';
+import 'conversation_item.dart';
+import '../domain/constants.dart';
 import '../domain/models.dart' as domain;
 
 class ConversationPage extends StatefulWidget {
@@ -31,7 +32,8 @@ class _ConversationPageState extends State<ConversationPage> {
   int? _typingItemIndex;
   bool _hasStarted = false;
 
-  static const _unknown = '__unknown__';
+  // Centralized unknown value constant
+  static const _unknown = conversationUnknownValue;
 
   @override
   void initState() {

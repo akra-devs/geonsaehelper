@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../../features/conversation/domain/models.dart' as domain;
+import '../../features/conversation/domain/constants.dart';
 
 class IntakeQuestion extends StatelessWidget {
   final String qid; // e.g., A1..S1
@@ -29,7 +30,7 @@ class IntakeQuestion extends StatelessWidget {
     final spacing = context.spacing;
     final allOptions = <domain.Choice>[
       ...options,
-      if (showUnknown) const domain.Choice(value: '__unknown__', text: '모름'),
+      if (showUnknown) const domain.Choice(value: conversationUnknownValue, text: '모름'),
     ];
     final cs = Theme.of(context).colorScheme;
     return Semantics(
@@ -48,7 +49,7 @@ class IntakeQuestion extends StatelessWidget {
                   key: Key('Intake.$qid.${c.value}'),
                   label: c.text,
                   selected: selected == c.value,
-                  isUnknown: c.value == '__unknown__',
+                  isUnknown: c.value == conversationUnknownValue,
                   onTap: () => onChanged(c.value),
                 ),
             ],

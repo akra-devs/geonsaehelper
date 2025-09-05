@@ -2,6 +2,7 @@ import 'package:meta/meta.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/analytics/analytics.dart';
 import '../../conversation/domain/models.dart';
+import '../../conversation/domain/constants.dart';
 import '../../conversation/domain/question_flow.dart' as qf;
 
 enum ConversationPhase { survey, intake, qna }
@@ -39,7 +40,7 @@ class ConversationState {
 }
 
 class ConversationCubit extends Cubit<ConversationState> {
-  static const _unknown = '__unknown__';
+  // Centralized 'unknown' sentinel from domain constants to avoid drift with UI.
   int _step = 0;
   final Map<String, String> _answers = {};
   DateTime _phaseStartedAt = DateTime.now();
@@ -98,7 +99,7 @@ class ConversationCubit extends Cubit<ConversationState> {
   void _evaluateAndEmit() {
     // Unknowns
     final unknowns = _answers.entries
-        .where((e) => e.value == _unknown && !_isSurveyQid(e.key))
+        .where((e) => e.value == conversationUnknownValue && !_isSurveyQid(e.key))
         .map((e) => e.key)
         .toList();
     if (unknowns.isNotEmpty) {

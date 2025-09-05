@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import '../../features/conversation/domain/conversation_item.dart';
+import '../../features/conversation/ui/conversation_item.dart';
 import 'appear.dart';
 import 'chat_bubble.dart';
 import 'progress_inline.dart';
