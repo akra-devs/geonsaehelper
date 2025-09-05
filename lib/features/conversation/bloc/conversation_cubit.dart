@@ -72,12 +72,13 @@ class ConversationCubit extends Cubit<ConversationState> {
         label = match.isNotEmpty ? match.first.text : value;
       }
     }
-    // Emit echo for UI to render as user message
+    // Emit echo-only state so UI appends just the user message.
+    // Do NOT include a question here to avoid duplicate question renders.
     emit(ConversationState(
       phase: state.phase,
       awaitingChoice: state.awaitingChoice,
-      question: state.question,
-      result: state.result,
+      question: null,
+      result: null,
       message: null,
       userEcho: label,
     ));
