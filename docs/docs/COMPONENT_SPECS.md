@@ -29,21 +29,23 @@ class IntakeQuestion extends StatelessWidget {
 
 ## ResultCard
 - 파일: `lib/ui/components/result_card.dart`
-- 시그니처:
+- 시그니처(구현 반영):
 ```dart
-enum RulingStatus { possible, notPossibleInfo, notPossibleDisq }
-class ReasonItem { final IconData icon; final String text; final String type; const ReasonItem(this.icon,this.text,this.type); }
-class ResultCard extends StatelessWidget {
-  final RulingStatus status;
+// domain 타입 사용(아이콘/색은 UI에서 결정)
+import '../../features/conversation/domain/models.dart' as domain;
+
+class ResultCard extends StatefulWidget {
+  final domain.RulingStatus status; // possible | notPossibleInfo | notPossibleDisq
   final String tldr;
-  final List<ReasonItem> reasons; // 충족/미충족/확인불가
+  final List<domain.Reason> reasons; // Reason(text, kind: met|unmet|unknown|warning)
   final List<String> nextSteps;
   final String lastVerified; // YYYY-MM-DD
-  final VoidCallback? onExpand; // 사유 펼치기
+  final VoidCallback? onExpand; // (옵션) 사유 영역 확장 알림
   const ResultCard({super.key, required this.status, required this.tldr, required this.reasons, required this.nextSteps, required this.lastVerified, this.onExpand});
 }
 ```
-- 배지: `lastVerified`/unknown 뱃지 제공
+- 동작: 사유/다음 단계는 3개까지만 우선 표시, ‘자세히/접기’ 토글 제공(Stateful 위젯).
+- 배지: `lastVerified` 표시, 30일 초과 시 ‘정보 최신성 확인 필요’ 배지 노출.
 
 ## ChatBubble
 - 파일: `lib/ui/components/chat_bubble.dart`
@@ -60,9 +62,9 @@ class ChatBubble extends StatelessWidget {
 ```
 - A11y: role별 Semantics 분리, 인용은 Chips로 음성 대체 텍스트 포함
 
-## Micro Components (신규 제안)
+## Micro Components
 - ProgressInline
-  - 파일: `lib/ui/components/progress_inline.dart`(제안)
+  - 파일: `lib/ui/components/progress_inline.dart`
   - 시그니처:
 ```dart
 class ProgressInline extends StatelessWidget {
@@ -73,7 +75,7 @@ class ProgressInline extends StatelessWidget {
 }
 ```
 - TypingIndicator
-  - 파일: `lib/ui/components/typing_indicator.dart`(제안)
+  - 파일: `lib/ui/components/typing_indicator.dart`
   - 시그니처:
 ```dart
 class TypingIndicator extends StatelessWidget {
@@ -102,7 +104,7 @@ class SummaryToggle extends StatelessWidget {
 }
 ```
 - AdSlot
-  - 파일: `lib/ui/components/ad_slot.dart`(제안)
+  - 파일: `lib/ui/components/ad_slot.dart`
   - 시그니처:
 ```dart
 enum AdPlacement { resultBottom, chatBottom }
@@ -130,6 +132,6 @@ class AdSlot extends StatelessWidget {
 - 스크롤 중첩 지양: 스크롤러 안에는 Sliver 계열 또는 단일 스크롤만 유지(shrinkWrap 과도 사용 금지)
 
 ## Keys(테스트 식별자)
-- ResultCard: `Key('ResultCard.TLDR')`, `Key('ResultCard.Reasons')`, `Key('ResultCard.Next')`
+- ResultCard: `Key('ResultCard.Container')`, `Key('ResultCard.TLDR')`, `Key('ResultCard.Reasons')`, `Key('ResultCard.Next')`
 - IntakeQuestion: `Key('Intake.$qid')`, 옵션 `Key('Intake.$qid.$value')`
 - ChatBubble: `Key('Chat.$role')`, 인용 `Key('Chat.Citation.$index')`

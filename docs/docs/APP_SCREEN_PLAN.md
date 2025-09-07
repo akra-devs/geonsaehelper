@@ -47,7 +47,7 @@ Status: canonical (Screen Flow)
 - 하단(Composer):
   - 선택형 질문 중에는 비활성화 상태(placeholder: “선택지에서 답변해 주세요”).
   - 결과 노출 후 활성화, 추천 질문 칩(한도/서류/절차).
-- 이벤트: `intake_start`, `intake_answer{qid, answer, is_unknown}`, `intake_complete{count, has_unknown, status}`, `ruling_shown{status}`, `qna_ask{topic}`, `qna_answer{has_disclaimer,last_verified}`, `reasons_expand`, `next_step_click`, `ad_view`.
+- 이벤트: `intake_start`, `intake_answer{qid, answer, is_unknown}`, `intake_complete{count, has_unknown, status}`, `ruling_shown{status}`, `qna_ask{topic}`, `qna_answer{has_disclaimer,last_verified}`, `next_step_click`, `ad_view`.
 - 상태/빈/에러:
   - 로딩: 봇 타이핑 인디케이터(점멸), Q&A 대기 시 skeleton bubble.
   - 에러: 네트워크 오류 시 bot bubble로 재시도 버튼 표기.
@@ -88,7 +88,7 @@ Status: canonical (Screen Flow)
 세부 컴포넌트 트리/프롭/상태는 SCREEN_SPECS.md 참조.
 
 ## 디자인 원칙/토큰
-- 색상: Material3 ColorScheme(seed #3B6EF5), 성공/경고/오류 시맨틱 사용
+- 색상: Material3 ColorScheme(seed — app_theme 기준), 성공/경고/오류 시맨틱 사용
 - 간격/라운드: DESIGN_TOKENS 준수(spacing [4,8,12,16,24,32], radius 8)
 - 타이포: display/headline/title/body/label 단계 사용
 - 접근성: 대비 기준 충족, 음성 라벨(Semantics), 칩/버튼 최소 44dp

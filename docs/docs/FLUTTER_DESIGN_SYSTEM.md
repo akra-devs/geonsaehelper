@@ -1,7 +1,7 @@
 # FLUTTER_DESIGN_SYSTEM — Flutter UI 작성 가이드(실행 지향)
 Status: derived (Implementation guide). Canonical: DESIGN_TOKENS.yaml, COMPONENT_SPECS.md, UI_UX_GUIDE.md
 
-마지막 업데이트: 2025-09-02
+마지막 업데이트: 2025-09-08
 범위: 디자인 토큰 → ThemeData/ThemeExtension 매핑 → 컴포넌트 규약 → 접근성/반응형/테스트.
 
 ## 목적
@@ -14,18 +14,20 @@ Status: derived (Implementation guide). Canonical: DESIGN_TOKENS.yaml, COMPONENT
 
 ## 디자인 토큰(소스)
 - 파일: `DESIGN_TOKENS.yaml` (색/타입/스페이싱/라운드/쉐도우)
-- 변환: 수동/스크립트로 Dart `ThemeExtension`에 주입
+- 변환: 현재 수동 매핑. 토큰 변경 시 `lib/ui/theme/app_theme.dart` 갱신 필요(스크립트 미사용).
 
 ## Theme 구성 원칙
 - ColorScheme 우선: `ColorScheme.fromSeed(seedColor)` 기반, 의미론적 컬러만 사용
-- TextTheme 표준화: 제목/본문/라벨 3축(scale sm/md/lg), 줄간/자간 고정
-- ThemeExtension: 스페이싱/라운드/간격/모서리/두께 등 비표준 토큰을 확장
-- 컴포넌트 고정값은 지양, Theme에서 가져오기(테스트 용이성↑)
+- Seed 컬러(현 구현): 크림톤 `0xFFF4E6C1`
+- TextTheme: Google Fonts Inter 적용, 제목 가중치 상향, 본문 line-height 1.5
+- ThemeExtension: Spacing(x1..x10), Corners(sm=10, md=14)
+- 컴포넌트 고정값은 지양, Theme/Extension에서 가져오기(테스트 용이성↑)
 
-### 예시: Theme + Extension
+### 예시: Theme + Extension (현 구현 발췌)
 ```dart
 // lib/ui/theme/app_theme.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 @immutable
 class Spacing extends ThemeExtension<Spacing> {
@@ -34,36 +36,47 @@ class Spacing extends ThemeExtension<Spacing> {
   final double x3; // 12
   final double x4; // 16
   final double x6; // 24
-  const Spacing({this.x1=4,this.x2=8,this.x3=12,this.x4=16,this.x6=24});
-  @override Spacing copyWith({double? x1,double? x2,double? x3,double? x4,double? x6}) =>
-    Spacing(x1: x1??this.x1, x2: x2??this.x2, x3: x3??this.x3, x4: x4??this.x4, x6: x6??this.x6);
+  final double x8; // 32
+  final double x10; // 40
+  const Spacing({this.x1=4,this.x2=8,this.x3=12,this.x4=16,this.x6=24,this.x8=32,this.x10=40});
+  @override Spacing copyWith({double? x1,double? x2,double? x3,double? x4,double? x6,double? x8,double? x10}) =>
+    Spacing(x1: x1??this.x1, x2: x2??this.x2, x3: x3??this.x3, x4: x4??this.x4, x6: x6??this.x6, x8: x8??this.x8, x10: x10??this.x10);
   @override Spacing lerp(ThemeExtension<Spacing>? other, double t) => this;
 }
 
 @immutable
 class Corners extends ThemeExtension<Corners> {
-  final double sm; // 8
-  final double md; // 12
-  const Corners({this.sm=8,this.md=12});
+  final double sm; // 10
+  final double md; // 14
+  const Corners({this.sm=10,this.md=14});
   @override Corners copyWith({double? sm,double? md}) => Corners(sm: sm??this.sm, md: md??this.md);
   @override Corners lerp(ThemeExtension<Corners>? other, double t) => this;
 }
 
 ThemeData buildAppTheme(Brightness brightness) {
-  final isDark = brightness == Brightness.dark;
-  final scheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF3B6EF5), brightness: brightness,
-  );
+  const cream = Color(0xFFF4E6C1);
+  final scheme = ColorScheme.fromSeed(seedColor: cream, brightness: brightness);
   final base = ThemeData(colorScheme: scheme, useMaterial3: true);
+  final interText = GoogleFonts.interTextTheme(base.textTheme);
   return base.copyWith(
-    textTheme: base.textTheme.copyWith(
-      titleLarge: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-      bodyMedium: base.textTheme.bodyMedium?.copyWith(height: 1.4),
-      labelLarge: base.textTheme.labelLarge?.copyWith(letterSpacing: 0.2),
+    textTheme: interText.copyWith(
+      titleLarge: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      titleMedium: base.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      bodyMedium: interText.bodyMedium?.copyWith(height: 1.5),
+      labelLarge: interText.labelLarge?.copyWith(letterSpacing: 0.15),
+    ),
+    chipTheme: base.chipTheme.copyWith(
+      labelStyle: base.textTheme.labelLarge?.copyWith(letterSpacing: 0.1),
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 8),
+      side: BorderSide(color: scheme.outlineVariant),
+      selectedColor: scheme.primaryContainer,
+      backgroundColor: scheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      showCheckmark: false,
     ),
     inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
     elevatedButtonTheme: ElevatedButtonThemeData(style: ElevatedButton.styleFrom(
-      minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+      minimumSize: const Size(48, 48), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
     )),
     extensions: const <ThemeExtension<dynamic>>[
       Spacing(), Corners(),
@@ -95,8 +108,8 @@ ThemeData buildAppTheme(Brightness brightness) {
 - A11y: label을 음성으로 충분히 읽히도록, 옵션은 `ToggleButtons`/`ChoiceChip` 중 택1
 
 ### ResultCard 사양(요약)
-- props: `status`, `tldr`, `reasons(List<Item{icon,text,type})`, `nextSteps(List<String>)`, `lastVerified`
-- states: `expanded`(사유 펼치기), `showMeta`
+- props: `status`, `tldr`, `reasons(List<Reason{text, kind})`, `nextSteps(List<String>)`, `lastVerified`
+- states: 사유/다음 단계 ‘자세히/접기’ 토글(Stateful)
 - A11y: 색상 외 구분(아이콘/텍스트), 대비 준수
 
 ## 접근성 체크
@@ -119,6 +132,6 @@ ThemeData buildAppTheme(Brightness brightness) {
 - 위젯 테스트: 버튼 탭→콜백, 상태 전이, Semantics 확인
 
 ## 문서-코드 연결 체크리스트(DoD)
-- DESIGN_TOKENS.yaml → ThemeExtension 매핑 확인
+- DESIGN_TOKENS.yaml ↔ app_theme.dart 매핑 동기화(현재 수동)
 - 컴포넌트가 Theme/Extension 토큰만 참조(하드코딩 X)
 - TestKey 부착, 골든 스냅샷 통과

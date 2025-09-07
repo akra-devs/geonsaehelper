@@ -100,7 +100,7 @@ return RepositoryProvider<ChatRepository>(
 - 불확실 시 ‘확인불가’로 응답(추정 금지).
 
 ## 측정(Analytics)
-- 핵심 이벤트: `intake_start`, `intake_answer`, `intake_complete`, `ruling_shown`, `reasons_expand`, `next_step_click`, `qna_ask`, `qna_answer`, `feedback_thumb`, `correction_request`.
+- 핵심 이벤트: `intake_start`, `intake_answer`, `intake_complete`, `ruling_shown`, `next_step_click`, `qna_ask`, `qna_answer` (feedback/reasons_toggle/correction는 추후 추가).
 - 위치: UI 인터랙션 직후 또는 결과 표시 시점. 상세 스키마는 MEASUREMENT_PLAN.md.
 
 ## 테스트 전략

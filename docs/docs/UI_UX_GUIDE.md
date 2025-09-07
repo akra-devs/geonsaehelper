@@ -41,7 +41,7 @@ Status: canonical (UX Principles)
 
 ## 컴포넌트 계약(Props/Keys)
 - COMPONENT_SPECS.md를 표준으로 하며 테스트 Key는 다음을 사용:
-  - ResultCard: `Key('ResultCard.TLDR')`, `Key('ResultCard.Reasons')`, `Key('ResultCard.Next')`
+  - ResultCard: `Key('ResultCard.Container')`, `Key('ResultCard.TLDR')`, `Key('ResultCard.Reasons')`, `Key('ResultCard.Next')`
   - IntakeQuestion: `Key('Intake.$qid')`, `Key('Intake.$qid.$value')`
   - ChatBubble: `Key('Chat.$role')`, `Key('Chat.Citation.$index')`
 
@@ -56,7 +56,7 @@ Status: canonical (UX Principles)
 
 ## 측정 이벤트 매핑
 - MEASUREMENT_PLAN.md의 이벤트를 UI 상호작용에 1:1 매핑
-- 예: intake_answer, intake_complete, ruling_shown, qna_ask, qna_answer, reasons_expand, next_step_click
+- 예: intake_answer, intake_complete, ruling_shown, qna_ask, qna_answer, next_step_click (reasons_toggle는 추후 추가)
 
 ## 문서 연관성
 - 상세 화면 설계: APP_SCREEN_PLAN.md

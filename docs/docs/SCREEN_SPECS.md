@@ -52,7 +52,7 @@ Status: canonical (Screen Specs)
   - label, options[], selected?, showUnknown=true, helper?, errorText?
 - `ResultCard`
   - status: `possible|notPossibleInfo|notPossibleDisq`
-  - tldr, reasons[{icon,text,type}], nextSteps[], lastVerified(YYYY-MM-DD)
+  - tldr, reasons[{text, kind}], nextSteps[], lastVerified(YYYY-MM-DD)
 - `ProgressInline`
   - current: number, total: number
 - `Composer`
@@ -76,7 +76,7 @@ Status: canonical (Screen Specs)
 
 ### 이벤트 매핑
 - `intake_start`, `intake_answer{qid, is_unknown}`, `intake_complete{count, has_unknown, status}`
-- `ruling_shown{status}`, `reasons_expand`, `next_step_click{action}`
+- `ruling_shown{status}`, `next_step_click{action}`
 - `qna_ask{topic}`, `qna_answer{has_disclaimer,last_verified}`
 
 ---

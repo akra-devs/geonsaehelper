@@ -1,28 +1,30 @@
 # MEASUREMENT_PLAN — 측정/계측 계획
 Status: canonical (Analytics Schema)
 
-마지막 업데이트: 2025-09-02
+마지막 업데이트: 2025-09-08
 
 ## 목표 지표(KPI)
 - 퍼널: 판정 완주율, 최초 판정까지 평균 시간
 - 품질: 결과 만족(👍) 비율, “사유 보기” 클릭률, 정정 요청률
 - 리텐션: 후속 Q&A 진입률, D1/D7 재방문
 
-## 이벤트 스키마(초안)
-- intake_start: { session_id, ts }
-- intake_answer: { qid, answer, is_unknown, ts }
-- intake_complete: { question_count, duration_ms, has_unknown, result_status, ts }
-- ruling_shown: { status, reasons_count, unknown_count, ts }
-- reasons_expand: { ts }
-- next_step_click: { action: checklist|howto|limit_estimate|similar_cases, ts }
-- qna_ask: { topic, length, ts }
-- qna_answer: { has_disclaimer, last_verified, ts }
-- feedback_thumb: { updown, context: ruling|qna, ts }
-- correction_request: { context, reason, ts }
+## 이벤트 스키마(구현/계획)
+- 구현됨(lib/common/analytics/analytics.dart):
+  - intake_start: { ts }
+  - intake_answer: { qid, answer, is_unknown, ts }
+  - intake_complete: { question_count, duration_ms, has_unknown, result_status, ts }
+  - ruling_shown: { status, ts }
+  - next_step_click: { action, ts }
+  - qna_ask: { topic, length, ts }
+  - qna_answer: { has_disclaimer, last_verified, ts }
+- 계획(추가 예정):
+  - reasons_toggle: { expanded, ts }  // ResultCard 사유 ‘자세히/접기’ 토글
+  - feedback_thumb: { updown, context: ruling|qna, ts }
+  - correction_request: { context, reason, ts }
 
 필드 설명
 - qid: A1..A7 / P1..P7 / S1 등 INTAKE_FLOW와 동일 식별자
-- status: possible | not_possible_info_lack | not_possible_disqualifier
+- status: possible | not_possible_info | not_possible_disq (도메인 enum에 맞춤)
 
 ## 퍼널 정의
 - F1: intake_start → intake_complete → ruling_shown
