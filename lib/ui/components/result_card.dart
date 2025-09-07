@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../../common/analytics/analytics.dart';
 import '../../features/conversation/domain/models.dart' as domain;
 
 class ResultCard extends StatefulWidget {
@@ -141,10 +142,13 @@ class _ResultCardState extends State<ResultCard> {
                 if (_showReasonsToggle())
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: () => setState(() => _expandReasons = !_expandReasons),
-                      child: Text(_expandReasons ? '접기' : '자세히'),
-                    ),
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() => _expandReasons = !_expandReasons);
+                      Analytics.instance.reasonsExpand(_expandReasons);
+                    },
+                    child: Text(_expandReasons ? '접기' : '자세히'),
+                  ),
                   ),
                 SizedBox(height: spacing.x3),
               ],
@@ -156,15 +160,18 @@ class _ResultCardState extends State<ResultCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (final s in _visibleNextSteps())
-                      Padding(
-                        padding: EdgeInsets.only(bottom: spacing.x2),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.chevron_right, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                            SizedBox(width: spacing.x1),
-                            Expanded(child: Text(s)),
-                          ],
+                      InkWell(
+                        onTap: () => Analytics.instance.nextStepClick(s),
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: spacing.x2),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.chevron_right, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              SizedBox(width: spacing.x1),
+                              Expanded(child: Text(s)),
+                            ],
+                          ),
                         ),
                       ),
                   ],

@@ -12,10 +12,18 @@ enum RulingStatus { possible, notPossibleInfo, notPossibleDisq }
 enum ReasonKind { met, unmet, unknown, warning }
 
 @immutable
+class SourceRef {
+  final String docId;
+  final String sectionKey;
+  const SourceRef(this.docId, this.sectionKey);
+}
+
+@immutable
 class Reason {
   final String text;
   final ReasonKind kind;
-  const Reason(this.text, this.kind);
+  final List<SourceRef>? sources;
+  const Reason(this.text, this.kind, [this.sources]);
 }
 
 @immutable

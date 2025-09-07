@@ -24,6 +24,7 @@ class Analytics {
         'result_status': status,
       });
   void rulingShown(String status) => log('ruling_shown', {'status': status});
+  void reasonsExpand(bool expanded) => log('reasons_expand', {'expanded': expanded});
   void qnaAsk(String topic, int length) => log('qna_ask', {'topic': topic, 'length': length});
   void qnaAnswer(bool hasDisclaimer, String lastVerified) =>
       log('qna_answer', {'has_disclaimer': hasDisclaimer, 'last_verified': lastVerified});
