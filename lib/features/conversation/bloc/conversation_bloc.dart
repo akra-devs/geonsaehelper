@@ -307,26 +307,89 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       return;
     }
 
-    // Disqualifier: 지역별 보증금 상한 초과(P2+P5)
+    // 지역별 보증금 상한(P2+P5) — 신혼 예외 고려
     final region = _answers['P2'];
     final dep = _answers['P5'];
+    final isNewly = _answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned';
     if (region != null && dep != null) {
       final isMetro = region == 'metro';
-      final overLimit = (!isMetro && dep == 'dep_le3') || (isMetro && dep == 'dep_gt3');
-      if (overLimit) {
-        _emitResult(
-          emit,
-          ConversationResult(
-            RulingStatus.notPossibleDisq,
-            '아래 결격 사유로 신청이 불가합니다.',
-            [Reason('지역별 임차보증금 상한 초과', ReasonKind.unmet, RuleCitations.forQid('P5'))],
-            const ['보증금 조정 또는 타 상품 검토'],
-            '2025-09-08',
-          ),
-          hasUnknown: false,
-          statusKey: 'not_possible_disq',
-        );
-        return;
+      // Interpret coarse bands conservatively
+      // - 수도권: 일반 3억, 신혼 4억
+      // - 비수도권: 일반 2억, 신혼 3억
+      if (isMetro) {
+        if (dep == 'dep_gt3') {
+          if (isNewly) {
+            // 3~4억인지 4억 초과인지 불명확 → 정보 부족 처리
+            final reasons = [
+              Reason('보증금 구간이 경계값(3~4억)으로 정확한 금액 확인 필요', ReasonKind.unknown, RuleCitations.forQid('P5')),
+            ];
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleInfo,
+                '다음 정보가 없어 판정 불가입니다.',
+                reasons,
+                const ['보증금: 정확 금액 확인(3~4억 경계)', '계약서 재확인 후 재판정'],
+                '2025-09-08',
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_info',
+            );
+            return;
+          } else {
+            // 일반가구 수도권 3억 초과 → 결격
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleDisq,
+                '아래 결격 사유로 신청이 불가합니다.',
+                [Reason('지역별 임차보증금 상한 초과(수도권 3억)', ReasonKind.unmet, RuleCitations.forQid('P5'))],
+                const ['보증금 조정 또는 타 상품 검토'],
+                '2025-09-08',
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_disq',
+            );
+            return;
+          }
+        }
+      } else {
+        // 비수도권(광역시/그 외)
+        if (dep == 'dep_gt3') {
+          // 3억 초과 → 신혼 예외(3억)도 초과
+          _emitResult(
+            emit,
+            ConversationResult(
+              RulingStatus.notPossibleDisq,
+              '아래 결격 사유로 신청이 불가합니다.',
+              [Reason('지역별 임차보증금 상한 초과(비수도권 2~3억)', ReasonKind.unmet, RuleCitations.forQid('P5'))],
+              const ['보증금 조정 또는 타 상품 검토'],
+              '2025-09-08',
+            ),
+            hasUnknown: false,
+            statusKey: 'not_possible_disq',
+          );
+          return;
+        }
+        if (dep == 'dep_le3' && !isNewly) {
+          // 2~3억 구간 → 일반가구 상한(2억)과 충돌 가능, 보수적 정보부족 처리
+          final reasons = [
+            Reason('보증금 구간(≤3억)에서 2~3억 여부 확인 필요(비수도권 일반 2억 상한)', ReasonKind.unknown, RuleCitations.forQid('P5')),
+          ];
+          _emitResult(
+            emit,
+            ConversationResult(
+              RulingStatus.notPossibleInfo,
+              '다음 정보가 없어 판정 불가입니다.',
+              reasons,
+              const ['보증금: 정확 금액 확인(2~3억 경계)', '계약서 재확인 후 재판정'],
+              '2025-09-08',
+            ),
+            hasUnknown: false,
+            statusKey: 'not_possible_info',
+          );
+          return;
+        }
       }
     }
 
@@ -341,6 +404,11 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       if (_answers.containsKey('P5')) Reason('보증금 상한: (충족)', ReasonKind.met, RuleCitations.forQid('P5')),
       if (_answers['P1'] == 'no') Reason('계약/5% 미지급 → 기한 유의', ReasonKind.warning, RuleCitations.forQid('P1')),
       if (_answers['S1'] == 'yes') Reason('전세피해자 라우팅 가능(특례)', ReasonKind.warning, RuleCitations.forQid('S1')),
+      if (_answers['S1a'] == 'yes') Reason('임차권등기 설정: (확인)', ReasonKind.met, RuleCitations.forQid('S1a')),
+      if (_answers['A3'] == 'y19_34') Reason('청년 전용 경로도 검토', ReasonKind.warning, RuleCitations.forQid('A3')),
+      if (_answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned')
+        Reason('신혼 전용 경로도 검토', ReasonKind.warning, RuleCitations.forQid('A4')),
+      if (_answers['A5'] == 'yes') Reason('신생아 특례 경로도 검토', ReasonKind.warning, RuleCitations.forQid('A5')),
     ];
     final tldr = _buildTldrPossible();
     _emitResult(

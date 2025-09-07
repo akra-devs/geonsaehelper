@@ -9,6 +9,9 @@ class RuleCitations {
   static const SourceRef incomeCap = SourceRef('HUG_POLICY_DOCS/HUG_POLICY', 'RENT_STANDARD:income_cap');
   static const SourceRef assetCap = SourceRef('HUG_POLICY_DOCS/HUG_POLICY', 'RENT_STANDARD:asset_cap');
   static const SourceRef damages = SourceRef('HUG_POLICY_DOCS/HUG_POLICY', 'RENT_DAMAGES_*:eligibility');
+  static const SourceRef youth = SourceRef('HUG_POLICY_DOCS/HUG_POLICY', 'RENT_YOUTH_BEOTIMMOK:eligibility');
+  static const SourceRef newlywed = SourceRef('HUG_POLICY_DOCS/HUG_POLICY', 'RENT_NEWLYWED:eligibility');
+  static const SourceRef newborn = SourceRef('HUG_POLICY_DOCS/HUG_POLICY', 'RENT_NEWBORN_SPECIAL:eligibility');
 
   static List<SourceRef> forQid(String qid) {
     switch (qid) {
@@ -16,9 +19,9 @@ class RuleCitations {
       case 'A2':
         return const [household];
       case 'A3':
-        return const [household];
+        return const [youth, household];
       case 'A4':
-        return const [household];
+        return const [newlywed, household];
       case 'A6':
         return const [incomeCap];
       case 'A7':
@@ -39,9 +42,10 @@ class RuleCitations {
       case 'S1':
       case 'S1a':
         return const [damages];
+      case 'A5':
+        return const [newborn];
       default:
         return const [];
     }
   }
 }
-
