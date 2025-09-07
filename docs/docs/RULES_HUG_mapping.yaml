@@ -1,21 +1,21 @@
-version: "v1.0"
-last_verified: "2025-09-02"
+version: "v1.1"
+last_verified: "2025-09-08"
 
-# 내부 규정 문서 매핑 — 값을 고객 내부 문서 기준으로 채워주세요.
+# 내부 규정 문서 매핑 — HUG 정규화 문서(HUG_POLICY.md)를 1차 소스로 사용합니다.
 documents:
   primary:
-    file: "HUG_internal_policy.md"   # 내부 문서 파일명(예시)
-    note: "외부 공개 금지. 섹션/키는 내부 문서 체계를 따름."
+    file: "docs/docs/HUG_POLICY_DOCS/HUG_POLICY.md"
+    note: "정규화된 HUG Programs 요약(외부 링크 없음). 섹션키: ProgramID + 필드(eligibility/rate/limit/term 등)."
 
 sources:
   household_requirement:
     doc: primary
-    section: "A.1"           # 예: 무주택/세대주 요건 섹션
+    section: "RENT_*:eligibility"   # 세대주(예비 포함), 무주택 요건
     key: "household_status"
 
   credit_disqualifiers:
     doc: primary
-    section: "A.2"           # 예: 신용/연체 관련 결격 섹션
+    section: "RENT_*:eligibility"   # 신용/공공임대 결격 요건
     flags:
       - long_delinquency      # 장기연체
       - rehabilitation        # 개인회생
@@ -24,7 +24,7 @@ sources:
 
   property_type_rules:
     doc: primary
-    section: "B.1"           # 예: 보증 대상 주택 유형/면적
+    section: "RENT_STANDARD:eligibility"   # 대상 주택 유형 정합성
     allowed_types:
       - apartment             # 아파트
       - officetel             # 오피스텔(주거용)
@@ -36,43 +36,42 @@ sources:
 
   floor_area_thresholds:
     doc: primary
-    section: "B.1"
+    section: "RENT_STANDARD:eligibility"
     max_by_type:
-      apartment: "FILL_ME"    # m² 또는 평 기준, 내부 값 입력
-      officetel: "FILL_ME"
-      multi_family: "FILL_ME"
-      row_house: "FILL_ME"
-      studio: "FILL_ME"
+      apartment: "85㎡"    # 읍·면 지역 100㎡ 예외는 별도 로직 처리
+      officetel: "85㎡"
+      multi_family: "85㎡"
+      row_house: "85㎡"
+      studio: "85㎡"
 
   deposit_limits:
     doc: primary
-    section: "B.2"           # 예: 지역별 전세보증금 한도
+    section: "RENT_STANDARD:region_limits"           # 지역별 전세보증금 상한
     max_by_region:
-      seoul_metro: "FILL_ME"  # 수도권
-      metro_cities: "FILL_ME" # 광역시
-      others: "FILL_ME"       # 그 외
+      seoul_metro: "3억원"     # 수도권
+      metro_cities: "2억원"    # 수도권 외(광역시 포함)
+      others: "2억원"         # 그 외
 
   pre_contract_policy:
     doc: primary
-    section: "C.1"           # 예: 계약 전 상태 정책
-    action: "warn"           # warn | allow | disqualify 중 내부 규정대로
+    section: "RENT_STANDARD:eligibility"           # 계약 및 5% 지급 요건
+    action: "warn"           # 계약/지급 전이면 경고 및 정보부족 처리
 
   encumbrance_policy:
     doc: primary
-    section: "C.2"           # 예: 근저당 존재 시 정책
+    section: "RENT_STANDARD:notes"           # 근저당 시 은행 내규/보증 영향
     action: "warn_or_disqualify"  # warn | disqualify | warn_or_disqualify
 
 required_fields:
   applicant:
     - household_status
-    - income_type
     - income_band
-    - employment_months
+    - age_band
   property:
     - type
-    - floor_area_band
     - region
     - deposit_band
+    # floor_area_band는 필요 시 브랜치 질문으로 보완
 
 message_overrides:  # 필요 시 RULES_HUG_v1.md 기본 문구 대신 교체
   ineligible_household: null
@@ -81,8 +80,7 @@ message_overrides:  # 필요 시 RULES_HUG_v1.md 기본 문구 대신 교체
   deposit_over_limit: null
   require_household_status: null
   require_income_band: null
-  require_employment_months: null
+  require_age_band: null
   require_property_details: null
   pre_contract_warning: null
   encumbrance_warning: null
-

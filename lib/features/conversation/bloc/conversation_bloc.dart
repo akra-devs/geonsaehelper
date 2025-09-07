@@ -163,16 +163,16 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       return;
     }
 
-    // Disqualifier: A1 == 1주택
-    if (_answers['A1'] == 'onehome') {
+    // Disqualifier: 미성년(A3)
+    if (_answers['A3'] == 'under19') {
       _emitResult(
         emit,
         ConversationResult(
           RulingStatus.notPossibleDisq,
           '아래 결격 사유로 신청이 불가합니다.',
-          const [Reason('무주택 요건 불충족', ReasonKind.unmet)],
-          const ['조건 변경(보증금 조정) 또는 타 기관 검토'],
-          '2025-09-02',
+          const [Reason('성년 요건 미충족(만 19세 미만)', ReasonKind.unmet)],
+          const ['연령 요건 충족 시 재진행'],
+          '2025-09-08',
         ),
         hasUnknown: false,
         statusKey: 'not_possible_disq',
@@ -180,16 +180,54 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       return;
     }
 
-    // Disqualifier: 중대한 신용 문제(A7)
-    if (_answers['A7'] == 'credit_severe') {
+    // Disqualifier: 무주택 요건 미충족(A2)
+    if (_answers['A2'] == 'no') {
       _emitResult(
         emit,
         ConversationResult(
           RulingStatus.notPossibleDisq,
           '아래 결격 사유로 신청이 불가합니다.',
-          const [Reason('중대한 신용 문제(장기연체/회생/파산/면책)', ReasonKind.unmet)],
-          const ['신용 상태 확인 후 재시도 또는 타 상품 검토'],
-          '2025-09-02',
+          const [Reason('무주택 요건 불충족(세대원 보유)', ReasonKind.unmet)],
+          const ['보유 주택 처분 후 재진행'],
+          '2025-09-08',
+        ),
+        hasUnknown: false,
+        statusKey: 'not_possible_disq',
+      );
+      return;
+    }
+
+    // Disqualifier: 결격/제한(C1)
+    if (_answers['C1'] == 'has') {
+      _emitResult(
+        emit,
+        ConversationResult(
+          RulingStatus.notPossibleDisq,
+          '아래 결격 사유로 신청이 불가합니다.',
+          const [Reason('신용/공공임대 등 결격 사항', ReasonKind.unmet)],
+          const ['신용 상태/거주 형태 확인 후 재시도'],
+          '2025-09-08',
+        ),
+        hasUnknown: false,
+        statusKey: 'not_possible_disq',
+      );
+      return;
+    }
+
+    // Disqualifier: 소득/자산 상한 초과(A6/A7)
+    if (_answers['A6'] == 'inc_over' || _answers['A7'] == 'asset_over') {
+      final reasons = <Reason>[
+        if (_answers['A6'] == 'inc_over') const Reason('소득 상한 초과', ReasonKind.unmet),
+        if (_answers['A7'] == 'asset_over') const Reason('자산 상한 초과', ReasonKind.unmet),
+      ];
+      _emitResult(
+        emit,
+        ConversationResult(
+          RulingStatus.notPossibleDisq,
+          '아래 결격 사유로 신청이 불가합니다.',
+          reasons,
+          const ['조건 충족 가능한 상품군 재탐색 또는 조건 변경'],
+          '2025-09-08',
         ),
         hasUnknown: false,
         statusKey: 'not_possible_disq',
@@ -199,14 +237,14 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
 
     // Otherwise, possible
     final reasons = <Reason>[
-      const Reason('가구/세대: (충족)', ReasonKind.met),
-      if (_answers.containsKey('A3')) const Reason('소득 형태: (충족)', ReasonKind.met),
-      if (_answers.containsKey('A4')) const Reason('소득 구간: (충족)', ReasonKind.met),
-      if (_answers.containsKey('P1')) const Reason('주택 유형: (충족)', ReasonKind.met),
-      if (_answers.containsKey('P2')) const Reason('전용면적: (충족)', ReasonKind.met),
-      if (_answers.containsKey('P3')) const Reason('지역: (충족)', ReasonKind.met),
-      if (_answers.containsKey('P4')) const Reason('보증금: (충족)', ReasonKind.met),
-      if (_answers['P7'] == 'encumbrance_yes') const Reason('근저당 있음 → 등기 확인 필요', ReasonKind.warning),
+      const Reason('세대주/무주택 요건: (충족)', ReasonKind.met),
+      if (_answers.containsKey('A6')) const Reason('소득 상한: (충족)', ReasonKind.met),
+      if (_answers.containsKey('A7')) const Reason('자산 상한: (충족)', ReasonKind.met),
+      if (_answers.containsKey('P3')) const Reason('대상 주택 유형: (충족)', ReasonKind.met),
+      if (_answers.containsKey('P2')) const Reason('지역 요건/우대: (확인)', ReasonKind.met),
+      if (_answers.containsKey('P5')) const Reason('보증금 상한: (충족)', ReasonKind.met),
+      if (_answers['P1'] == 'no') const Reason('계약/5% 미지급 → 기한 유의', ReasonKind.warning),
+      if (_answers['S1'] == 'yes') const Reason('전세피해자 라우팅 가능(특례)', ReasonKind.warning),
     ];
     _emitResult(
       emit,
@@ -215,7 +253,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         '예비판정 결과, \'해당\'합니다. 체크리스트를 확인하세요.',
         const [], // reasons replaced below to keep const
         const ['신분증·가족/혼인관계·소득 증빙 준비', '임대인 등기부등본/계약서 사본', '은행 상담 → 심사 → 승인 → 실행'],
-        '2025-09-02',
+        '2025-09-08',
       ),
       hasUnknown: false,
       statusKey: 'possible',
@@ -243,33 +281,29 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       case 'A1':
         return '세대주 여부';
       case 'A2':
-        return '혼인/부양 상태';
+        return '세대원 무주택 여부';
       case 'A3':
-        return '소득 형태';
+        return '나이대(만)';
       case 'A4':
-        return '소득 구간';
+        return '혼인 상태';
       case 'A5':
-        return '재직/사업 기간';
+        return '최근 2년 내 출산';
       case 'A6':
-        return '기존 대출/보증';
+        return '연소득 구간';
       case 'A7':
-        return '신용/연체 이력';
+        return '순자산 구간';
+      case 'C1':
+        return '결격/제한(신용·공공임대)';
       case 'P1':
-        return '주택 유형';
+        return '계약 및 5% 지급';
       case 'P2':
-        return '전용면적';
-      case 'P3':
         return '지역';
-      case 'P4':
-        return '보증금(또는 보증금+월세)';
+      case 'P3':
+        return '주택 유형';
       case 'P5':
-        return '계약 상태';
-      case 'P6':
-        return '입주 예정';
-      case 'P7':
-        return '등기 근저당';
+        return '임차보증금';
       case 'S1':
-        return '우대/특례';
+        return '전세피해자 여부';
       default:
         return qid;
     }
