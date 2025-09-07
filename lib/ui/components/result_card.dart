@@ -109,6 +109,19 @@ class _ResultCardState extends State<ResultCard> {
                   _LastVerifiedBadge(lastVerified: widget.lastVerified),
                 ],
               ),
+              if (_programBadges().isNotEmpty) ...[
+                SizedBox(height: spacing.x2),
+                Wrap(
+                  spacing: spacing.x2,
+                  runSpacing: spacing.x1,
+                  children: _programBadges()
+                      .map((b) => Chip(
+                            label: Text(b, style: Theme.of(context).textTheme.labelSmall),
+                            visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+                          ))
+                      .toList(),
+                ),
+              ],
               SizedBox(height: spacing.x3),
               Text(
                 widget.tldr,
@@ -235,6 +248,16 @@ class _ResultCardState extends State<ResultCard> {
   bool _showReasonsToggle() => widget.reasons.length > 3;
   bool _showNextToggle() => widget.nextSteps.length > 3;
 }
+
+  List<String> _programBadges() {
+    final texts = widget.reasons.map((r) => r.text).join(' ');
+    final out = <String>[];
+    if (texts.contains('전세피해자')) out.add('특례(피해자)');
+    if (texts.contains('신생아')) out.add('특례(신생아)');
+    if (texts.contains('신혼')) out.add('신혼');
+    if (texts.contains('청년')) out.add('청년');
+    return out;
+  }
 
 class _LastVerifiedBadge extends StatelessWidget {
   final String lastVerified;

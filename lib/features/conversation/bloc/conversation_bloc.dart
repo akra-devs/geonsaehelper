@@ -403,12 +403,12 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       if (_answers.containsKey('P2')) Reason('지역 요건/우대: (확인)', ReasonKind.met, RuleCitations.forQid('P2')),
       if (_answers.containsKey('P5')) Reason('보증금 상한: (충족)', ReasonKind.met, RuleCitations.forQid('P5')),
       if (_answers['P1'] == 'no') Reason('계약/5% 미지급 → 기한 유의', ReasonKind.warning, RuleCitations.forQid('P1')),
-      if (_answers['S1'] == 'yes') Reason('전세피해자 라우팅 가능(특례)', ReasonKind.warning, RuleCitations.forQid('S1')),
+      if (_answers['S1'] == 'yes') Reason('전세피해자 특례 경로 안내 대상', ReasonKind.warning, RuleCitations.forQid('S1')),
       if (_answers['S1a'] == 'yes') Reason('임차권등기 설정: (확인)', ReasonKind.met, RuleCitations.forQid('S1a')),
-      if (_answers['A3'] == 'y19_34') Reason('청년 전용 경로도 검토', ReasonKind.warning, RuleCitations.forQid('A3')),
+      if (_answers['A3'] == 'y19_34') Reason('청년 연령 요건: (충족)', ReasonKind.met, RuleCitations.forQid('A3')),
       if (_answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned')
-        Reason('신혼 전용 경로도 검토', ReasonKind.warning, RuleCitations.forQid('A4')),
-      if (_answers['A5'] == 'yes') Reason('신생아 특례 경로도 검토', ReasonKind.warning, RuleCitations.forQid('A5')),
+        Reason('신혼 요건: (충족)', ReasonKind.met, RuleCitations.forQid('A4')),
+      if (_answers['A5'] == 'yes') Reason('신생아 특례 요건: (충족)', ReasonKind.met, RuleCitations.forQid('A5')),
     ];
     final tldr = _buildTldrPossible();
     _emitResult(
@@ -417,7 +417,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         RulingStatus.possible,
         tldr,
         const [],
-        const ['신분증·가족/혼인관계·소득 증빙 준비', '임대인 등기부등본/계약서 사본', '은행 상담 → 심사 → 승인 → 실행'],
+        _buildNextSteps(),
         '2025-09-08',
       ),
       hasUnknown: false,
@@ -455,7 +455,37 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
           return '주택';
       }
     }();
-    return '예비판정 결과, $regionLabel의 $propertyLabel은(는) HUG 전세자금대출 대상에 ‘해당’합니다.';
+    final first = '예비판정 결과, $regionLabel의 $propertyLabel은(는) HUG 전세자금대출 대상에 ‘해당’합니다.';
+    // Add up to two route hints by priority: damages > newborn > newly > youth
+    final hints = <String>[];
+    if (_answers['S1'] == 'yes') hints.add('전세피해자 특례 경로 안내 대상입니다.');
+    if (_answers['A5'] == 'yes') hints.add('신생아 특례 경로도 검토 대상입니다.');
+    if (_answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned') hints.add('신혼 전용 경로도 검토 대상입니다.');
+    if (_answers['A3'] == 'y19_34') hints.add('청년 전용 경로도 검토 대상입니다.');
+    final extra = hints.isEmpty ? '' : '\n' + hints.take(2).join('\n');
+    return first + extra;
+  }
+
+  List<String> _buildNextSteps() {
+    final steps = <String>[];
+    // Program-specific additions first
+    if (_answers['S1'] == 'yes') {
+      steps.add('피해자 확인서류/임차권등기(해당 시) 준비');
+      steps.add('보증기관(HUG) 상담 경로 확인');
+    }
+    if (_answers['A5'] == 'yes') {
+      steps.add('출생증명서 또는 가족관계등록부 준비');
+    }
+    if (_answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned') {
+      steps.add('혼인관계증명서(또는 예정 증빙) 준비');
+    }
+    // Common checklist
+    steps.addAll([
+      '신분증·가족/혼인관계·소득 증빙 준비',
+      '임대인 등기부등본/건축물대장(필요 시)/계약서 사본',
+      '은행 상담 → 심사 → 보증 승인 → 실행',
+    ]);
+    return steps;
   }
 
   void _emitResult(Emitter<ConversationState> emit, ConversationResult result,
