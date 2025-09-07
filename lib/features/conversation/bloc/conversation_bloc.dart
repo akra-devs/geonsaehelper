@@ -107,8 +107,9 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     final phase = state.phase;
     _answers[qid] = value;
     final list = phase == ConversationPhase.survey ? qf.surveyFlow : qf.intakeFlow;
-    if (_step < list.length - 1) {
-      _step += 1;
+    final nextStep = _findNextAskableStep(phase, _step);
+    if (nextStep != -1) {
+      _step = nextStep;
       _emitQuestion(emit, phase: phase, step: _step);
     } else {
       if (phase == ConversationPhase.survey) {
@@ -145,6 +146,25 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     emit(ConversationState(phase: phase, awaitingChoice: true, question: cq));
   }
 
+  // Branch visibility rules
+  bool _shouldAsk(String qid) {
+    if (qid == 'P4a') {
+      return _answers['P4'] == 'fa_86_100';
+    }
+    if (qid == 'S1a') {
+      return _answers['S1'] == 'yes';
+    }
+    return true;
+  }
+
+  int _findNextAskableStep(ConversationPhase phase, int fromExclusive) {
+    final list = phase == ConversationPhase.survey ? qf.surveyFlow : qf.intakeFlow;
+    for (int i = fromExclusive + 1; i < list.length; i++) {
+      if (_shouldAsk(list[i].qid)) return i;
+    }
+    return -1;
+  }
+
   void _evaluateAndEmit(Emitter<ConversationState> emit) {
     // Unknowns
     final unknowns = _answers.entries
@@ -157,8 +177,8 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         RulingStatus.notPossibleInfo,
         '다음 정보가 없어 판정 불가입니다.',
         reasons,
-        const ['세대주: 정부24 확인', '보증금: 계약서 확인', '근저당: 등기부등본 열람'],
-        '2025-09-02',
+        const ['세대주: 정부24 확인', '면적: 등기/건축물대장 확인', '보증금: 계약서 확인'],
+        '2025-09-08',
       ), hasUnknown: true, statusKey: 'not_possible_info');
       return;
     }
@@ -235,12 +255,85 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       return;
     }
 
+    // Disqualifier: 대상 주택 유형 불가(P3)
+    if (_answers['P3'] == 'other') {
+      _emitResult(
+        emit,
+        ConversationResult(
+          RulingStatus.notPossibleDisq,
+          '아래 결격 사유로 신청이 불가합니다.',
+          const [Reason('대상 주택 유형 아님(비주거 등)', ReasonKind.unmet)],
+          const ['주거용 유형으로 조건 변경 후 재진행'],
+          '2025-09-08',
+        ),
+        hasUnknown: false,
+        statusKey: 'not_possible_disq',
+      );
+      return;
+    }
+
+    // Disqualifier: 전용면적 초과(P4) — 읍·면 100㎡ 예외 처리
+    if (_answers['P4'] == 'fa_gt100') {
+      _emitResult(
+        emit,
+        ConversationResult(
+          RulingStatus.notPossibleDisq,
+          '아래 결격 사유로 신청이 불가합니다.',
+          const [Reason('전용면적 100㎡ 초과(예외 없음)', ReasonKind.unmet)],
+          const ['면적 조건 충족 주택으로 재검토'],
+          '2025-09-08',
+        ),
+        hasUnknown: false,
+        statusKey: 'not_possible_disq',
+      );
+      return;
+    }
+    if (_answers['P4'] == 'fa_86_100' && _answers['P4a'] == 'no') {
+      _emitResult(
+        emit,
+        ConversationResult(
+          RulingStatus.notPossibleDisq,
+          '아래 결격 사유로 신청이 불가합니다.',
+          const [Reason('전용면적 85㎡ 초과(읍·면 아님)', ReasonKind.unmet)],
+          const ['면적·입지 조건 충족 주택으로 재검토'],
+          '2025-09-08',
+        ),
+        hasUnknown: false,
+        statusKey: 'not_possible_disq',
+      );
+      return;
+    }
+
+    // Disqualifier: 지역별 보증금 상한 초과(P2+P5)
+    final region = _answers['P2'];
+    final dep = _answers['P5'];
+    if (region != null && dep != null) {
+      final isMetro = region == 'metro';
+      final overLimit = (!isMetro && dep == 'dep_le3') || (isMetro && dep == 'dep_gt3');
+      if (overLimit) {
+        _emitResult(
+          emit,
+          ConversationResult(
+            RulingStatus.notPossibleDisq,
+            '아래 결격 사유로 신청이 불가합니다.',
+            const [Reason('지역별 임차보증금 상한 초과', ReasonKind.unmet)],
+            const ['보증금 조정 또는 타 상품 검토'],
+            '2025-09-08',
+          ),
+          hasUnknown: false,
+          statusKey: 'not_possible_disq',
+        );
+        return;
+      }
+    }
+
     // Otherwise, possible
     final reasons = <Reason>[
       const Reason('세대주/무주택 요건: (충족)', ReasonKind.met),
       if (_answers.containsKey('A6')) const Reason('소득 상한: (충족)', ReasonKind.met),
       if (_answers.containsKey('A7')) const Reason('자산 상한: (충족)', ReasonKind.met),
       if (_answers.containsKey('P3')) const Reason('대상 주택 유형: (충족)', ReasonKind.met),
+      if (_answers.containsKey('P4')) const Reason('전용면적: (충족/예외 확인)', ReasonKind.met),
       if (_answers.containsKey('P2')) const Reason('지역 요건/우대: (확인)', ReasonKind.met),
       if (_answers.containsKey('P5')) const Reason('보증금 상한: (충족)', ReasonKind.met),
       if (_answers['P1'] == 'no') const Reason('계약/5% 미지급 → 기한 유의', ReasonKind.warning),
@@ -300,10 +393,16 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         return '지역';
       case 'P3':
         return '주택 유형';
+      case 'P4':
+        return '전용면적';
+      case 'P4a':
+        return '읍·면 소재 여부';
       case 'P5':
         return '임차보증금';
       case 'S1':
         return '전세피해자 여부';
+      case 'S1a':
+        return '임차권등기 설정';
       default:
         return qid;
     }

@@ -151,6 +151,26 @@ const List<QuestionDef> intakeFlow = [
       Choice(value: 'other', text: '기타'),
     ],
   ),
+  // P4. 전용면적
+  QuestionDef(
+    qid: 'P4',
+    label: '전용면적을 선택해 주세요.',
+    choices: [
+      Choice(value: 'fa_le60', text: '60㎡ 이하'),
+      Choice(value: 'fa_61_85', text: '61–85㎡'),
+      Choice(value: 'fa_86_100', text: '86–100㎡'),
+      Choice(value: 'fa_gt100', text: '100㎡ 초과'),
+    ],
+  ),
+  // P4a. 읍·면 소재 여부(면적 예외)
+  QuestionDef(
+    qid: 'P4a',
+    label: '도시지역이 아닌 읍·면 소재인가요?',
+    choices: [
+      Choice(value: 'yes', text: '예'),
+      Choice(value: 'no', text: '아니오'),
+    ],
+  ),
   // P5. 임차보증금 구간
   QuestionDef(
     qid: 'P5',
@@ -165,6 +185,15 @@ const List<QuestionDef> intakeFlow = [
   QuestionDef(
     qid: 'S1',
     label: '전세사기/피해자 특별법 대상에 해당되시나요?',
+    choices: [
+      Choice(value: 'yes', text: '예'),
+      Choice(value: 'no', text: '아니오'),
+    ],
+  ),
+  // S1a. 임차권등기 설정 여부(피해자 대환)
+  QuestionDef(
+    qid: 'S1a',
+    label: '임차권등기를 설정하셨나요?',
     choices: [
       Choice(value: 'yes', text: '예'),
       Choice(value: 'no', text: '아니오'),
