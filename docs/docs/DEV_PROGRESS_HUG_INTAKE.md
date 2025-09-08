@@ -71,7 +71,7 @@ owner: convo/intake
 - 실행(웹): `flutter run -d chrome`
 - 정책 갱신 플로우(Ops):
   1) `docs/docs/HUG_POLICY_DOCS/*` 갱신
-  2) `rules_mapping.yaml` 검토/수정
+  2) `docs/docs/RULES_HUG_mapping.yaml` 검토/수정
   3) last_verified 갱신(문서/앱 결과)
   4) 회귀 테스트(20 케이스)
 
@@ -79,4 +79,3 @@ owner: convo/intake
 - PRD/정책/인테이크/카피/측정 문서 일람: `docs/docs/DOCS_INDEX.md`
 - 결과 카드 카피 가이드: `docs/docs/RESULT_CARD_COPY.md`
 - RAG 정책: `docs/docs/RAG_POLICY.md`
-
