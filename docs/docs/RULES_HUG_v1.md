@@ -103,8 +103,8 @@ function evaluate(input):
 ## 메타데이터
 - last_verified: YYYY-MM-DD (내부 문서 최신화 기준)
 - version: v1.0
-- source_map: docs/RULES_HUG_mapping.yaml 를 참조하여 섹션/임계값을 주입
+- source_map: docs/docs/RULES_HUG_mapping.yaml 를 참조하여 섹션/임계값을 주입
 
 ## 변경 이력
 - 2025-09-02: 초기 규칙 체계/메시지 사전/의사코드 작성.
- - 2025-09-02: 매핑 파일 추가(docs/RULES_HUG_mapping.yaml) 및 참조 경로 명시.
+ - 2025-09-02: 매핑 파일 추가(docs/docs/RULES_HUG_mapping.yaml) 및 참조 경로 명시.

@@ -5,7 +5,7 @@ Status: canonical (Operations)
 
 ## 1) 규정 갱신 프로세스
 1. 소스 확인: 내부 문서 개정(개정일/버전) 수신
-2. 매핑 업데이트: docs/RULES_HUG_mapping.yaml 섹션/임계값 수정
+2. 매핑 업데이트: docs/docs/RULES_HUG_mapping.yaml 섹션/임계값 수정
 3. 검토: 변경 포인트 요약 → 카피 영향 점검(COPY_GUIDE, RESULT_CARD_COPY)
 4. last_verified 갱신: 단일 소스는 RULES_HUG_mapping.yaml.last_verified. 다른 문서는 갱신 알림만(문서 메타 ‘마지막 업데이트’와 구분)
 5. QA: 시나리오 20개 회귀 테스트 → 승인
