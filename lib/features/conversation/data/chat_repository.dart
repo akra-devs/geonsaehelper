@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../domain/constants.dart';
 import 'chat_models.dart';
 
 abstract class ChatRepository {
@@ -66,7 +67,7 @@ class ApiChatRepository implements ChatRepository {
 /// Mock fallback for local/dev when API server is not available.
 class MockChatRepository implements ChatRepository {
   final String lastVerified;
-  MockChatRepository({this.lastVerified = '2025-09-02'});
+  MockChatRepository({this.lastVerified = rulesLastVerifiedYmd});
   @override
   Future<void> ensureSession() async {}
 
