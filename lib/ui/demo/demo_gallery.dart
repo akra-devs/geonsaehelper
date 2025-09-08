@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../components/intake_question.dart';
 import '../components/result_card.dart';
 import '../../features/conversation/domain/models.dart' as domain;
+import '../../features/conversation/domain/constants.dart';
 import '../components/chat_bubble.dart';
 
 class DemoGallery extends StatefulWidget {
@@ -29,7 +30,10 @@ class _DemoGalleryState extends State<DemoGallery> {
             label: '현재 세대주이신가요?',
             options: const [
               domain.Choice(value: 'household_head', text: '세대주'),
-              domain.Choice(value: 'household_head_soon', text: '예비 세대주(1개월 내)'),
+              domain.Choice(
+                value: 'household_head_soon',
+                text: '예비 세대주(1개월 내)',
+              ),
               domain.Choice(value: 'household_member', text: '세대원'),
             ],
             selected: _a1Selected,
@@ -54,7 +58,7 @@ class _DemoGalleryState extends State<DemoGallery> {
               '임대인 등기부등본/계약서 사본',
               '은행 상담 → 심사 → 승인 → 실행',
             ],
-            lastVerified: '2025-09-08',
+            lastVerified: rulesLastVerifiedYmd,
           ),
           SizedBox(height: spacing.x6),
 
@@ -67,12 +71,8 @@ class _DemoGalleryState extends State<DemoGallery> {
               domain.Reason('보증금 구간 확인 필요', domain.ReasonKind.unknown),
               domain.Reason('근저당 유무 확인 필요', domain.ReasonKind.unknown),
             ],
-            nextSteps: const [
-              '세대주: 정부24 확인',
-              '보증금: 계약서 확인',
-              '근저당: 등기부등본 열람',
-            ],
-            lastVerified: '2025-09-08',
+            nextSteps: const ['세대주: 정부24 확인', '보증금: 계약서 확인', '근저당: 등기부등본 열람'],
+            lastVerified: rulesLastVerifiedYmd,
           ),
           SizedBox(height: spacing.x6),
 
@@ -84,10 +84,8 @@ class _DemoGalleryState extends State<DemoGallery> {
               domain.Reason('무주택 요건 불충족', domain.ReasonKind.unmet),
               domain.Reason('보증금 한도 초과', domain.ReasonKind.unmet),
             ],
-            nextSteps: const [
-              '조건 변경(보증금 조정) 또는 타 기관 검토',
-            ],
-            lastVerified: '2025-09-08',
+            nextSteps: const ['조건 변경(보증금 조정) 또는 타 기관 검토'],
+            lastVerified: rulesLastVerifiedYmd,
           ),
           SizedBox(height: spacing.x6),
 
