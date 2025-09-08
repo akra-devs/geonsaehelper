@@ -421,6 +421,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     final dep = _answers['P5'];
     final isNewly =
         _answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned';
+    final isNewborn = _answers['A5'] == 'yes';
     if (region != null && dep != null) {
       final isMetro = region == 'metro';
       // Interpret coarse bands conservatively
@@ -450,6 +451,27 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               statusKey: 'not_possible_info',
             );
             return;
+          } else if (isNewborn) {
+            // 신생아 특례: 한도 2.4억(보증금 3억 기준) → 3억 초과는 결격
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleDisq,
+                '아래 결격 사유로 인해 신청이 불가합니다.',
+                [
+                  Reason(
+                    '임차보증금 상한 초과(신생아 특례 최대 3억 기준)',
+                    ReasonKind.unmet,
+                    RuleCitations.forQid('P5'),
+                  ),
+                ],
+                const ['보증금 조정 또는 타 상품 검토'],
+                rulesLastVerifiedYmd,
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_disq',
+            );
+            return;
           } else {
             // 일반가구 수도권 3억 초과 → 결격
             _emitResult(
@@ -459,7 +481,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 '아래 결격 사유로 인해 신청이 불가합니다.',
                 [
                   Reason(
-                    '지역별 임차보증금 상한 초과(수도권 3억)',
+                    '임차보증금 상한 초과(수도권 3억)',
                     ReasonKind.unmet,
                     RuleCitations.forQid('P5'),
                   ),
@@ -484,7 +506,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               '아래 결격 사유로 인해 신청이 불가합니다.',
               [
                 Reason(
-                  '지역별 임차보증금 상한 초과(비수도권 2~3억)',
+                  '임차보증금 상한 초과(비수도권 2~3억)',
                   ReasonKind.unmet,
                   RuleCitations.forQid('P5'),
                 ),
