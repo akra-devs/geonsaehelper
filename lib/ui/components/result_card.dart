@@ -29,6 +29,17 @@ class _ResultCardState extends State<ResultCard> {
   bool _expandReasons = false;
   bool _expandNext = false;
 
+  // Derive program badges from reasons/tags contained in the card
+  List<String> _programBadges() {
+    final texts = widget.reasons.map((r) => r.text).join(' ');
+    final out = <String>[];
+    if (texts.contains('전세피해자')) out.add('특례(피해자)');
+    if (texts.contains('신생아')) out.add('특례(신생아)');
+    if (texts.contains('신혼')) out.add('신혼');
+    if (texts.contains('청년')) out.add('청년');
+    return out;
+  }
+
   Color _statusColor(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     switch (widget.status) {
@@ -73,13 +84,17 @@ class _ResultCardState extends State<ResultCard> {
         key: const Key('ResultCard.Container'),
         elevation: 0,
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(corners.md)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(corners.md),
+        ),
         child: Container(
           width: double.infinity,
           padding: EdgeInsets.all(spacing.x4),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
             borderRadius: BorderRadius.circular(corners.md),
           ),
           child: Column(
@@ -88,7 +103,10 @@ class _ResultCardState extends State<ResultCard> {
               Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: spacing.x2,
+                      vertical: spacing.x1,
+                    ),
                     decoration: BoxDecoration(
                       color: _statusColor(context).withAlpha(31),
                       borderRadius: BorderRadius.circular(999),
@@ -96,11 +114,16 @@ class _ResultCardState extends State<ResultCard> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_statusIcon(), color: _statusColor(context), size: 16),
+                        Icon(
+                          _statusIcon(),
+                          color: _statusColor(context),
+                          size: 16,
+                        ),
                         SizedBox(width: spacing.x1),
                         Text(
                           _statusLabel(),
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: _statusColor(context)),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(color: _statusColor(context)),
                         ),
                       ],
                     ),
@@ -114,19 +137,30 @@ class _ResultCardState extends State<ResultCard> {
                 Wrap(
                   spacing: spacing.x2,
                   runSpacing: spacing.x1,
-                  children: _programBadges()
-                      .map((b) => Chip(
-                            label: Text(b, style: Theme.of(context).textTheme.labelSmall),
-                            visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
-                          ))
-                      .toList(),
+                  children:
+                      _programBadges()
+                          .map(
+                            (b) => Chip(
+                              label: Text(
+                                b,
+                                style: Theme.of(context).textTheme.labelSmall,
+                              ),
+                              visualDensity: const VisualDensity(
+                                horizontal: -2,
+                                vertical: -2,
+                              ),
+                            ),
+                          )
+                          .toList(),
                 ),
               ],
               SizedBox(height: spacing.x3),
               Text(
                 widget.tldr,
                 key: const Key('ResultCard.TLDR'),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -137,31 +171,37 @@ class _ResultCardState extends State<ResultCard> {
                 Column(
                   key: const Key('ResultCard.Reasons'),
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _visibleReasons().map((r) {
-                    final color = _reasonColor(context, r.kind);
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: spacing.x2),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(_reasonIcon(r.kind), size: 14, color: color),
-                          SizedBox(width: spacing.x2),
-                          Expanded(child: Text(r.text, style: Theme.of(context).textTheme.bodyMedium)),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                  children:
+                      _visibleReasons().map((r) {
+                        final color = _reasonColor(context, r.kind);
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: spacing.x2),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(_reasonIcon(r.kind), size: 14, color: color),
+                              SizedBox(width: spacing.x2),
+                              Expanded(
+                                child: Text(
+                                  r.text,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                 ),
                 if (_showReasonsToggle())
                   Align(
                     alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: () {
-                      setState(() => _expandReasons = !_expandReasons);
-                      Analytics.instance.reasonsExpand(_expandReasons);
-                    },
-                    child: Text(_expandReasons ? '접기' : '자세히'),
-                  ),
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() => _expandReasons = !_expandReasons);
+                        Analytics.instance.reasonsExpand(_expandReasons);
+                      },
+                      child: Text(_expandReasons ? '접기' : '자세히'),
+                    ),
                   ),
                 SizedBox(height: spacing.x3),
               ],
@@ -180,7 +220,14 @@ class _ResultCardState extends State<ResultCard> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.chevron_right, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              Icon(
+                                Icons.chevron_right,
+                                size: 14,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                               SizedBox(width: spacing.x1),
                               Expanded(child: Text(s)),
                             ],
@@ -193,7 +240,8 @@ class _ResultCardState extends State<ResultCard> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton(
-                      onPressed: () => setState(() => _expandNext = !_expandNext),
+                      onPressed:
+                          () => setState(() => _expandNext = !_expandNext),
                       child: Text(_expandNext ? '접기' : '자세히'),
                     ),
                   ),
@@ -249,16 +297,6 @@ class _ResultCardState extends State<ResultCard> {
   bool _showNextToggle() => widget.nextSteps.length > 3;
 }
 
-  List<String> _programBadges() {
-    final texts = widget.reasons.map((r) => r.text).join(' ');
-    final out = <String>[];
-    if (texts.contains('전세피해자')) out.add('특례(피해자)');
-    if (texts.contains('신생아')) out.add('특례(신생아)');
-    if (texts.contains('신혼')) out.add('신혼');
-    if (texts.contains('청년')) out.add('청년');
-    return out;
-  }
-
 class _LastVerifiedBadge extends StatelessWidget {
   final String lastVerified;
   const _LastVerifiedBadge({required this.lastVerified});
@@ -271,7 +309,10 @@ class _LastVerifiedBadge extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
+          padding: EdgeInsets.symmetric(
+            horizontal: spacing.x2,
+            vertical: spacing.x1,
+          ),
           decoration: BoxDecoration(
             color: cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
@@ -281,27 +322,36 @@ class _LastVerifiedBadge extends StatelessWidget {
             children: [
               const Icon(Icons.schedule, size: 14),
               SizedBox(width: spacing.x1),
-              Text('마지막 확인일 $lastVerified', style: Theme.of(context).textTheme.labelSmall),
+              Text(
+                '마지막 확인일 $lastVerified',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
             ],
           ),
         ),
         if (stale) ...[
           SizedBox(width: spacing.x1),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: spacing.x2, vertical: spacing.x1),
+            padding: EdgeInsets.symmetric(
+              horizontal: spacing.x2,
+              vertical: spacing.x1,
+            ),
             decoration: BoxDecoration(
               color: cs.errorContainer,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               '정보 최신성 확인 필요',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onErrorContainer),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: cs.onErrorContainer),
             ),
           ),
         ],
       ],
     );
   }
+
   bool _isStale(String ymd) {
     try {
       final d = DateTime.parse(ymd);
