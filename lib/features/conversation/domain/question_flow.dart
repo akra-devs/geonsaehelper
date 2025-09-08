@@ -185,6 +185,15 @@ const List<QuestionDef> intakeFlow = [
       Choice(value: 'dep_gt3', text: '3억원 초과'),
     ],
   ),
+  // P7. 등기 근저당(경고/주의)
+  QuestionDef(
+    qid: 'P7',
+    label: '등기부등본상 근저당이 있나요?',
+    choices: [
+      Choice(value: 'yes', text: '있음'),
+      Choice(value: 'no', text: '없음'),
+    ],
+  ),
   // S1. 전세피해자 여부(간단 라우팅용)
   QuestionDef(
     qid: 'S1',

@@ -48,6 +48,10 @@ class RuleCitations {
     'HUG_POLICY_DOCS/신생아 특례 버팀목대출.MD',
     '자격',
   );
+  static const SourceRef encumbrance = SourceRef(
+    'HUG_POLICY_DOCS/HUG_POLICY.md',
+    'RENT_STANDARD:notes',
+  );
 
   static List<SourceRef> forQid(String qid) {
     switch (qid) {
@@ -75,6 +79,8 @@ class RuleCitations {
         return const [floorArea];
       case 'P5':
         return const [depositUpperBound];
+      case 'P7':
+        return const [encumbrance];
       case 'S1':
       case 'S1a':
         return const [damages];

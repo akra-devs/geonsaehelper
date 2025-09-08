@@ -327,26 +327,122 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     }
 
     // Disqualifier: 소득/자산 상한 초과(A6/A7)
-    if (_answers['A6'] == 'inc_over' || _answers['A7'] == 'asset_over') {
-      final reasons = <Reason>[
-        if (_answers['A6'] == 'inc_over')
-          Reason('소득 상한 초과', ReasonKind.unmet, RuleCitations.forQid('A6')),
-        if (_answers['A7'] == 'asset_over')
-          Reason('자산 상한 초과', ReasonKind.unmet, RuleCitations.forQid('A7')),
-      ];
-      _emitResult(
-        emit,
-        ConversationResult(
-          RulingStatus.notPossibleDisq,
-          '아래 결격 사유로 인해 신청이 불가합니다.',
-          reasons,
-          const ['조건 충족 가능한 상품군 재탐색 또는 조건 변경'],
-          rulesLastVerifiedYmd,
-        ),
-        hasUnknown: false,
-        statusKey: 'not_possible_disq',
-      );
-      return;
+    {
+      final a6 = _answers['A6'];
+      final a7 = _answers['A7'];
+      final isNewborn = _answers['A5'] == 'yes';
+      final isNewly =
+          _answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned';
+      final isYouth = _answers['A3'] == 'y19_34';
+
+      // Asset cap (임차군 공통: 3.37억원)
+      if (a7 != null && (a7 == 'asset_le488' || a7 == 'asset_over')) {
+        _emitResult(
+          emit,
+          ConversationResult(
+            RulingStatus.notPossibleDisq,
+            '아래 결격 사유로 인해 신청이 불가합니다.',
+            [
+              Reason(
+                '자산 상한 초과(3.37억원)',
+                ReasonKind.unmet,
+                RuleCitations.forQid('A7'),
+              ),
+            ],
+            const ['자산 확인 후 조건 충족 가능한 상품 검토'],
+            rulesLastVerifiedYmd,
+          ),
+          hasUnknown: false,
+          statusKey: 'not_possible_disq',
+        );
+        return;
+      }
+
+      // Income cap by program priority: 신생아 > 신혼 > 청년 > 표준
+      if (a6 != null) {
+        if (isNewborn) {
+          if (a6 == 'inc_over') {
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleDisq,
+                '아래 결격 사유로 인해 신청이 불가합니다.',
+                [
+                  Reason('소득 상한 초과(신생아 특례 1.3억원)', ReasonKind.unmet, [
+                    RuleCitations.newborn,
+                  ]),
+                ],
+                const ['소득 확인 후 조건 충족 가능한 상품 검토'],
+                rulesLastVerifiedYmd,
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_disq',
+            );
+            return;
+          }
+        } else if (isNewly) {
+          if (a6 == 'inc_le130m' || a6 == 'inc_over') {
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleDisq,
+                '아래 결격 사유로 인해 신청이 불가합니다.',
+                [
+                  Reason('소득 상한 초과(신혼 7천5백만원)', ReasonKind.unmet, [
+                    RuleCitations.newlywed,
+                  ]),
+                ],
+                const ['소득 확인 후 조건 충족 가능한 상품 검토'],
+                rulesLastVerifiedYmd,
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_disq',
+            );
+            return;
+          }
+        } else if (isYouth) {
+          if (a6 != 'inc_le50m') {
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleDisq,
+                '아래 결격 사유로 인해 신청이 불가합니다.',
+                [
+                  Reason('소득 상한 초과(청년 5천만원)', ReasonKind.unmet, [
+                    RuleCitations.youth,
+                  ]),
+                ],
+                const ['소득 확인 후 조건 충족 가능한 상품 검토'],
+                rulesLastVerifiedYmd,
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_disq',
+            );
+            return;
+          }
+        } else {
+          // 표준형: 5천만원
+          if (a6 != 'inc_le50m') {
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleDisq,
+                '아래 결격 사유로 인해 신청이 불가합니다.',
+                [
+                  Reason('소득 상한 초과(5천만원)', ReasonKind.unmet, [
+                    RuleCitations.incomeCap,
+                  ]),
+                ],
+                const ['소득 확인 후 조건 충족 가능한 상품 검토'],
+                rulesLastVerifiedYmd,
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_disq',
+            );
+            return;
+          }
+        }
+      }
     }
 
     // Disqualifier: 대상 주택 유형 불가(P3)
@@ -422,6 +518,8 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     final isNewly =
         _answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned';
     final isNewborn = _answers['A5'] == 'yes';
+    final isYouth = _answers['A3'] == 'y19_34';
+    final isDamages = _answers['S1'] == 'yes';
     if (region != null && dep != null) {
       final isMetro = region == 'metro';
       // Interpret coarse bands conservatively
@@ -445,6 +543,28 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
                 reasons,
                 const ['보증금: 정확 금액 확인(3~4억 경계)', '계약서 재확인 후 재판정'],
+                rulesLastVerifiedYmd,
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_info',
+            );
+            return;
+          } else if (isDamages) {
+            // 피해자 특례: 수도권 보증금 상한 5억원 → 3억 초과는 경계(3~5억) 정보 부족 처리
+            final reasons = [
+              Reason(
+                '보증금 구간이 경계값(3~5억)으로 정확한 금액 확인 필요',
+                ReasonKind.unknown,
+                RuleCitations.forQid('P5'),
+              ),
+            ];
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleInfo,
+                '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
+                reasons,
+                const ['보증금: 정확 금액 확인(3~5억 경계)', '계약서 재확인 후 재판정'],
                 rulesLastVerifiedYmd,
               ),
               hasUnknown: false,
@@ -495,29 +615,74 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
             return;
           }
         }
-      } else {
-        // 비수도권(광역시/그 외)
-        if (dep == 'dep_gt3') {
-          // 3억 초과 → 신혼 예외(3억)도 초과
+        // 청년 전용: 보증금 한도 1.5억 경계 확인(≤2억/≤3억 응답 시 정보 부족 처리)
+        if (isYouth && (dep == 'dep_le2' || dep == 'dep_le3')) {
+          final reasons = [
+            Reason('보증금 청년 한도(1.5억) 경계로 정확한 금액 확인 필요', ReasonKind.unknown, [
+              RuleCitations.youth,
+            ]),
+          ];
           _emitResult(
             emit,
             ConversationResult(
-              RulingStatus.notPossibleDisq,
-              '아래 결격 사유로 인해 신청이 불가합니다.',
-              [
-                Reason(
-                  '임차보증금 상한 초과(비수도권 2~3억)',
-                  ReasonKind.unmet,
-                  RuleCitations.forQid('P5'),
-                ),
-              ],
-              const ['보증금 조정 또는 타 상품 검토'],
+              RulingStatus.notPossibleInfo,
+              '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
+              reasons,
+              const ['보증금: 정확 금액 확인(1.5~2.0억 경계)', '계약서 재확인 후 재판정'],
               rulesLastVerifiedYmd,
             ),
             hasUnknown: false,
-            statusKey: 'not_possible_disq',
+            statusKey: 'not_possible_info',
           );
           return;
+        }
+      } else {
+        // 비수도권(광역시/그 외)
+        if (dep == 'dep_gt3') {
+          if (isDamages) {
+            // 피해자: 비수도권 4억 상한 → 3~4 경계는 정보 부족 처리
+            final reasons = [
+              Reason(
+                '보증금 구간이 경계값(3~4억)으로 정확한 금액 확인 필요',
+                ReasonKind.unknown,
+                RuleCitations.forQid('P5'),
+              ),
+            ];
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleInfo,
+                '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
+                reasons,
+                const ['보증금: 정확 금액 확인(3~4억 경계)', '계약서 재확인 후 재판정'],
+                rulesLastVerifiedYmd,
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_info',
+            );
+            return;
+          } else {
+            // 3억 초과 → 신혼 예외(3억)도 초과 → 결격
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleDisq,
+                '아래 결격 사유로 인해 신청이 불가합니다.',
+                [
+                  Reason(
+                    '임차보증금 상한 초과(비수도권 2~3억)',
+                    ReasonKind.unmet,
+                    RuleCitations.forQid('P5'),
+                  ),
+                ],
+                const ['보증금 조정 또는 타 상품 검토'],
+                rulesLastVerifiedYmd,
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_disq',
+            );
+            return;
+          }
         }
         if (dep == 'dep_le3' && !isNewly) {
           // 2~3억 구간 → 일반가구 상한(2억)과 충돌 가능, 보수적 정보부족 처리
@@ -535,6 +700,27 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
               reasons,
               const ['보증금: 정확 금액 확인(2~3억 경계)', '계약서 재확인 후 재판정'],
+              rulesLastVerifiedYmd,
+            ),
+            hasUnknown: false,
+            statusKey: 'not_possible_info',
+          );
+          return;
+        }
+        // 청년 전용: 비수도권도 동일하게 1.5억 경계 확인
+        if (isYouth && (dep == 'dep_le2' || dep == 'dep_le3')) {
+          final reasons = [
+            Reason('보증금 청년 한도(1.5억) 경계로 정확한 금액 확인 필요', ReasonKind.unknown, [
+              RuleCitations.youth,
+            ]),
+          ];
+          _emitResult(
+            emit,
+            ConversationResult(
+              RulingStatus.notPossibleInfo,
+              '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
+              reasons,
+              const ['보증금: 정확 금액 확인(1.5~2.0억 경계)', '계약서 재확인 후 재판정'],
               rulesLastVerifiedYmd,
             ),
             hasUnknown: false,
@@ -574,6 +760,12 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         ),
       if (_answers['S1a'] == 'yes')
         Reason('임차권등기 설정: (확인)', ReasonKind.met, RuleCitations.forQid('S1a')),
+      if (_answers['P7'] == 'yes')
+        Reason(
+          '등기상 근저당 있음: (주의)',
+          ReasonKind.warning,
+          RuleCitations.forQid('P7'),
+        ),
       if (_answers['A3'] == 'y19_34')
         Reason('청년 연령 요건: (충족)', ReasonKind.met, RuleCitations.forQid('A3')),
       if (_answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned')
@@ -729,6 +921,8 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         return '읍·면 소재 여부';
       case 'P5':
         return '임차보증금';
+      case 'P7':
+        return '등기 근저당 유무';
       case 'S1':
         return '전세피해자 여부';
       case 'S1a':
