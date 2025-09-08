@@ -53,6 +53,46 @@ class _DemoGalleryState extends State<DemoGallery> {
             helper: '등기/세대원 조회로 확인 가능',
           ),
           const SizedBox(height: 12),
+          // 경계/우대 관련 추가 질문 예시(A8/A9/A10, P7)
+          IntakeQuestion(
+            qid: 'A8',
+            label: '맞벌이이신가요?',
+            options: const [
+              domain.Choice(value: 'yes', text: '예'),
+              domain.Choice(value: 'no', text: '아니오'),
+            ],
+            selected: null,
+            onChanged: (_) {},
+            helper: '신생아 특례 소득 한도(맞벌이 2억원) 판단에 사용',
+          ),
+          const SizedBox(height: 12),
+          IntakeQuestion(
+            qid: 'A9',
+            label: '자녀 수를 알려주세요.',
+            options: const [
+              domain.Choice(value: 'child0', text: '없음'),
+              domain.Choice(value: 'child1', text: '1명'),
+              domain.Choice(value: 'child2', text: '2명'),
+              domain.Choice(value: 'child3p', text: '3명 이상'),
+            ],
+            selected: null,
+            onChanged: (_) {},
+            helper: '표준 소득 상한 6천만원 우대 적용 판단',
+          ),
+          const SizedBox(height: 12),
+          IntakeQuestion(
+            qid: 'A10',
+            label: '우대 사유가 있나요?',
+            options: const [
+              domain.Choice(value: 'none', text: '해당 없음'),
+              domain.Choice(value: 'innov', text: '혁신도시 이전 공공기관 종사자'),
+              domain.Choice(value: 'redevelop', text: '타 지역 이주 재개발 구역내 세입자'),
+              domain.Choice(value: 'risky', text: '위험건축물 이주지원 대상자'),
+            ],
+            selected: null,
+            onChanged: (_) {},
+          ),
+          const SizedBox(height: 12),
           IntakeQuestion(
             qid: 'P3',
             label: '주택 유형을 선택해 주세요.',
@@ -66,6 +106,18 @@ class _DemoGalleryState extends State<DemoGallery> {
             ],
             selected: null,
             onChanged: (_) {},
+          ),
+          const SizedBox(height: 12),
+          IntakeQuestion(
+            qid: 'P7',
+            label: '등기부등본상 근저당이 있나요?',
+            options: const [
+              domain.Choice(value: 'yes', text: '있음'),
+              domain.Choice(value: 'no', text: '없음'),
+            ],
+            selected: null,
+            onChanged: (_) {},
+            helper: '인터넷등기소 열람으로 확인 가능',
           ),
           SizedBox(height: spacing.x6),
 
