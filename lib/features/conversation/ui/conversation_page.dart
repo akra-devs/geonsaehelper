@@ -114,6 +114,41 @@ class _ConversationPageState extends State<ConversationPage> {
     _scheduleScroll();
   }
 
+  // Derive up to 3 citations from the latest ruling reasons
+  List<Citation> _deriveCitationsFromResult(domain.ConversationResult? result) {
+    if (result == null) return const [];
+    // Priority: unmet > unknown > warning > met
+    int prio(domain.ReasonKind k) {
+      switch (k) {
+        case domain.ReasonKind.unmet:
+          return 0;
+        case domain.ReasonKind.unknown:
+          return 1;
+        case domain.ReasonKind.warning:
+          return 2;
+        case domain.ReasonKind.met:
+          return 3;
+      }
+    }
+
+    final pairs = <String>{};
+    final collected = <Citation>[];
+    final sorted = List<domain.Reason>.from(result.reasons)
+      ..sort((a, b) => prio(a.kind).compareTo(prio(b.kind)));
+    for (final r in sorted) {
+      final srcs = r.sources ?? const [];
+      for (final s in srcs) {
+        final key = '${s.docId}#${s.sectionKey}';
+        if (pairs.add(key)) {
+          collected.add(Citation(s.docId, s.sectionKey));
+          if (collected.length >= 3) return collected;
+        }
+      }
+      if (collected.length >= 3) break;
+    }
+    return collected;
+  }
+
   void _scheduleScroll() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -232,11 +267,13 @@ class _ConversationPageState extends State<ConversationPage> {
                   }
                   if (state.suggestionReply != null &&
                       state.suggestionReply!.isNotEmpty) {
+                    final cites = _deriveCitationsFromResult(state.result);
                     _items.add(
                       ConversationItem.botWidget(
                         ChatBubble(
                           role: ChatRole.bot,
                           content: state.suggestionReply!,
+                          citations: cites,
                         ),
                       ),
                     );
