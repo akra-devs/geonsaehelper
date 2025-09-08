@@ -246,6 +246,13 @@ class _ResultCardState extends State<ResultCard> {
                     ),
                   ),
               ],
+              SizedBox(height: spacing.x3),
+              Text(
+                '본 결과는 예비판정이며, 실제 심사 결과와 다를 수 있습니다. (금융자문 아님)',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
         ),
