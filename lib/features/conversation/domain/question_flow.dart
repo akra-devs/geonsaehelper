@@ -92,6 +92,15 @@ const List<QuestionDef> intakeFlow = [
       Choice(value: 'no', text: '아니오'),
     ],
   ),
+  // A8. 맞벌이 여부(신생아 특례 소득 한도 구분)
+  QuestionDef(
+    qid: 'A8',
+    label: '맞벌이이신가요?',
+    choices: [
+      Choice(value: 'yes', text: '예'),
+      Choice(value: 'no', text: '아니오'),
+    ],
+  ),
   // A6. 부부합산 연소득 구간
   QuestionDef(
     qid: 'A6',
@@ -102,6 +111,28 @@ const List<QuestionDef> intakeFlow = [
       Choice(value: 'inc_le75m', text: '7천5백만원 이하'),
       Choice(value: 'inc_le130m', text: '1억3천만원 이하'),
       Choice(value: 'inc_over', text: '초과'),
+    ],
+  ),
+  // A9. 자녀 수(표준 2자녀 이상 우대 소득 상향 6천 적용)
+  QuestionDef(
+    qid: 'A9',
+    label: '자녀 수를 알려주세요.',
+    choices: [
+      Choice(value: 'child0', text: '없음'),
+      Choice(value: 'child1', text: '1명'),
+      Choice(value: 'child2', text: '2명'),
+      Choice(value: 'child3p', text: '3명 이상'),
+    ],
+  ),
+  // A10. 우대 사유(표준 6천 상향 적용 대상)
+  QuestionDef(
+    qid: 'A10',
+    label: '우대 사유가 있나요?',
+    choices: [
+      Choice(value: 'none', text: '해당 없음'),
+      Choice(value: 'innov', text: '혁신도시 이전 공공기관 종사자'),
+      Choice(value: 'redevelop', text: '타 지역 이주 재개발 구역내 세입자'),
+      Choice(value: 'risky', text: '위험건축물 이주지원 대상자'),
     ],
   ),
   // A7. 합산 순자산

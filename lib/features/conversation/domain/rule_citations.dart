@@ -62,10 +62,15 @@ class RuleCitations {
         return const [youth, household];
       case 'A4':
         return const [newlywed, household];
+      case 'A8':
+        return const [newborn];
       case 'A6':
         return const [incomeCap];
       case 'A7':
         return const [assetCap];
+      case 'A9':
+      case 'A10':
+        return const [incomeCap];
       case 'C1':
         return const [credit];
       case 'P1':

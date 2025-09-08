@@ -186,6 +186,14 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     if (qid == 'S1a') {
       return _answers['S1'] == 'yes';
     }
+    if (qid == 'A8') {
+      // 맞벌이 여부: 신생아 특례 응답 시에만 질문
+      return _answers['A5'] == 'yes';
+    }
+    if (qid == 'A9' || qid == 'A10') {
+      // 소득 6천 경계인 경우에만 질문(표준 6천 상향 반영 여부 확인)
+      return _answers['A6'] == 'inc_le60m';
+    }
     return true;
   }
 
@@ -331,9 +339,16 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       final a6 = _answers['A6'];
       final a7 = _answers['A7'];
       final isNewborn = _answers['A5'] == 'yes';
+      final isDualIncome = _answers['A8'] == 'yes';
       final isNewly =
           _answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned';
       final isYouth = _answers['A3'] == 'y19_34';
+      final children2p =
+          _answers['A9'] == 'child2' || _answers['A9'] == 'child3p';
+      final favored =
+          _answers['A10'] == 'innov' ||
+          _answers['A10'] == 'redevelop' ||
+          _answers['A10'] == 'risky';
 
       // Asset cap (임차군 공통: 3.37억원)
       if (a7 != null && (a7 == 'asset_le488' || a7 == 'asset_over')) {
@@ -362,23 +377,46 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       if (a6 != null) {
         if (isNewborn) {
           if (a6 == 'inc_over') {
-            _emitResult(
-              emit,
-              ConversationResult(
-                RulingStatus.notPossibleDisq,
-                '아래 결격 사유로 인해 신청이 불가합니다.',
-                [
-                  Reason('소득 상한 초과(신생아 특례 1.3억원)', ReasonKind.unmet, [
-                    RuleCitations.newborn,
-                  ]),
-                ],
-                const ['소득 확인 후 조건 충족 가능한 상품 검토'],
-                rulesLastVerifiedYmd,
-              ),
-              hasUnknown: false,
-              statusKey: 'not_possible_disq',
-            );
-            return;
+            if (isDualIncome) {
+              final reasons = [
+                Reason(
+                  '소득 구간이 경계값(1.3~2.0억원)으로 정확한 금액 확인 필요',
+                  ReasonKind.unknown,
+                  RuleCitations.forQid('A8'),
+                ),
+              ];
+              _emitResult(
+                emit,
+                ConversationResult(
+                  RulingStatus.notPossibleInfo,
+                  '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
+                  reasons,
+                  const ['소득증빙: 최근 원천·소득금액증명 확인', '정확 소득 확인 후 재판정'],
+                  rulesLastVerifiedYmd,
+                ),
+                hasUnknown: false,
+                statusKey: 'not_possible_info',
+              );
+              return;
+            } else {
+              _emitResult(
+                emit,
+                ConversationResult(
+                  RulingStatus.notPossibleDisq,
+                  '아래 결격 사유로 인해 신청이 불가합니다.',
+                  [
+                    Reason('소득 상한 초과(신생아 특례 1.3억원)', ReasonKind.unmet, [
+                      RuleCitations.newborn,
+                    ]),
+                  ],
+                  const ['소득 확인 후 조건 충족 가능한 상품 검토'],
+                  rulesLastVerifiedYmd,
+                ),
+                hasUnknown: false,
+                statusKey: 'not_possible_disq',
+              );
+              return;
+            }
           }
         } else if (isNewly) {
           if (a6 == 'inc_le130m' || a6 == 'inc_over') {
@@ -421,17 +459,20 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
             return;
           }
         } else {
-          // 표준형: 5천만원
-          if (a6 != 'inc_le50m') {
+          // 표준형: 5천만원(다자녀/2자녀/우대 사유는 6천 허용)
+          final allow6k = a6 == 'inc_le60m' && (children2p || favored);
+          if (!(a6 == 'inc_le50m' || allow6k)) {
             _emitResult(
               emit,
               ConversationResult(
                 RulingStatus.notPossibleDisq,
                 '아래 결격 사유로 인해 신청이 불가합니다.',
                 [
-                  Reason('소득 상한 초과(5천만원)', ReasonKind.unmet, [
-                    RuleCitations.incomeCap,
-                  ]),
+                  Reason(
+                    allow6k ? '소득 상한(우대 6천) 범위 초과' : '소득 상한 초과(5천만원)',
+                    ReasonKind.unmet,
+                    [RuleCitations.incomeCap],
+                  ),
                 ],
                 const ['소득 확인 후 조건 충족 가능한 상품 검토'],
                 rulesLastVerifiedYmd,
@@ -903,10 +944,16 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         return '혼인 상태';
       case 'A5':
         return '최근 2년 내 출산';
+      case 'A8':
+        return '맞벌이 여부';
       case 'A6':
         return '연소득 구간';
       case 'A7':
         return '순자산 구간';
+      case 'A9':
+        return '자녀 수';
+      case 'A10':
+        return '우대 사유';
       case 'C1':
         return '결격/제한(신용·공공임대)';
       case 'P1':
