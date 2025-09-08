@@ -13,8 +13,13 @@ class ApiChatRepository implements ChatRepository {
   String? _sessionId;
 
   ApiChatRepository({String? baseUrl, http.Client? client})
-      : baseUrl = baseUrl ?? const String.fromEnvironment('CHAT_API_BASE', defaultValue: 'http://localhost:8080/api'),
-        _client = client ?? http.Client();
+    : baseUrl =
+          baseUrl ??
+          const String.fromEnvironment(
+            'CHAT_API_BASE',
+            defaultValue: 'http://localhost:8080/api',
+          ),
+      _client = client ?? http.Client();
 
   @override
   Future<void> ensureSession() async {
@@ -37,7 +42,11 @@ class ApiChatRepository implements ChatRepository {
     await _client.post(
       Uri.parse('$baseUrl/chat/messages'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'sessionId': _sessionId, 'role': 'user', 'content': userText}),
+      body: jsonEncode({
+        'sessionId': _sessionId,
+        'role': 'user',
+        'content': userText,
+      }),
     );
 
     final r = await _client.post(
@@ -67,7 +76,9 @@ class MockChatRepository implements ChatRepository {
     return BotReply(
       content:
           'TL;DR: 서류는 신분증, 가족·혼인관계, 소득 증빙이 기본입니다. 다음 단계에서 발급처/순서를 안내해 드립니다.',
-      citations: const [ChatCitation(docId: 'HUG_internal_policy.md', sectionKey: 'A.1')],
+      citations: const [
+        ChatCitation(docId: 'HUG_internal_policy.md', sectionKey: 'A.1'),
+      ],
       lastVerified: lastVerified,
     );
   }
@@ -75,16 +86,18 @@ class MockChatRepository implements ChatRepository {
 
 Map<String, dynamic> _normalizeReplyJson(Map<String, dynamic> json) {
   final out = Map<String, dynamic>.from(json);
-  final citations = (out['citations'] as List<dynamic>? ?? const [])
-      .whereType<Map<String, dynamic>>()
-      .map((e) {
-    final m = Map<String, dynamic>.from(e);
-    // Accept either 'section' or 'sectionKey'
-    if (!m.containsKey('sectionKey') && m.containsKey('section')) {
-      m['sectionKey'] = m['section'];
-    }
-    return m;
-  }).toList();
+  final citations =
+      (out['citations'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map((e) {
+            final m = Map<String, dynamic>.from(e);
+            // Accept either 'section' or 'sectionKey'
+            if (!m.containsKey('sectionKey') && m.containsKey('section')) {
+              m['sectionKey'] = m['section'];
+            }
+            return m;
+          })
+          .toList();
   out['citations'] = citations;
   return out;
 }

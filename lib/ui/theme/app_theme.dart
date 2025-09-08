@@ -20,15 +20,23 @@ class Spacing extends ThemeExtension<Spacing> {
     this.x10 = 40,
   });
   @override
-  Spacing copyWith({double? x1, double? x2, double? x3, double? x4, double? x6, double? x8, double? x10}) => Spacing(
-        x1: x1 ?? this.x1,
-        x2: x2 ?? this.x2,
-        x3: x3 ?? this.x3,
-        x4: x4 ?? this.x4,
-        x6: x6 ?? this.x6,
-        x8: x8 ?? this.x8,
-        x10: x10 ?? this.x10,
-      );
+  Spacing copyWith({
+    double? x1,
+    double? x2,
+    double? x3,
+    double? x4,
+    double? x6,
+    double? x8,
+    double? x10,
+  }) => Spacing(
+    x1: x1 ?? this.x1,
+    x2: x2 ?? this.x2,
+    x3: x3 ?? this.x3,
+    x4: x4 ?? this.x4,
+    x6: x6 ?? this.x6,
+    x8: x8 ?? this.x8,
+    x10: x10 ?? this.x10,
+  );
   @override
   Spacing lerp(ThemeExtension<Spacing>? other, double t) => this;
 }
@@ -39,7 +47,8 @@ class Corners extends ThemeExtension<Corners> {
   final double md; // 14
   const Corners({this.sm = 10, this.md = 14});
   @override
-  Corners copyWith({double? sm, double? md}) => Corners(sm: sm ?? this.sm, md: md ?? this.md);
+  Corners copyWith({double? sm, double? md}) =>
+      Corners(sm: sm ?? this.sm, md: md ?? this.md);
   @override
   Corners lerp(ThemeExtension<Corners>? other, double t) => this;
 }
@@ -47,18 +56,19 @@ class Corners extends ThemeExtension<Corners> {
 ThemeData buildAppTheme(Brightness brightness) {
   // 브랜드 포인트 컬러: 크림
   const cream = Color(0xFFF4E6C1);
-  final scheme = ColorScheme.fromSeed(
-    seedColor: cream,
-    brightness: brightness,
-  );
+  final scheme = ColorScheme.fromSeed(seedColor: cream, brightness: brightness);
   final base = ThemeData(colorScheme: scheme, useMaterial3: true);
   final corners = const Corners();
   final interText = GoogleFonts.interTextTheme(base.textTheme);
   final isDark = brightness == Brightness.dark;
   return base.copyWith(
     textTheme: interText.copyWith(
-      titleLarge: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-      titleMedium: base.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      titleLarge: base.textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.w700,
+      ),
+      titleMedium: base.textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
       bodyMedium: interText.bodyMedium?.copyWith(height: 1.5),
       labelLarge: interText.labelLarge?.copyWith(letterSpacing: 0.15),
     ),
@@ -89,7 +99,10 @@ ThemeData buildAppTheme(Brightness brightness) {
     ),
     chipTheme: base.chipTheme.copyWith(
       labelStyle: base.textTheme.labelLarge?.copyWith(letterSpacing: 0.1),
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
       side: BorderSide(color: scheme.outlineVariant),
       selectedColor: scheme.primaryContainer,
       backgroundColor: scheme.surfaceContainerHighest,
@@ -107,10 +120,7 @@ ThemeData buildAppTheme(Brightness brightness) {
         ),
       ),
     ),
-    extensions: const <ThemeExtension<dynamic>>[
-      Spacing(),
-      Corners(),
-    ],
+    extensions: const <ThemeExtension<dynamic>>[Spacing(), Corners()],
   );
 }
 

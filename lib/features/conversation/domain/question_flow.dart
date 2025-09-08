@@ -4,7 +4,11 @@ class QuestionDef {
   final String qid;
   final String label;
   final List<Choice> choices;
-  const QuestionDef({required this.qid, required this.label, required this.choices});
+  const QuestionDef({
+    required this.qid,
+    required this.label,
+    required this.choices,
+  });
 }
 
 // Quick survey flow (QS1..)
@@ -200,4 +204,3 @@ const List<QuestionDef> intakeFlow = [
     ],
   ),
 ];
-

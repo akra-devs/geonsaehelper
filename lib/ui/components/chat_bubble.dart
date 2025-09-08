@@ -13,14 +13,20 @@ class ChatBubble extends StatelessWidget {
   final ChatRole role;
   final String content;
   final List<Citation> citations;
-  const ChatBubble({super.key, required this.role, required this.content, this.citations = const []});
+  const ChatBubble({
+    super.key,
+    required this.role,
+    required this.content,
+    this.citations = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacing;
     final isUser = role == ChatRole.user;
     final cs = Theme.of(context).colorScheme;
-    final bubbleColor = isUser ? cs.primaryContainer : cs.surfaceContainerHighest;
+    final bubbleColor =
+        isUser ? cs.primaryContainer : cs.surfaceContainerHighest;
     final textColor = isUser ? cs.onPrimaryContainer : cs.onSurface;
     final r = context.corners.sm;
     final radius = BorderRadius.only(
@@ -38,7 +44,8 @@ class ChatBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
-              mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+              mainAxisAlignment:
+                  isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
               children: [
                 Flexible(
                   child: Material(
@@ -51,7 +58,8 @@ class ChatBubble extends StatelessWidget {
                         constraints: const BoxConstraints(maxWidth: 680),
                         child: Text(
                           content,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: textColor, height: 1.5),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: textColor, height: 1.5),
                         ),
                       ),
                     ),
@@ -69,8 +77,14 @@ class ChatBubble extends StatelessWidget {
                     for (var i = 0; i < citations.length; i++)
                       Chip(
                         key: Key('Chat.Citation.$i'),
-                        label: Text('${citations[i].docId} • ${citations[i].sectionKey}', style: Theme.of(context).textTheme.labelSmall),
-                        visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+                        label: Text(
+                          '${citations[i].docId} • ${citations[i].sectionKey}',
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                        visualDensity: const VisualDensity(
+                          horizontal: -2,
+                          vertical: -2,
+                        ),
                       ),
                   ],
                 ),

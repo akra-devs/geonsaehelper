@@ -7,7 +7,11 @@ class SplashAnimationConfig {
   final SplashAnimationType type;
   final String lightAsset;
   final String darkAsset;
-  const SplashAnimationConfig({required this.type, required this.lightAsset, required this.darkAsset});
+  const SplashAnimationConfig({
+    required this.type,
+    required this.lightAsset,
+    required this.darkAsset,
+  });
 }
 
 class SplashConfig {
@@ -37,7 +41,9 @@ class SplashConfig {
     ),
   );
 
-  static Future<SplashConfig> load([String path = 'assets/splash/config.json']) async {
+  static Future<SplashConfig> load([
+    String path = 'assets/splash/config.json',
+  ]) async {
     try {
       final raw = await rootBundle.loadString(path);
       final map = jsonDecode(raw) as Map<String, dynamic>;
@@ -51,13 +57,16 @@ class SplashConfig {
       };
       return SplashConfig(
         durationMs: (map['durationMs'] as num?)?.toInt() ?? fallback.durationMs,
-        nextDelayMs: (map['nextDelayMs'] as num?)?.toInt() ?? fallback.nextDelayMs,
+        nextDelayMs:
+            (map['nextDelayMs'] as num?)?.toInt() ?? fallback.nextDelayMs,
         title: (map['title'] as String?) ?? fallback.title,
         subtitle: (map['subtitle'] as String?) ?? fallback.subtitle,
         animation: SplashAnimationConfig(
           type: type,
-          lightAsset: (anim?['lightAsset'] as String?) ?? fallback.animation.lightAsset,
-          darkAsset: (anim?['darkAsset'] as String?) ?? fallback.animation.darkAsset,
+          lightAsset:
+              (anim?['lightAsset'] as String?) ?? fallback.animation.lightAsset,
+          darkAsset:
+              (anim?['darkAsset'] as String?) ?? fallback.animation.darkAsset,
         ),
       );
     } catch (_) {
@@ -65,4 +74,3 @@ class SplashConfig {
     }
   }
 }
-

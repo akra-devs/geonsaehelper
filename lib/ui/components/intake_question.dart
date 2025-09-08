@@ -30,7 +30,8 @@ class IntakeQuestion extends StatelessWidget {
     final spacing = context.spacing;
     final allOptions = <domain.Choice>[
       ...options,
-      if (showUnknown) const domain.Choice(value: conversationUnknownValue, text: '모름'),
+      if (showUnknown)
+        const domain.Choice(value: conversationUnknownValue, text: '모름'),
     ];
     final cs = Theme.of(context).colorScheme;
     return Semantics(
@@ -38,7 +39,11 @@ class IntakeQuestion extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.titleMedium, key: Key('Intake.$qid.Label')),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.titleMedium,
+            key: Key('Intake.$qid.Label'),
+          ),
           SizedBox(height: spacing.x3),
           Wrap(
             spacing: spacing.x2,
@@ -56,13 +61,20 @@ class IntakeQuestion extends StatelessWidget {
           ),
           if (helper != null) ...[
             SizedBox(height: spacing.x2),
-            Text(helper!, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+            Text(
+              helper!,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
           ],
           if (errorText != null) ...[
             SizedBox(height: spacing.x2),
             Text(
               errorText!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.error),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: cs.error),
             ),
           ],
         ],
@@ -76,7 +88,13 @@ class _Segment extends StatelessWidget {
   final bool selected;
   final bool isUnknown;
   final VoidCallback onTap;
-  const _Segment({super.key, required this.label, required this.selected, required this.isUnknown, required this.onTap});
+  const _Segment({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.isUnknown,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -96,15 +114,27 @@ class _Segment extends StatelessWidget {
         borderRadius: BorderRadius.circular(corners.sm),
         onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: spacing.x3, vertical: spacing.x2),
+          padding: EdgeInsets.symmetric(
+            horizontal: spacing.x3,
+            vertical: spacing.x2,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isUnknown) ...[
-                Icon(Icons.help_outline, size: 14, color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+                Icon(
+                  Icons.help_outline,
+                  size: 14,
+                  color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                ),
                 SizedBox(width: spacing.x1),
               ],
-              Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: fg)),
+              Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: fg),
+              ),
             ],
           ),
         ),

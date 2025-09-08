@@ -6,7 +6,7 @@ part 'chat_event.freezed.dart';
 class ChatEvent with _$ChatEvent {
   /// Event to send a message to the chat system
   const factory ChatEvent.messageSent(String text) = MessageSent;
-  
+
   /// Event to reset the chat state to idle
   const factory ChatEvent.reset() = ChatReset;
 }

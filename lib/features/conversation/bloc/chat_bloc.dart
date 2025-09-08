@@ -16,13 +16,16 @@ class ChatState with _$ChatState {
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatRepository repo;
-  
+
   ChatBloc(this.repo) : super(const ChatState.idle()) {
     on<MessageSent>(_onMessageSent);
     on<ChatReset>(_onReset);
   }
 
-  Future<void> _onMessageSent(MessageSent event, Emitter<ChatState> emit) async {
+  Future<void> _onMessageSent(
+    MessageSent event,
+    Emitter<ChatState> emit,
+  ) async {
     emit(const ChatState.loading());
     try {
       await repo.ensureSession();

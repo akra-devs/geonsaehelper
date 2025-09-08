@@ -19,10 +19,10 @@ enum ConversationItemType {
 /// by separating data representation from UI rendering logic.
 class ConversationItem {
   final ConversationItemType type;
-  
+
   // Text content (for messages)
   final String? text;
-  
+
   // Intake question data
   final String? questionId;
   final String? questionLabel;
@@ -30,16 +30,16 @@ class ConversationItem {
   final int? questionIndex;
   final int? totalQuestions;
   final bool? isSurvey;
-  
+
   // Result data
   final ResultCard? resultCard;
-  
+
   // Rich widget content (for typing indicators, custom widgets)
   final Widget? customWidget;
-  
+
   // Advertisement widget
   final Widget? advertisementWidget;
-  
+
   // Suggestions data
   final List<SuggestionItem>? suggestions;
 

@@ -29,22 +29,22 @@ class ConversationItemWidget extends StatelessWidget {
     switch (item.type) {
       case ConversationItemType.botMessage:
         return _buildBotMessage(context, spacing);
-      
+
       case ConversationItemType.userMessage:
         return _buildUserMessage(context, spacing);
-      
+
       case ConversationItemType.intakeQuestion:
         return _buildIntakeQuestion(context, spacing);
-      
+
       case ConversationItemType.result:
         return _buildResult(context, spacing);
-      
+
       case ConversationItemType.botWidget:
         return _buildBotWidget(context, spacing);
-      
+
       case ConversationItemType.advertisement:
         return _buildAdvertisement(context, spacing);
-      
+
       case ConversationItemType.suggestions:
         return _buildSuggestions(context, spacing);
     }
@@ -55,10 +55,7 @@ class ConversationItemWidget extends StatelessWidget {
       delay: const Duration(milliseconds: 40),
       child: Padding(
         padding: EdgeInsets.only(bottom: spacing.x3),
-        child: ChatBubble(
-          role: ChatRole.bot,
-          content: item.text ?? '',
-        ),
+        child: ChatBubble(role: ChatRole.bot, content: item.text ?? ''),
       ),
     );
   }
@@ -68,10 +65,7 @@ class ConversationItemWidget extends StatelessWidget {
       delay: const Duration(milliseconds: 40),
       child: Padding(
         padding: EdgeInsets.only(bottom: spacing.x3),
-        child: ChatBubble(
-          role: ChatRole.user,
-          content: item.text ?? '',
-        ),
+        child: ChatBubble(role: ChatRole.user, content: item.text ?? ''),
       ),
     );
   }
@@ -95,7 +89,8 @@ class ConversationItemWidget extends StatelessWidget {
               label: item.questionLabel!,
               options: item.choices!,
               showUnknown: true,
-              onChanged: (value) => onChoiceSelected?.call(item.questionId!, value),
+              onChanged:
+                  (value) => onChoiceSelected?.call(item.questionId!, value),
             ),
           ],
         ),

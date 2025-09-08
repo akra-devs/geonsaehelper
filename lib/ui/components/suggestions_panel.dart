@@ -29,4 +29,3 @@ class SuggestionsPanel extends StatelessWidget {
     );
   }
 }
-

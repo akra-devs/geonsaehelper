@@ -51,6 +51,11 @@ class ConversationResult {
   final List<Reason> reasons;
   final List<String> nextSteps;
   final String lastVerified;
-  const ConversationResult(this.status, this.tldr, this.reasons, this.nextSteps, this.lastVerified);
+  const ConversationResult(
+    this.status,
+    this.tldr,
+    this.reasons,
+    this.nextSteps,
+    this.lastVerified,
+  );
 }
-

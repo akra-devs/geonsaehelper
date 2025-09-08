@@ -11,7 +11,9 @@ class Appear extends StatefulWidget {
   const Appear({
     super.key,
     required this.child,
-    this.duration = const Duration(milliseconds: 200), // tokens.motion.durations_ms.normal
+    this.duration = const Duration(
+      milliseconds: 200,
+    ), // tokens.motion.durations_ms.normal
     this.curve = Curves.easeOut, // tokens.motion.easing.standard
     this.offsetY = 12,
     this.delay = Duration.zero,
@@ -39,19 +41,26 @@ class _AppearState extends State<Appear> {
   @override
   Widget build(BuildContext context) {
     if (!_start) {
-      return Opacity(opacity: 0, child: Transform.translate(offset: Offset(0, widget.offsetY), child: widget.child));
+      return Opacity(
+        opacity: 0,
+        child: Transform.translate(
+          offset: Offset(0, widget.offsetY),
+          child: widget.child,
+        ),
+      );
     }
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: widget.duration,
       curve: widget.curve,
-      builder: (context, t, _) => Opacity(
-        opacity: t,
-        child: Transform.translate(
-          offset: Offset(0, (1 - t) * widget.offsetY),
-          child: widget.child,
-        ),
-      ),
+      builder:
+          (context, t, _) => Opacity(
+            opacity: t,
+            child: Transform.translate(
+              offset: Offset(0, (1 - t) * widget.offsetY),
+              child: widget.child,
+            ),
+          ),
     );
   }
 }

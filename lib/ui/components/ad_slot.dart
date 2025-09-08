@@ -24,7 +24,10 @@ class AdSlot extends StatelessWidget {
               child: const Text('광고', style: TextStyle(fontSize: 10)),
             ),
             const SizedBox(width: 8),
-            Text(placement == AdPlacement.resultBottom ? '결과 관련 스폰서' : '추천 스폰서', style: Theme.of(context).textTheme.labelSmall),
+            Text(
+              placement == AdPlacement.resultBottom ? '결과 관련 스폰서' : '추천 스폰서',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -40,4 +43,3 @@ class AdSlot extends StatelessWidget {
     );
   }
 }
-

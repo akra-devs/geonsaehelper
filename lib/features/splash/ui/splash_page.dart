@@ -12,7 +12,8 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _fadeIn;
   late final Animation<double> _scaleUp;
@@ -32,13 +33,25 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   }
 
   void _initAnim(SplashConfig cfg) {
-    _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: cfg.durationMs));
-    _fadeIn = CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.5, curve: Curves.easeOut));
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: cfg.durationMs),
+    );
+    _fadeIn = CurvedAnimation(
+      parent: _ctrl,
+      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+    );
     _scaleUp = Tween<double>(begin: 0.86, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: const Interval(0.15, 0.75, curve: Curves.easeOutBack)),
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0.15, 0.75, curve: Curves.easeOutBack),
+      ),
     );
     _slideUp = Tween<double>(begin: 16, end: 0).animate(
-      CurvedAnimation(parent: _ctrl, curve: const Interval(0.35, 1.0, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0.35, 1.0, curve: Curves.easeOut),
+      ),
     );
     _ctrl.forward();
     _ctrl.addStatusListener((s) {
@@ -50,7 +63,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
             PageRouteBuilder(
               transitionDuration: const Duration(milliseconds: 350),
               pageBuilder: (_, __, ___) => const AppShell(),
-              transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
+              transitionsBuilder:
+                  (_, anim, __, child) =>
+                      FadeTransition(opacity: anim, child: child),
             ),
           );
         });
@@ -68,8 +83,12 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final spacing = context.spacing;
     final cs = Theme.of(context).colorScheme;
-    final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
-    final subStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant);
+    final titleStyle = Theme.of(
+      context,
+    ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
+    final subStyle = Theme.of(
+      context,
+    ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant);
 
     return Scaffold(
       body: Container(
@@ -93,7 +112,10 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                       offset: Offset(0, _slideUp.value),
                       child: Transform.scale(
                         scale: _scaleUp.value,
-                        child: _AnimatedMark(opacity: _fadeIn.value, config: _config),
+                        child: _AnimatedMark(
+                          opacity: _fadeIn.value,
+                          config: _config,
+                        ),
                       ),
                     ),
                     SizedBox(height: spacing.x3),
@@ -101,9 +123,17 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                       opacity: _fadeIn.value,
                       child: Column(
                         children: [
-                          Text(_config.title, style: titleStyle, textAlign: TextAlign.center),
+                          Text(
+                            _config.title,
+                            style: titleStyle,
+                            textAlign: TextAlign.center,
+                          ),
                           SizedBox(height: spacing.x1),
-                          Text(_config.subtitle, style: subStyle, textAlign: TextAlign.center),
+                          Text(
+                            _config.subtitle,
+                            style: subStyle,
+                            textAlign: TextAlign.center,
+                          ),
                         ],
                       ),
                     ),
@@ -129,7 +159,8 @@ class _AnimatedMark extends StatelessWidget {
     final spacing = context.spacing;
     final size = 112.0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final asset = isDark ? config.animation.darkAsset : config.animation.lightAsset;
+    final asset =
+        isDark ? config.animation.darkAsset : config.animation.lightAsset;
 
     return Semantics(
       label: '앱 로고',
@@ -147,7 +178,11 @@ class _AnimatedMark extends StatelessWidget {
                 color: cs.primary,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
-                  BoxShadow(color: cs.primary.withAlpha(38), blurRadius: 24, spreadRadius: 4),
+                  BoxShadow(
+                    color: cs.primary.withAlpha(38),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
                 ],
               ),
             ),
@@ -179,7 +214,13 @@ class _AnimatedMark extends StatelessWidget {
     );
   }
 
-  Widget _contentByType(SplashAnimationType type, String asset, ColorScheme cs, dynamic spacing, double size) {
+  Widget _contentByType(
+    SplashAnimationType type,
+    String asset,
+    ColorScheme cs,
+    dynamic spacing,
+    double size,
+  ) {
     switch (type) {
       case SplashAnimationType.lottie:
         return SizedBox(
@@ -195,7 +236,14 @@ class _AnimatedMark extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SvgPicture.asset(asset, width: size * 0.44, colorFilter: ColorFilter.mode(cs.onPrimaryContainer, BlendMode.srcIn)),
+              SvgPicture.asset(
+                asset,
+                width: size * 0.44,
+                colorFilter: ColorFilter.mode(
+                  cs.onPrimaryContainer,
+                  BlendMode.srcIn,
+                ),
+              ),
             ],
           ),
         );
@@ -206,7 +254,12 @@ class _AnimatedMark extends StatelessWidget {
           color: cs.primaryContainer,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(size * 0.34),
-            child: Image.asset(asset, width: size * 0.56, height: size * 0.56, fit: BoxFit.contain),
+            child: Image.asset(
+              asset,
+              width: size * 0.56,
+              height: size * 0.56,
+              fit: BoxFit.contain,
+            ),
           ),
         );
     }
@@ -218,7 +271,12 @@ class _Pill extends StatelessWidget {
   final double h;
   final Color color;
   final Widget child;
-  const _Pill({required this.w, required this.h, required this.color, required this.child});
+  const _Pill({
+    required this.w,
+    required this.h,
+    required this.color,
+    required this.child,
+  });
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -243,10 +301,7 @@ class _Dot extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }

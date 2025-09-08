@@ -20,7 +20,7 @@ class SuggestionActions {
   );
 
   static const documentChecklist = SuggestionAction(
-    id: 'document_checklist', 
+    id: 'document_checklist',
     label: '서류 체크리스트',
     botReply: '기본 서류는 신분증, 가족·혼인관계, 소득 증빙입니다. 발급처와 순서를 안내해요.',
   );

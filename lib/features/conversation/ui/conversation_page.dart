@@ -89,7 +89,9 @@ class _ConversationPageState extends State<ConversationPage> {
   void _handleChoiceSelection(BuildContext ctx, String qid, String? value) {
     // Delegate to Bloc for label resolution and state emission
     if (value != null) {
-      ctx.read<ConversationBloc>().add(ConversationEvent.choiceSelected(qid, value));
+      ctx.read<ConversationBloc>().add(
+        ConversationEvent.choiceSelected(qid, value),
+      );
     }
   }
 
@@ -97,12 +99,17 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _showSuggestionsAndAds() {
     // Convert domain SuggestionAction to UI SuggestionItem
-    final suggestionItems = SuggestionActions.list.map((action) => 
-      SuggestionItem(action.label, action.botReply)
-    ).toList();
-    
+    final suggestionItems =
+        SuggestionActions.list
+            .map((action) => SuggestionItem(action.label, action.botReply))
+            .toList();
+
     _items.add(ConversationItem.suggestions(suggestionItems));
-    _items.add(ConversationItem.advertisement(const AdSlot(placement: AdPlacement.resultBottom)));
+    _items.add(
+      ConversationItem.advertisement(
+        const AdSlot(placement: AdPlacement.resultBottom),
+      ),
+    );
     _scheduleScroll();
   }
 
@@ -166,8 +173,7 @@ class _ConversationPageState extends State<ConversationPage> {
     return MultiBlocProvider(
       providers: [
         BlocProvider<ChatBloc>(
-          create:
-              (ctx) => ChatBloc(RepositoryProvider.of<ChatRepository>(ctx)),
+          create: (ctx) => ChatBloc(RepositoryProvider.of<ChatRepository>(ctx)),
         ),
         BlocProvider<ConversationBloc>(create: (_) => ConversationBloc()),
       ],
@@ -176,7 +182,9 @@ class _ConversationPageState extends State<ConversationPage> {
           if (!_hasStarted) {
             _hasStarted = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              innerCtx.read<ConversationBloc>().add(const ConversationEvent.started());
+              innerCtx.read<ConversationBloc>().add(
+                const ConversationEvent.started(),
+              );
             });
           }
           return MultiBlocListener(
@@ -214,14 +222,15 @@ class _ConversationPageState extends State<ConversationPage> {
                     setState(() {});
                     return;
                   }
-                  
+
                   if (state.userEcho != null && state.userEcho!.isNotEmpty) {
                     _appendUserText(state.userEcho!);
                   }
                   if (state.message != null && state.message!.isNotEmpty) {
                     _appendBotText(state.message!);
                   }
-                  if (state.suggestionReply != null && state.suggestionReply!.isNotEmpty) {
+                  if (state.suggestionReply != null &&
+                      state.suggestionReply!.isNotEmpty) {
                     _items.add(
                       ConversationItem.botWidget(
                         ChatBubble(
@@ -264,44 +273,56 @@ class _ConversationPageState extends State<ConversationPage> {
             child: Scaffold(
               appBar: AppBar(title: const Text('대화형 예비판정')),
               body: SafeArea(
-                child: _CenteredContent(child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        controller: _scroll,
-                        padding: EdgeInsets.only(top: spacing.x4, bottom: spacing.x4),
-                        itemCount: _items.length,
-                        itemBuilder: (context, index) {
-                          final item = _items[index];
-                          return ConversationItemWidget(
-                            item: item,
-                            onChoiceSelected: (qid, value) {
-                              // Handle choice selection with Bloc logic
-                              _handleChoiceSelection(context, qid, value);
-                            },
-                            onSuggestionTap: (s) {
-                              // Find suggestion ID by label
-                              final suggestion = SuggestionActions.list.firstWhere(
-                                (action) => action.label == s.label,
-                                orElse: () => SuggestionActions.limitEstimation,
-                              );
-                              context.read<ConversationBloc>().add(ConversationEvent.suggestionSelected(suggestion.id));
-                            },
+                child: _CenteredContent(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          controller: _scroll,
+                          padding: EdgeInsets.only(
+                            top: spacing.x4,
+                            bottom: spacing.x4,
+                          ),
+                          itemCount: _items.length,
+                          itemBuilder: (context, index) {
+                            final item = _items[index];
+                            return ConversationItemWidget(
+                              item: item,
+                              onChoiceSelected: (qid, value) {
+                                // Handle choice selection with Bloc logic
+                                _handleChoiceSelection(context, qid, value);
+                              },
+                              onSuggestionTap: (s) {
+                                // Find suggestion ID by label
+                                final suggestion = SuggestionActions.list
+                                    .firstWhere(
+                                      (action) => action.label == s.label,
+                                      orElse:
+                                          () =>
+                                              SuggestionActions.limitEstimation,
+                                    );
+                                context.read<ConversationBloc>().add(
+                                  ConversationEvent.suggestionSelected(
+                                    suggestion.id,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      BlocBuilder<ConversationBloc, ConversationState>(
+                        builder: (context, state) {
+                          return ChatComposer(
+                            controller: _composer,
+                            onSend: () => _onSend(context),
+                            enabled: !state.awaitingChoice,
                           );
                         },
                       ),
-                    ),
-                    BlocBuilder<ConversationBloc, ConversationState>(
-                      builder: (context, state) {
-                        return ChatComposer(
-                          controller: _composer,
-                          onSend: () => _onSend(context),
-                          enabled: !state.awaitingChoice,
-                        );
-                      },
-                    ),
-                  ],
-                )),
+                    ],
+                  ),
+                ),
               ),
             ),
           );
@@ -320,8 +341,6 @@ class _ConversationPageState extends State<ConversationPage> {
 // _Composer extracted to ui/components/chat_composer.dart as ChatComposer
 
 // UI no longer declares a _Question; ConversationCubit provides question data.
-
-
 
 class _CenteredContent extends StatelessWidget {
   final Widget child;

@@ -29,8 +29,14 @@ class _Dot extends StatefulWidget {
 }
 
 class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))..repeat(reverse: true);
-  late final Animation<double> _a = Tween(begin: 0.3, end: 1.0).animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut));
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 600),
+  )..repeat(reverse: true);
+  late final Animation<double> _a = Tween(
+    begin: 0.3,
+    end: 1.0,
+  ).animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut));
 
   @override
   void initState() {
@@ -54,4 +60,3 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
     );
   }
 }
-

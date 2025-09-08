@@ -23,18 +23,24 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: IndexedStack(index: _index, children: _pages),
-      ),
+      body: SafeArea(child: IndexedStack(index: _index, children: _pages)),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) {
           setState(() => _index = i);
-          final tab = switch (i) { 0 => 'start', 1 => 'checklist', 2 => 'history', _ => 'settings' };
+          final tab = switch (i) {
+            0 => 'start',
+            1 => 'checklist',
+            2 => 'history',
+            _ => 'settings',
+          };
           Analytics.instance.tabChange(tab);
         },
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.play_circle_outline), label: '시작'),
+          NavigationDestination(
+            icon: Icon(Icons.play_circle_outline),
+            label: '시작',
+          ),
           NavigationDestination(icon: Icon(Icons.fact_check), label: '체크리스트'),
           NavigationDestination(icon: Icon(Icons.history), label: '히스토리'),
           NavigationDestination(icon: Icon(Icons.settings), label: '설정'),
@@ -73,32 +79,39 @@ class _ChecklistPageState extends State<_ChecklistPage> {
   Widget build(BuildContext context) {
     final spacing = context.spacing;
     final total = _sections.values.fold<int>(0, (p, e) => p + e.length);
-    final done = _sections.values.fold<int>(0, (p, e) => p + e.where((i) => i.done).length);
+    final done = _sections.values.fold<int>(
+      0,
+      (p, e) => p + e.where((i) => i.done).length,
+    );
     return Scaffold(
       appBar: AppBar(title: const Text('서류 체크리스트')),
-      body: _CenteredBody(child: ListView(
-        padding: EdgeInsets.symmetric(vertical: spacing.x4),
-        children: [
-          // Overall progress
-          Text('진행 현황', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(value: total > 0 ? done / total : 0),
-          SizedBox(height: spacing.x3),
-          for (final entry in _sections.entries) ...[
-            // Section header with progress
-            _SectionHeader(title: entry.key, items: entry.value),
+      body: _CenteredBody(
+        child: ListView(
+          padding: EdgeInsets.symmetric(vertical: spacing.x4),
+          children: [
+            // Overall progress
+            Text('진행 현황', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            ...entry.value.map((it) => CheckboxListTile(
+            LinearProgressIndicator(value: total > 0 ? done / total : 0),
+            SizedBox(height: spacing.x3),
+            for (final entry in _sections.entries) ...[
+              // Section header with progress
+              _SectionHeader(title: entry.key, items: entry.value),
+              const SizedBox(height: 8),
+              ...entry.value.map(
+                (it) => CheckboxListTile(
                   value: it.done,
                   onChanged: (v) => setState(() => it.done = v ?? false),
                   title: Text(it.label),
-                )),
-            SizedBox(height: spacing.x2),
-            Divider(color: Theme.of(context).colorScheme.outlineVariant),
-            SizedBox(height: spacing.x2),
+                ),
+              ),
+              SizedBox(height: spacing.x2),
+              Divider(color: Theme.of(context).colorScheme.outlineVariant),
+              SizedBox(height: spacing.x2),
+            ],
           ],
-        ],
-      )),
+        ),
+      ),
     );
   }
 }
@@ -125,8 +138,18 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
-            Text('$done/$total', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            Text(
+              '$done/$total',
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant),
+            ),
           ],
         ),
         const SizedBox(height: 6),
@@ -142,12 +165,12 @@ class _HistoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('히스토리')),
-      body: _CenteredBody(child: ListView(
-        padding: EdgeInsets.symmetric(vertical: context.spacing.x4),
-        children: const [
-          _EmptyHint(text: '최근 판정/대화가 여기에 표시됩니다.'),
-        ],
-      )),
+      body: _CenteredBody(
+        child: ListView(
+          padding: EdgeInsets.symmetric(vertical: context.spacing.x4),
+          children: const [_EmptyHint(text: '최근 판정/대화가 여기에 표시됩니다.')],
+        ),
+      ),
     );
   }
 }
@@ -160,9 +183,7 @@ class _SettingsPage extends StatelessWidget {
       appBar: AppBar(title: const Text('설정')),
       body: ListView(
         padding: EdgeInsets.symmetric(vertical: context.spacing.x4),
-        children: const [
-          _EmptyHint(text: '테마/데이터/고지 설정이 여기에 표시됩니다.'),
-        ],
+        children: const [_EmptyHint(text: '테마/데이터/고지 설정이 여기에 표시됩니다.')],
       ),
     );
   }
@@ -179,8 +200,8 @@ class _EmptyHint extends StatelessWidget {
         child: Text(
           text,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           textAlign: TextAlign.center,
         ),
       ),
