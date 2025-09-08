@@ -1,49 +1,52 @@
 import 'models.dart';
 
 class RuleCitations {
+  // 표준형(버팀목전세자금) — 근거: HUG_POLICY_DOCS/버팀목전세자금.MD
   static const SourceRef household = SourceRef(
-    'HUG_POLICY_DOCS/버팀목전세자금',
-    'eligibility',
+    'HUG_POLICY_DOCS/버팀목전세자금.MD',
+    '자격(세대주·무주택)',
   );
   static const SourceRef credit = SourceRef(
-    'HUG_POLICY_DOCS/버팀목전세자금',
-    'eligibility',
+    'HUG_POLICY_DOCS/버팀목전세자금.MD',
+    '신용도 조건',
   );
   static const SourceRef propertyType = SourceRef(
-    'HUG_POLICY_DOCS/버팀목전세자금',
-    'property',
+    'HUG_POLICY_DOCS/버팀목전세자금.MD',
+    '대상주택',
   );
   static const SourceRef floorArea = SourceRef(
-    'HUG_POLICY_DOCS/버팀목전세자금',
-    'property',
+    'HUG_POLICY_DOCS/버팀목전세자금.MD',
+    '대상주택/전용면적',
   );
-  static const SourceRef regionLimits = SourceRef(
-    'HUG_POLICY_DOCS/버팀목전세자금',
-    'region_limits',
+  static const SourceRef depositUpperBound = SourceRef(
+    'HUG_POLICY_DOCS/버팀목전세자금.MD',
+    '대상주택/임차보증금 상한',
   );
   static const SourceRef incomeCap = SourceRef(
-    'HUG_POLICY_DOCS/HUG_POLICY',
-    'RENT_STANDARD:income_cap',
+    'HUG_POLICY_DOCS/버팀목전세자금.MD',
+    '자격/소득',
   );
   static const SourceRef assetCap = SourceRef(
-    'HUG_POLICY_DOCS/HUG_POLICY',
-    'RENT_STANDARD:asset_cap',
+    'HUG_POLICY_DOCS/버팀목전세자금.MD',
+    '자격/자산',
   );
+
+  // 특례/전용 상품 — 근거: 각 HUG_POLICY_DOCS 하위 파일
   static const SourceRef damages = SourceRef(
-    'HUG_POLICY_DOCS/HUG_POLICY',
-    'RENT_DAMAGES_*:eligibility',
+    'HUG_POLICY_DOCS/전세피해 임차인 버팀목전세자금.MD',
+    '대출 대상 자격요건',
   );
   static const SourceRef youth = SourceRef(
-    'HUG_POLICY_DOCS/HUG_POLICY',
-    'RENT_YOUTH_BEOTIMMOK:eligibility',
+    'HUG_POLICY_DOCS/청년전용 버팀목전세자금.MD',
+    '자격',
   );
   static const SourceRef newlywed = SourceRef(
-    'HUG_POLICY_DOCS/HUG_POLICY',
-    'RENT_NEWLYWED:eligibility',
+    'HUG_POLICY_DOCS/신혼부부전용 전세자금.MD',
+    '자격',
   );
   static const SourceRef newborn = SourceRef(
-    'HUG_POLICY_DOCS/HUG_POLICY',
-    'RENT_NEWBORN_SPECIAL:eligibility',
+    'HUG_POLICY_DOCS/신생아 특례 버팀목대출.MD',
+    '자격',
   );
 
   static List<SourceRef> forQid(String qid) {
@@ -64,14 +67,14 @@ class RuleCitations {
       case 'P1':
         return const [household];
       case 'P2':
-        return const [regionLimits];
+        return const [depositUpperBound];
       case 'P3':
         return const [propertyType];
       case 'P4':
       case 'P4a':
         return const [floorArea];
       case 'P5':
-        return const [regionLimits];
+        return const [depositUpperBound];
       case 'S1':
       case 'S1a':
         return const [damages];

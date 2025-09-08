@@ -128,8 +128,6 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
   void _answer(Emitter<ConversationState> emit, String qid, String value) {
     final phase = state.phase;
     _answers[qid] = value;
-    final list =
-        phase == ConversationPhase.survey ? qf.surveyFlow : qf.intakeFlow;
     final nextStep = _findNextAskableStep(phase, _step);
     if (nextStep != -1) {
       _step = nextStep;
@@ -251,6 +249,29 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
             ),
           ],
           const ['연령 요건 충족 시 재진행'],
+          rulesLastVerifiedYmd,
+        ),
+        hasUnknown: false,
+        statusKey: 'not_possible_disq',
+      );
+      return;
+    }
+
+    // Disqualifier: 세대주 요건 미충족(A1)
+    if (_answers['A1'] == 'household_member') {
+      _emitResult(
+        emit,
+        ConversationResult(
+          RulingStatus.notPossibleDisq,
+          '아래 결격 사유로 인해 신청이 불가합니다.',
+          [
+            Reason(
+              '세대주 요건 불충족(예비 세대주 아님)',
+              ReasonKind.unmet,
+              RuleCitations.forQid('A1'),
+            ),
+          ],
+          const ['세대주 전환(전입/혼인 등) 후 재진행'],
           rulesLastVerifiedYmd,
         ),
         hasUnknown: false,
@@ -591,10 +612,11 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     final hints = <String>[];
     if (_answers['S1'] == 'yes') hints.add('전세피해자 특례 경로 안내 대상입니다.');
     if (_answers['A5'] == 'yes') hints.add('신생아 특례 경로도 검토 대상입니다.');
-    if (_answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned')
+    if (_answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned') {
       hints.add('신혼 전용 경로도 검토 대상입니다.');
+    }
     if (_answers['A3'] == 'y19_34') hints.add('청년 전용 경로도 검토 대상입니다.');
-    final extra = hints.isEmpty ? '' : '\n' + hints.take(2).join('\n');
+    final extra = hints.isEmpty ? '' : '\n${hints.take(2).join('\n')}';
     return '$first\n$second$extra';
   }
 
