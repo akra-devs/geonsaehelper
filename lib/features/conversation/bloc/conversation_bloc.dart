@@ -225,7 +225,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         emit,
         ConversationResult(
           RulingStatus.notPossibleInfo,
-          '다음 정보가 없어 판정 불가입니다.',
+          '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
           reasons,
           const ['세대주: 정부24 확인', '면적: 등기/건축물대장 확인', '보증금: 계약서 확인'],
           rulesLastVerifiedYmd,
@@ -242,7 +242,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         emit,
         ConversationResult(
           RulingStatus.notPossibleDisq,
-          '아래 결격 사유로 신청이 불가합니다.',
+          '아래 결격 사유로 인해 신청이 불가합니다.',
           [
             Reason(
               '성년 요건 미충족(만 19세 미만)',
@@ -265,7 +265,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         emit,
         ConversationResult(
           RulingStatus.notPossibleDisq,
-          '아래 결격 사유로 신청이 불가합니다.',
+          '아래 결격 사유로 인해 신청이 불가합니다.',
           [
             Reason(
               '무주택 요건 불충족(세대원 보유)',
@@ -288,7 +288,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         emit,
         ConversationResult(
           RulingStatus.notPossibleDisq,
-          '아래 결격 사유로 신청이 불가합니다.',
+          '아래 결격 사유로 인해 신청이 불가합니다.',
           [
             Reason(
               '신용/공공임대 등 결격 사항',
@@ -317,7 +317,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         emit,
         ConversationResult(
           RulingStatus.notPossibleDisq,
-          '아래 결격 사유로 신청이 불가합니다.',
+          '아래 결격 사유로 인해 신청이 불가합니다.',
           reasons,
           const ['조건 충족 가능한 상품군 재탐색 또는 조건 변경'],
           rulesLastVerifiedYmd,
@@ -334,7 +334,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         emit,
         ConversationResult(
           RulingStatus.notPossibleDisq,
-          '아래 결격 사유로 신청이 불가합니다.',
+          '아래 결격 사유로 인해 신청이 불가합니다.',
           [
             Reason(
               '대상 주택 유형 아님(비주거 등)',
@@ -357,7 +357,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         emit,
         ConversationResult(
           RulingStatus.notPossibleDisq,
-          '아래 결격 사유로 신청이 불가합니다.',
+          '아래 결격 사유로 인해 신청이 불가합니다.',
           [
             Reason(
               '전용면적 100㎡ 초과(예외 없음)',
@@ -378,7 +378,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         emit,
         ConversationResult(
           RulingStatus.notPossibleDisq,
-          '아래 결격 사유로 신청이 불가합니다.',
+          '아래 결격 사유로 인해 신청이 불가합니다.',
           [
             Reason(
               '전용면적 85㎡ 초과(읍·면 아님)',
@@ -420,7 +420,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               emit,
               ConversationResult(
                 RulingStatus.notPossibleInfo,
-                '다음 정보가 없어 판정 불가입니다.',
+                '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
                 reasons,
                 const ['보증금: 정확 금액 확인(3~4억 경계)', '계약서 재확인 후 재판정'],
                 rulesLastVerifiedYmd,
@@ -435,7 +435,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               emit,
               ConversationResult(
                 RulingStatus.notPossibleDisq,
-                '아래 결격 사유로 신청이 불가합니다.',
+                '아래 결격 사유로 인해 신청이 불가합니다.',
                 [
                   Reason(
                     '지역별 임차보증금 상한 초과(수도권 3억)',
@@ -460,7 +460,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
             emit,
             ConversationResult(
               RulingStatus.notPossibleDisq,
-              '아래 결격 사유로 신청이 불가합니다.',
+              '아래 결격 사유로 인해 신청이 불가합니다.',
               [
                 Reason(
                   '지역별 임차보증금 상한 초과(비수도권 2~3억)',
@@ -489,7 +489,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
             emit,
             ConversationResult(
               RulingStatus.notPossibleInfo,
-              '다음 정보가 없어 판정 불가입니다.',
+              '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
               reasons,
               const ['보증금: 정확 금액 확인(2~3억 경계)', '계약서 재확인 후 재판정'],
               rulesLastVerifiedYmd,
@@ -585,6 +585,8 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     }();
     final first =
         '예비판정 결과, $regionLabel의 $propertyLabel은(는) HUG 전세자금대출 대상에 ‘해당’합니다.';
+    final second =
+        '핵심 요건(무주택·세대주/소득/면적/보증금)을 충족한 것으로 확인되었습니다.\n아래 준비물을 확인해 주세요.';
     // Add up to two route hints by priority: damages > newborn > newly > youth
     final hints = <String>[];
     if (_answers['S1'] == 'yes') hints.add('전세피해자 특례 경로 안내 대상입니다.');
@@ -593,7 +595,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       hints.add('신혼 전용 경로도 검토 대상입니다.');
     if (_answers['A3'] == 'y19_34') hints.add('청년 전용 경로도 검토 대상입니다.');
     final extra = hints.isEmpty ? '' : '\n' + hints.take(2).join('\n');
-    return first + extra;
+    return '$first\n$second$extra';
   }
 
   List<String> _buildNextSteps() {

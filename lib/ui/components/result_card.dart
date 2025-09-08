@@ -161,7 +161,7 @@ class _ResultCardState extends State<ResultCard> {
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                maxLines: 2,
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
               SizedBox(height: spacing.x3),

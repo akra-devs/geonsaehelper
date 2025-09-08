@@ -45,7 +45,8 @@ class _DemoGalleryState extends State<DemoGallery> {
           _sectionTitle(context, 'ResultCard — 가능'),
           ResultCard(
             status: domain.RulingStatus.possible,
-            tldr: '예비판정 결과, ‘해당’합니다. 체크리스트를 확인하세요.',
+            tldr:
+                '예비판정 결과, 대상 주택은 HUG 전세자금대출 대상에 ‘해당’합니다.\n핵심 요건(무주택·세대주/소득/면적/보증금)을 충족한 것으로 확인되었습니다.\n아래 준비물을 확인해 주세요.',
             reasons: const [
               domain.Reason('무주택·세대주(충족)', domain.ReasonKind.met),
               domain.Reason('소득 형태/구간: 근로 / 5천만원대', domain.ReasonKind.met),
@@ -65,7 +66,7 @@ class _DemoGalleryState extends State<DemoGallery> {
           _sectionTitle(context, 'ResultCard — 불가(정보 부족)'),
           ResultCard(
             status: domain.RulingStatus.notPossibleInfo,
-            tldr: '다음 정보가 없어 판정 불가입니다.',
+            tldr: '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
             reasons: const [
               domain.Reason('세대주 여부 확인 필요', domain.ReasonKind.unknown),
               domain.Reason('보증금 구간 확인 필요', domain.ReasonKind.unknown),
@@ -79,7 +80,7 @@ class _DemoGalleryState extends State<DemoGallery> {
           _sectionTitle(context, 'ResultCard — 불가(결격)'),
           ResultCard(
             status: domain.RulingStatus.notPossibleDisq,
-            tldr: '아래 결격 사유로 신청이 불가합니다.',
+            tldr: '아래 결격 사유로 인해 신청이 불가합니다.',
             reasons: const [
               domain.Reason('무주택 요건 불충족', domain.ReasonKind.unmet),
               domain.Reason('보증금 한도 초과', domain.ReasonKind.unmet),
