@@ -19,6 +19,7 @@ import '../data/chat_repository.dart';
 import 'conversation_item.dart';
 import '../domain/models.dart' as domain;
 import '../domain/suggestion.dart';
+import '../domain/constants.dart';
 
 class ConversationPage extends StatefulWidget {
   const ConversationPage({super.key});
@@ -198,7 +199,7 @@ class _ConversationPageState extends State<ConversationPage> {
                         Analytics.instance.qnaAnswer(
                           true,
                           reply.lastVerified.isEmpty
-                              ? '2025-09-02'
+                              ? rulesLastVerifiedYmd
                               : reply.lastVerified,
                         );
                         _typingItemIndex = null;
