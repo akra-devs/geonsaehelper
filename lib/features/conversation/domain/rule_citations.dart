@@ -10,6 +10,10 @@ class RuleCitations {
     'HUG_POLICY_DOCS/버팀목전세자금.MD',
     '신용도 조건',
   );
+  static const SourceRef duplicateLoans = SourceRef(
+    'HUG_POLICY_DOCS/버팀목전세자금.MD',
+    '자격/중복대출 금지',
+  );
   static const SourceRef propertyType = SourceRef(
     'HUG_POLICY_DOCS/버팀목전세자금.MD',
     '대상주택',
@@ -73,6 +77,8 @@ class RuleCitations {
         return const [incomeCap];
       case 'C1':
         return const [credit];
+      case 'C2':
+        return const [duplicateLoans];
       case 'P1':
         return const [household];
       case 'P2':

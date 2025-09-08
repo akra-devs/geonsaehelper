@@ -334,6 +334,31 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       return;
     }
 
+    // Disqualifier: 중복대출 금지(C2)
+    if (_answers['C2'] == 'fund_rent' ||
+        _answers['C2'] == 'bank_rent' ||
+        _answers['C2'] == 'mortgage') {
+      _emitResult(
+        emit,
+        ConversationResult(
+          RulingStatus.notPossibleDisq,
+          '아래 결격 사유로 인해 신청이 불가합니다.',
+          [
+            Reason(
+              '중복대출 금지(기존 전세/주담대 보유)',
+              ReasonKind.unmet,
+              RuleCitations.forQid('C2'),
+            ),
+          ],
+          const ['기존 대출 상환/해지 후 재진행'],
+          rulesLastVerifiedYmd,
+        ),
+        hasUnknown: false,
+        statusKey: 'not_possible_disq',
+      );
+      return;
+    }
+
     // Disqualifier: 소득/자산 상한 초과(A6/A7)
     {
       final a6 = _answers['A6'];
@@ -378,24 +403,21 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         if (isNewborn) {
           if (a6 == 'inc_over') {
             if (isDualIncome) {
-              final reasons = [
-                Reason(
-                  '소득 구간이 경계값(1.3~2.0억원)으로 정확한 금액 확인 필요',
-                  ReasonKind.unknown,
-                  RuleCitations.forQid('A8'),
-                ),
-              ];
               _emitResult(
                 emit,
                 ConversationResult(
-                  RulingStatus.notPossibleInfo,
-                  '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
-                  reasons,
-                  const ['소득증빙: 최근 원천·소득금액증명 확인', '정확 소득 확인 후 재판정'],
+                  RulingStatus.notPossibleDisq,
+                  '아래 결격 사유로 인해 신청이 불가합니다.',
+                  [
+                    Reason('소득 상한 초과(신생아 특례 맞벌이 2억원)', ReasonKind.unmet, [
+                      RuleCitations.newborn,
+                    ]),
+                  ],
+                  const ['소득 확인 후 조건 충족 가능한 상품 검토'],
                   rulesLastVerifiedYmd,
                 ),
                 hasUnknown: false,
-                statusKey: 'not_possible_info',
+                statusKey: 'not_possible_disq',
               );
               return;
             } else {
@@ -956,6 +978,8 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         return '우대 사유';
       case 'C1':
         return '결격/제한(신용·공공임대)';
+      case 'C2':
+        return '기존 대출/보증';
       case 'P1':
         return '계약 및 5% 지급';
       case 'P2':

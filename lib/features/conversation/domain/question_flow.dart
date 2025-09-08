@@ -110,6 +110,7 @@ const List<QuestionDef> intakeFlow = [
       Choice(value: 'inc_le60m', text: '6천만원 이하'),
       Choice(value: 'inc_le75m', text: '7천5백만원 이하'),
       Choice(value: 'inc_le130m', text: '1억3천만원 이하'),
+      Choice(value: 'inc_le200m', text: '2억원 이하(맞벌이 경계 판단용)'),
       Choice(value: 'inc_over', text: '초과'),
     ],
   ),
@@ -152,6 +153,17 @@ const List<QuestionDef> intakeFlow = [
     choices: [
       Choice(value: 'none', text: '해당 없음'),
       Choice(value: 'has', text: '있음'),
+    ],
+  ),
+  // C2. 중복대출 금지(기존 대출/보증)
+  QuestionDef(
+    qid: 'C2',
+    label: '기존 대출/보증 이용 중인가요?',
+    choices: [
+      Choice(value: 'fund_rent', text: '기금 전세자금대출'),
+      Choice(value: 'bank_rent', text: '은행 전세자금대출'),
+      Choice(value: 'mortgage', text: '주택담보대출'),
+      Choice(value: 'none', text: '없음'),
     ],
   ),
   // P1. 계약 및 5% 지급
