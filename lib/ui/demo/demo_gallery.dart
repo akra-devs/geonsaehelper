@@ -174,6 +174,94 @@ class _DemoGalleryState extends State<DemoGallery> {
           ),
           SizedBox(height: spacing.x6),
 
+          // 경계 시나리오 샘플들
+          _sectionTitle(context, 'ResultCard — 경계: 신혼 수도권 3~4억(정보부족)'),
+          ResultCard(
+            status: domain.RulingStatus.notPossibleInfo,
+            tldr: '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
+            reasons: const [
+              domain.Reason(
+                '보증금 구간이 경계값(3~4억)으로 정확한 금액 확인 필요',
+                domain.ReasonKind.unknown,
+              ),
+            ],
+            nextSteps: const [
+              '보증금: 정확 금액 확인(3~4억 경계)',
+              '계약서 재확인 후 재판정',
+            ],
+            lastVerified: rulesLastVerifiedYmd,
+          ),
+          SizedBox(height: spacing.x6),
+
+          _sectionTitle(context, 'ResultCard — 경계: 청년 1.5~2.0억(정보부족)'),
+          ResultCard(
+            status: domain.RulingStatus.notPossibleInfo,
+            tldr: '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
+            reasons: const [
+              domain.Reason(
+                '보증금 청년 한도(1.5억) 경계로 정확한 금액 확인 필요',
+                domain.ReasonKind.unknown,
+              ),
+            ],
+            nextSteps: const [
+              '보증금: 정확 금액 확인(1.5~2.0억 경계)',
+              '계약서 재확인 후 재판정',
+            ],
+            lastVerified: rulesLastVerifiedYmd,
+          ),
+          SizedBox(height: spacing.x6),
+
+          _sectionTitle(context, 'ResultCard — 경계: 피해자 수도권 3~5억(정보부족)'),
+          ResultCard(
+            status: domain.RulingStatus.notPossibleInfo,
+            tldr: '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
+            reasons: const [
+              domain.Reason(
+                '보증금 구간이 경계값(3~5억)으로 정확한 금액 확인 필요',
+                domain.ReasonKind.unknown,
+              ),
+            ],
+            nextSteps: const [
+              '보증금: 정확 금액 확인(3~5억 경계)',
+              '계약서 재확인 후 재판정',
+            ],
+            lastVerified: rulesLastVerifiedYmd,
+          ),
+          SizedBox(height: spacing.x6),
+
+          _sectionTitle(context, 'ResultCard — 경계: 피해자 비수도권 3~4억(정보부족)'),
+          ResultCard(
+            status: domain.RulingStatus.notPossibleInfo,
+            tldr: '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
+            reasons: const [
+              domain.Reason(
+                '보증금 구간이 경계값(3~4억)으로 정확한 금액 확인 필요',
+                domain.ReasonKind.unknown,
+              ),
+            ],
+            nextSteps: const [
+              '보증금: 정확 금액 확인(3~4억 경계)',
+              '계약서 재확인 후 재판정',
+            ],
+            lastVerified: rulesLastVerifiedYmd,
+          ),
+          SizedBox(height: spacing.x6),
+
+          _sectionTitle(context, 'ResultCard — 결격: 신생아 수도권 3억 초과'),
+          ResultCard(
+            status: domain.RulingStatus.notPossibleDisq,
+            tldr: '아래 결격 사유로 인해 신청이 불가합니다.',
+            reasons: const [
+              domain.Reason(
+                '임차보증금 상한 초과(신생아 특례 최대 3억 기준)',
+                domain.ReasonKind.unmet,
+              ),
+            ],
+            nextSteps: const ['보증금 조정 또는 타 상품 검토'],
+            lastVerified: rulesLastVerifiedYmd,
+          ),
+          SizedBox(height: spacing.x6),
+
           _sectionTitle(context, 'ChatBubble'),
           const ChatBubble(
             role: ChatRole.bot,
