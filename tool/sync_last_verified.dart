@@ -34,19 +34,30 @@ void main(List<String> args) async {
         RegExp(r"const String rulesLastVerifiedYmd = '([^']*)';");
     final match = regex.firstMatch(content);
 
+    final current = match?.group(1);
+
+    final checkMode = args.contains('--check');
+    if (checkMode) {
+      if (current == lastVerified) {
+        stdout.writeln('OK: last_verified is synchronized ($lastVerified).');
+        return;
+      }
+      stderr.writeln(
+          'Mismatch: mapping=$lastVerified, constants=${current ?? 'MISSING'}');
+      exit(5);
+    }
+
     if (match == null) {
       // Append the constant if missing
       if (!content.endsWith('\n')) content += '\n';
-      content +=
-          "const String rulesLastVerifiedYmd = '$lastVerified';\n";
+      content += "const String rulesLastVerifiedYmd = '$lastVerified';\n";
     } else {
-      final current = match.group(1);
       if (current == lastVerified) {
         stdout.writeln('No change needed (already $lastVerified).');
         return;
       }
-      content = content.replaceFirst(regex,
-          "const String rulesLastVerifiedYmd = '$lastVerified';");
+      content = content.replaceFirst(
+          regex, "const String rulesLastVerifiedYmd = '$lastVerified';");
     }
 
     await constantsFile.writeAsString(content);
@@ -59,4 +70,3 @@ void main(List<String> args) async {
     exit(1);
   }
 }
-

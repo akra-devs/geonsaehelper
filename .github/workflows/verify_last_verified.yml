@@ -1,0 +1,32 @@
+name: Verify last_verified sync
+
+on:
+  pull_request:
+    paths:
+      - 'docs/docs/RULES_HUG_mapping.yaml'
+      - 'lib/features/conversation/domain/constants.dart'
+      - '.github/workflows/verify_last_verified.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/docs/RULES_HUG_mapping.yaml'
+      - 'lib/features/conversation/domain/constants.dart'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Check last_verified synchronization
+        run: dart run tool/sync_last_verified.dart --check
+
