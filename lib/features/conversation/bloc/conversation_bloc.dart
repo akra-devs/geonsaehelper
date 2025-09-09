@@ -401,15 +401,44 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       // Income cap by program priority: 신생아 > 신혼 > 청년 > 표준
       if (a6 != null) {
         if (isNewborn) {
+          // 신생아 특례 소득 한도
+          // - 단일소득: 1.3억원 이하
+          // - 맞벌이: 2.0억원 이하
           if (a6 == 'inc_over') {
-            if (isDualIncome) {
+            // 2.0억원 초과는 (맞벌이 기준도 초과) → 결격
+            _emitResult(
+              emit,
+              ConversationResult(
+                RulingStatus.notPossibleDisq,
+                '아래 결격 사유로 인해 신청이 불가합니다.',
+                [
+                  Reason('소득 상한 초과(신생아 특례 상한 초과)', ReasonKind.unmet, [
+                    RuleCitations.newborn,
+                  ]),
+                ],
+                const ['소득 확인 후 조건 충족 가능한 상품 검토'],
+                rulesLastVerifiedYmd,
+              ),
+              hasUnknown: false,
+              statusKey: 'not_possible_disq',
+            );
+            return;
+          }
+
+          if (a6 == 'inc_le200m') {
+            // 1.3~2.0억 구간: 맞벌이 여부(A8)에 따라 판정 분기
+            final a8 = _answers['A8'];
+            if (a8 == 'yes') {
+              // 맞벌이 2억 이하 → 충족(통과)
+            } else if (a8 == 'no') {
+              // 단일소득 1.3억 초과 → 결격
               _emitResult(
                 emit,
                 ConversationResult(
                   RulingStatus.notPossibleDisq,
                   '아래 결격 사유로 인해 신청이 불가합니다.',
                   [
-                    Reason('소득 상한 초과(신생아 특례 맞벌이 2억원)', ReasonKind.unmet, [
+                    Reason('소득 상한 초과(신생아 특례 단일소득 1.3억원)', ReasonKind.unmet, [
                       RuleCitations.newborn,
                     ]),
                   ],
@@ -420,22 +449,24 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 statusKey: 'not_possible_disq',
               );
               return;
-            } else {
+            } else if (a8 == conversationUnknownValue) {
+              // 맞벌이 여부가 ‘모름’이면 정보 부족 처리
+              final reasons = [
+                Reason('맞벌이 여부 확인 필요(신생아 특례 1.3~2.0억 경계)', ReasonKind.unknown, [
+                  RuleCitations.newborn,
+                ]),
+              ];
               _emitResult(
                 emit,
                 ConversationResult(
-                  RulingStatus.notPossibleDisq,
-                  '아래 결격 사유로 인해 신청이 불가합니다.',
-                  [
-                    Reason('소득 상한 초과(신생아 특례 1.3억원)', ReasonKind.unmet, [
-                      RuleCitations.newborn,
-                    ]),
-                  ],
-                  const ['소득 확인 후 조건 충족 가능한 상품 검토'],
+                  RulingStatus.notPossibleInfo,
+                  '다음 항목의 정보가 확인되지 않아 판정이 불가합니다.\n해당 정보를 확인 후 다시 진행해 주세요.',
+                  reasons,
+                  const ['맞벌이 여부 확인 후 재판정'],
                   rulesLastVerifiedYmd,
                 ),
-                hasUnknown: false,
-                statusKey: 'not_possible_disq',
+                hasUnknown: true,
+                statusKey: 'not_possible_info',
               );
               return;
             }
@@ -585,9 +616,11 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     final isDamages = _answers['S1'] == 'yes';
     if (region != null && dep != null) {
       final isMetro = region == 'metro';
+      final isMetroCity = region == 'metrocity';
+      final isOthers = region == 'others';
       // Interpret coarse bands conservatively
       // - 수도권: 일반 3억, 신혼 4억
-      // - 비수도권: 일반 2억, 신혼 3억
+      // - 비수도권(광역시/그 외): 일반 2억, 신혼 3억
       if (isMetro) {
         if (dep == 'dep_gt3') {
           if (isNewly) {
@@ -608,7 +641,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 const ['보증금: 정확 금액 확인(3~4억 경계)', '계약서 재확인 후 재판정'],
                 rulesLastVerifiedYmd,
               ),
-              hasUnknown: false,
+              hasUnknown: true,
               statusKey: 'not_possible_info',
             );
             return;
@@ -630,7 +663,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 const ['보증금: 정확 금액 확인(3~5억 경계)', '계약서 재확인 후 재판정'],
                 rulesLastVerifiedYmd,
               ),
-              hasUnknown: false,
+              hasUnknown: true,
               statusKey: 'not_possible_info',
             );
             return;
@@ -694,12 +727,12 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               const ['보증금: 정확 금액 확인(1.5~2.0억 경계)', '계약서 재확인 후 재판정'],
               rulesLastVerifiedYmd,
             ),
-            hasUnknown: false,
+            hasUnknown: true,
             statusKey: 'not_possible_info',
           );
           return;
         }
-      } else {
+      } else if (isMetroCity || isOthers) {
         // 비수도권(광역시/그 외)
         if (dep == 'dep_gt3') {
           if (isDamages) {
@@ -720,7 +753,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 const ['보증금: 정확 금액 확인(3~4억 경계)', '계약서 재확인 후 재판정'],
                 rulesLastVerifiedYmd,
               ),
-              hasUnknown: false,
+              hasUnknown: true,
               statusKey: 'not_possible_info',
             );
             return;
@@ -765,7 +798,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               const ['보증금: 정확 금액 확인(2~3억 경계)', '계약서 재확인 후 재판정'],
               rulesLastVerifiedYmd,
             ),
-            hasUnknown: false,
+            hasUnknown: true,
             statusKey: 'not_possible_info',
           );
           return;
@@ -786,7 +819,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               const ['보증금: 정확 금액 확인(1.5~2.0억 경계)', '계약서 재확인 후 재판정'],
               rulesLastVerifiedYmd,
             ),
-            hasUnknown: false,
+            hasUnknown: true,
             statusKey: 'not_possible_info',
           );
           return;
