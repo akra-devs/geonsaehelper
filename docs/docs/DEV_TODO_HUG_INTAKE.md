@@ -36,11 +36,11 @@ owner: convo/intake
 
 ## Milestone E — Demo 스냅샷(진행)
 - [x] A1/A2/A8/A9/A10/P3/P7 IntakeQuestion 예시 추가
-- [ ] 경계 시나리오(ResultCard) 샘플 추가: 
-  - [ ] 수도권 신혼 3~4억 정보부족 카드
-  - [ ] 청년 1.5~2.0억 정보부족 카드
-  - [ ] 피해자 3~5억(수도권)/3~4억(비수도권) 정보부족 카드
-  - [ ] 신생아 수도권 3억 초과 결격 카드
+- [x] 경계 시나리오(ResultCard) 샘플 추가: 
+  - [x] 수도권 신혼 3~4억 정보부족 카드
+  - [x] 청년 1.5~2.0억 정보부족 카드
+  - [x] 피해자 3~5억(수도권)/3~4억(비수도권) 정보부족 카드
+  - [x] 신생아 수도권 3억 초과 결격 카드
 
 ## Milestone F — Ops/도구(진행)
 - [x] last_verified 단일 소스 유지: docs/docs/RULES_HUG_mapping.yaml:last_verified
@@ -65,4 +65,3 @@ owner: convo/intake
 
 ## 변경 로그 포맷(권장)
 - feat(rules): … / fix(theme): … / chore(demo): … / docs(progress): …
-
