@@ -34,6 +34,7 @@ class _ConversationPageState extends State<ConversationPage> {
   final ScrollController _scroll = ScrollController();
   int? _typingItemIndex;
   bool _hasStarted = false;
+  domain.ConversationResult? _lastResult; // for Q&A citations fallback
 
   // No local constants; business logic lives in Cubit.
 
@@ -186,8 +187,13 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _replaceTypingWithReply(int typingIndex, BotReply reply) {
     // Convert model citations to UI component citations
-    final cites =
+    var cites =
         reply.citations.map((c) => Citation(c.docId, c.sectionKey)).toList();
+    // Fallback: if server provided no citations, derive from last ruling
+    if (cites.isEmpty) {
+      final derived = _deriveCitationsFromResult(_lastResult);
+      if (derived.isNotEmpty) cites = derived;
+    }
     _items[typingIndex] = ConversationItem.botWidget(
       ChatBubble(role: ChatRole.bot, content: reply.content, citations: cites),
     );
@@ -290,6 +296,7 @@ class _ConversationPageState extends State<ConversationPage> {
                     );
                   }
                   if (state.result != null) {
+                    _lastResult = state.result; // keep for Q&A citation fallback
                     _items.add(
                       ConversationItem.result(
                         ResultCard(

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../domain/constants.dart';
 import 'chat_models.dart';
+import '../domain/citation_schema.dart';
 
 abstract class ChatRepository {
   Future<void> ensureSession();
@@ -78,7 +79,10 @@ class MockChatRepository implements ChatRepository {
       content:
           'TL;DR: 서류는 신분증, 가족·혼인관계, 소득 증빙이 기본입니다. 다음 단계에서 발급처/순서를 안내해 드립니다.',
       citations: const [
-        ChatCitation(docId: 'HUG_internal_policy.md', sectionKey: 'A.1'),
+        ChatCitation(
+          docId: 'HUG_POLICY_DOCS/HUG_POLICY.md',
+          sectionKey: 'RENT_STANDARD:eligibility',
+        ),
       ],
       lastVerified: lastVerified,
     );
@@ -87,18 +91,23 @@ class MockChatRepository implements ChatRepository {
 
 Map<String, dynamic> _normalizeReplyJson(Map<String, dynamic> json) {
   final out = Map<String, dynamic>.from(json);
-  final citations =
-      (out['citations'] as List<dynamic>? ?? const [])
-          .whereType<Map<String, dynamic>>()
-          .map((e) {
-            final m = Map<String, dynamic>.from(e);
-            // Accept either 'section' or 'sectionKey'
-            if (!m.containsKey('sectionKey') && m.containsKey('section')) {
-              m['sectionKey'] = m['section'];
-            }
-            return m;
-          })
-          .toList();
-  out['citations'] = citations;
+  final rawCitations = (out['citations'] as List<dynamic>? ?? const [])
+      .whereType<Map<String, dynamic>>()
+      .map((e) => Map<String, dynamic>.from(e))
+      .toList();
+
+  final normalized = <Map<String, dynamic>>[];
+  for (final m in rawCitations) {
+    // Accept either 'section' or 'sectionKey'
+    if (!m.containsKey('sectionKey') && m.containsKey('section')) {
+      m['sectionKey'] = m['section'];
+    }
+    final docId = CitationSchema.normalizeDocId(m['docId']?.toString() ?? '');
+    final sectionKey = (m['sectionKey'] ?? '').toString();
+    if (CitationSchema.isValid(docId, sectionKey)) {
+      normalized.add({'docId': docId, 'sectionKey': sectionKey});
+    }
+  }
+  out['citations'] = normalized;
   return out;
 }
