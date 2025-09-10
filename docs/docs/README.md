@@ -31,4 +31,6 @@ last_updated: 2025-09-10
 - rules/RULES_HUG_v1.md ↔ copy/RESULT_CARD_COPY.md(Q&A 템플릿 포함) ↔ measurement/MEASUREMENT_PLAN.md(사유/이벤트 키)
 - ops/* ↔ dev/*(운영 절차와 작업 현황)
 
+중요: HUG_POLICY_DOCS/* 는 정책 ‘실데이터’로 간주합니다. 경로는 변경될 수 있으나 파일 내용은 변경하지 않습니다(불변). 변경 시 CI에서 차단됩니다.
+
 자세한 목록은 DOCS_INDEX.md를 참고하세요.

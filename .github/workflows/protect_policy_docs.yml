@@ -1,0 +1,32 @@
+name: Protect policy source docs (HUG_POLICY_DOCS)
+
+on:
+  pull_request:
+    paths:
+      - 'docs/docs/HUG_POLICY_DOCS/**'
+
+jobs:
+  forbid-modifications:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes under HUG_POLICY_DOCS
+        id: detect
+        run: |
+          BASE_SHA=${{ github.event.pull_request.base.sha }}
+          HEAD_SHA=${{ github.sha }}
+          echo "BASE=$BASE_SHA HEAD=$HEAD_SHA"
+          CHANGED=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA $HEAD_SHA -- docs/docs/HUG_POLICY_DOCS/ | wc -l)
+          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+
+      - name: Fail if any file changed
+        if: steps.detect.outputs.changed != '0'
+        run: |
+          echo 'HUG_POLICY_DOCS contains immutable policy sources. Content changes are not allowed.'
+          git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} -- docs/docs/HUG_POLICY_DOCS/
+          exit 1
+
