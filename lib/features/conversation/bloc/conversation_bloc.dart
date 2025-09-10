@@ -7,6 +7,7 @@ import '../../conversation/domain/suggestion.dart';
 import '../../conversation/domain/rule_citations.dart';
 import '../../conversation/domain/question_flow.dart' as qf;
 import '../../conversation/domain/rules_engine.dart' as rules;
+import '../../conversation/domain/copy_templates.dart' as copy;
 import 'conversation_event.dart';
 
 part 'conversation_bloc.freezed.dart';
@@ -372,7 +373,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       final a6 = _answers['A6'];
       final a7 = _answers['A7'];
       final isNewborn = _answers['A5'] == 'yes';
-      final isDualIncome = _answers['A8'] == 'yes';
+      // A8 is evaluated downstream where necessary
       final isNewly =
           _answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned';
       final isYouth = _answers['A3'] == 'y19_34';
@@ -896,14 +897,14 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       if (_answers['A5'] == 'yes')
         Reason('신생아 특례 요건: (충족)', ReasonKind.met, RuleCitations.forQid('A5')),
     ];
-    final tldr = _buildTldrPossible();
+    final tldr = copy.buildTldrPossible(_answers);
     _emitResult(
       emit,
       ConversationResult(
         RulingStatus.possible,
         tldr,
         const [],
-        _buildNextSteps(),
+        copy.buildNextSteps(_answers),
         rulesLastVerifiedYmd,
         programMatches,
       ),
@@ -913,72 +914,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     );
   }
 
-  String _buildTldrPossible() {
-    final regionLabel = () {
-      switch (_answers['P2']) {
-        case 'metro':
-          return '수도권';
-        case 'metrocity':
-          return '광역시';
-        case 'others':
-          return '기타 지역';
-        default:
-          return '해당 지역';
-      }
-    }();
-    final propertyLabel = () {
-      switch (_answers['P3']) {
-        case 'apartment':
-          return '아파트';
-        case 'officetel':
-          return '오피스텔(주거)';
-        case 'multi_family':
-          return '다가구';
-        case 'row_house':
-          return '연립·다세대';
-        case 'studio':
-          return '원룸';
-        default:
-          return '주택';
-      }
-    }();
-    final first =
-        '예비판정 결과, $regionLabel의 $propertyLabel은(는) HUG 전세자금대출 대상에 ‘해당’합니다.';
-    final second =
-        '핵심 요건(무주택·세대주/소득/면적/보증금)을 충족한 것으로 확인되었습니다.\n아래 준비물을 확인해 주세요.';
-    // Add up to two route hints by priority: damages > newborn > newly > youth
-    final hints = <String>[];
-    if (_answers['S1'] == 'yes') hints.add('전세피해자 특례 경로 안내 대상입니다.');
-    if (_answers['A5'] == 'yes') hints.add('신생아 특례 경로도 검토 대상입니다.');
-    if (_answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned') {
-      hints.add('신혼 전용 경로도 검토 대상입니다.');
-    }
-    if (_answers['A3'] == 'y19_34') hints.add('청년 전용 경로도 검토 대상입니다.');
-    final extra = hints.isEmpty ? '' : '\n${hints.take(2).join('\n')}';
-    return '$first\n$second$extra';
-  }
-
-  List<String> _buildNextSteps() {
-    final steps = <String>[];
-    // Program-specific additions first
-    if (_answers['S1'] == 'yes') {
-      steps.add('피해자 확인서류/임차권등기(해당 시) 준비');
-      steps.add('보증기관(HUG) 상담 경로 확인');
-    }
-    if (_answers['A5'] == 'yes') {
-      steps.add('출생증명서 또는 가족관계등록부 준비');
-    }
-    if (_answers['A4'] == 'newly7y' || _answers['A4'] == 'marry_3m_planned') {
-      steps.add('혼인관계증명서(또는 예정 증빙) 준비');
-    }
-    // Common checklist
-    steps.addAll([
-      '신분증·가족/혼인관계·소득 증빙 준비',
-      '임대인 등기부등본/건축물대장(필요 시)/계약서 사본',
-      '은행 상담 → 심사 → 보증 승인 → 실행',
-    ]);
-    return steps;
-  }
+  
 
   // Compute per-program matches based on current answers.
   List<ProgramMatch> _evaluateProgramMatches() {
