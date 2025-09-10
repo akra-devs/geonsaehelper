@@ -220,7 +220,9 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
             )
             .map((e) => e.key)
             .toList();
-    if (unknowns.isNotEmpty) {
+    final anyProgramPossible =
+        programMatches.any((m) => m.status == RulingStatus.possible);
+    if (unknowns.isNotEmpty && !anyProgramPossible) {
       final reasons =
           unknowns
               .map(

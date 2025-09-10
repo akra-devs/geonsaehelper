@@ -11,6 +11,7 @@ class ResultCard extends StatefulWidget {
   final String lastVerified; // YYYY-MM-DD
   final VoidCallback? onExpand;
   final List<domain.ProgramMatch>? programMatches; // optional
+  final void Function(domain.ProgramId programId)? onProgramHelp;
 
   const ResultCard({
     super.key,
@@ -21,6 +22,7 @@ class ResultCard extends StatefulWidget {
     required this.lastVerified,
     this.onExpand,
     this.programMatches,
+    this.onProgramHelp,
   });
 
   @override
@@ -154,7 +156,11 @@ class _ResultCardState extends State<ResultCard> {
                 Column(
                   children: [
                     for (int i = 0; i < sortedPm.length; i++)
-                      _ProgramRow(match: sortedPm[i], position: i + 1),
+                      _ProgramRow(
+                        match: sortedPm[i],
+                        position: i + 1,
+                        onProgramHelp: widget.onProgramHelp,
+                      ),
                   ],
                 ),
               ],
@@ -343,7 +349,8 @@ class _ResultCardState extends State<ResultCard> {
 class _ProgramRow extends StatelessWidget {
   final domain.ProgramMatch match;
   final int position;
-  const _ProgramRow({required this.match, required this.position});
+  final void Function(domain.ProgramId programId)? onProgramHelp;
+  const _ProgramRow({required this.match, required this.position, this.onProgramHelp});
 
   @override
   Widget build(BuildContext context) {
@@ -376,8 +383,10 @@ class _ProgramRow extends StatelessWidget {
           ),
           SizedBox(width: spacing.x2),
           TextButton(
-            onPressed: () => Analytics.instance
-                .programSelect(match.programId.name, 'docs'),
+            onPressed: () {
+              Analytics.instance.programSelect(match.programId.name, 'docs');
+              onProgramHelp?.call(match.programId);
+            },
             child: const Text('확인 방법'),
           ),
         ],
@@ -433,6 +442,8 @@ class _ProgramRow extends StatelessWidget {
     }
   }
 }
+
+//
 
 // Sort order: 피해자 → 신생아 → 신혼 → 청년 → 표준
 List<domain.ProgramMatch> _sortedProgramMatches(List<domain.ProgramMatch> list) {

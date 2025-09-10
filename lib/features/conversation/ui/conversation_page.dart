@@ -7,6 +7,7 @@ import '../../../ui/components/chat_bubble.dart';
 import '../../../ui/components/chat_composer.dart';
 import '../../../ui/components/conversation_item_widget.dart';
 import '../../../ui/components/result_card.dart';
+import '../../../ui/components/program_help_sheet.dart';
 import '../../../ui/components/suggestions_panel.dart';
 import '../../../ui/components/typing_indicator.dart';
 import '../../../ui/theme/app_theme.dart';
@@ -306,6 +307,16 @@ class _ConversationPageState extends State<ConversationPage> {
                           nextSteps: state.result!.nextSteps,
                           lastVerified: state.result!.lastVerified,
                           programMatches: state.result!.programMatches,
+                          onProgramHelp: (pid) {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (ctx) => ProgramHelpSheet(
+                                programId: pid,
+                                lastVerified: state.result!.lastVerified,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     );
