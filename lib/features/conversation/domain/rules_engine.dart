@@ -1,5 +1,6 @@
 import 'models.dart';
 import 'constants.dart';
+import 'rule_citations.dart';
 
 /// Evaluate per-program eligibility summaries based on collected answers.
 /// Returns a list of ProgramMatch ordered by business priority should be applied at UI.
@@ -50,8 +51,27 @@ List<ProgramMatch> evaluateProgramMatches(Map<String, String> answers) {
   bool isMetroCity = p2 == 'metrocity';
   bool isOthers = p2 == 'others';
 
+  List<SourceRef> baseSourcesFor(ProgramId id) {
+    switch (id) {
+      case ProgramId.RENT_STANDARD:
+        return const [
+          RuleCitations.household,
+          RuleCitations.incomeCap,
+          RuleCitations.depositUpperBound,
+        ];
+      case ProgramId.RENT_NEWLYWED:
+        return const [RuleCitations.newlywed];
+      case ProgramId.RENT_YOUTH:
+        return const [RuleCitations.youth];
+      case ProgramId.RENT_NEWBORN:
+        return const [RuleCitations.newborn];
+      case ProgramId.RENT_DAMAGES:
+        return const [RuleCitations.damages];
+    }
+  }
+
   ProgramMatch mk(ProgramId id, RulingStatus s, String msg) =>
-      ProgramMatch(programId: id, status: s, summary: msg);
+      ProgramMatch(programId: id, status: s, summary: msg, sources: baseSourcesFor(id));
 
   // Helper for deposit boundary checks used in multiple programs
   RulingStatus? stdDepositStatus() {
@@ -182,4 +202,3 @@ List<ProgramMatch> evaluateProgramMatches(Map<String, String> answers) {
 
   return matches;
 }
-

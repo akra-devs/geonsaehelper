@@ -58,10 +58,12 @@ class ProgramMatch {
   final ProgramId programId; // e.g., RENT_STANDARD, RENT_NEWBORN
   final RulingStatus status; // map: eligible->possible, info_needed->notPossibleInfo, ineligible->notPossibleDisq
   final String summary; // one-line summary
+  final List<SourceRef>? sources; // optional citations for the row
   const ProgramMatch({
     required this.programId,
     required this.status,
     required this.summary,
+    this.sources,
   });
 }
 
