@@ -1,7 +1,7 @@
 # MEASUREMENT_PLAN — 측정/계측 계획
 Status: canonical (Analytics Schema)
 
-마지막 업데이트: 2025-09-08
+마지막 업데이트: 2025-09-10
 
 ## 목표 지표(KPI)
 - 퍼널: 판정 완주율, 최초 판정까지 평균 시간
@@ -18,7 +18,10 @@ Status: canonical (Analytics Schema)
   - qna_ask: { topic, length, ts }
   - qna_answer: { has_disclaimer, last_verified, ts }
 - 계획(추가 예정):
-  - reasons_toggle: { expanded, ts }  // ResultCard 사유 ‘자세히/접기’ 토글
+  - reasons_expand: { expanded, ts }  // ResultCard 사유 ‘자세히/접기’ 토글(구현 명칭과 일치)
+  - program_evaluated: { programId, status: eligible|info_needed|ineligible, ts }
+  - program_shown: { programId, position, ts }
+  - program_select: { programId, action: docs|faq|start, ts }
   - feedback_thumb: { updown, context: ruling|qna, ts }
   - correction_request: { context, reason, ts }
 

@@ -1,7 +1,7 @@
 # COMPONENT_SPECS — 공용 위젯 사양(Flutter API 초안)
 Status: canonical (Component APIs)
 
-마지막 업데이트: 2025-09-02
+마지막 업데이트: 2025-09-10
 
 ## 공통 규약
 - const 생성자, 필수값은 required, 나머지 기본값 제공
@@ -46,6 +46,22 @@ class ResultCard extends StatefulWidget {
 ```
 - 동작: 사유/다음 단계는 3개까지만 우선 표시, ‘자세히/접기’ 토글 제공(Stateful 위젯).
 - 배지: `lastVerified` 표시, 30일 초과 시 ‘정보 최신성 확인 필요’ 배지 노출.
+
+확장(제안): ProgramMatches 표시 지원
+```dart
+class ProgramMatch {
+  final String programId; // RENT_STANDARD|RENT_NEWLYWED|RENT_YOUTH|RENT_NEWBORN|RENT_DAMAGES
+  final domain.RulingStatus status; // eligible->possible, info_needed->notPossibleInfo, ineligible->notPossibleDisq
+  final String summary; // 핵심 사유 한 줄
+  const ProgramMatch({required this.programId, required this.status, required this.summary});
+}
+
+class ResultCard extends StatefulWidget {
+  final List<ProgramMatch>? programMatches; // (옵션) 프로그램별 결과 리스트
+  // ...기존 필드 유지
+}
+```
+UI: 섹션 타이틀 ‘프로그램별 결과’, 각 행은 프로그램 배지/상태/요약/확인 방법 버튼으로 구성
 
 ## ChatBubble
 - 파일: `lib/ui/components/chat_bubble.dart`

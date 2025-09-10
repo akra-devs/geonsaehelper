@@ -1,6 +1,6 @@
 # DEV_TODO_HUG_INTAKE — HUG 인테이크/판정 TODO 체크리스트
 
-last_updated: 2025-09-08
+last_updated: 2025-09-10
 owner: convo/intake
 
 본 문서는 HUG 기반 인테이크/판정 구현의 작업 항목을 일람표 형태로 관리합니다. 각 항목은 내부 문서(HUG_POLICY_DOCS/*, RULES_HUG_mapping.yaml)를 단일 근거로 삼습니다.
@@ -43,6 +43,13 @@ owner: convo/intake
   - [x] 신생아 수도권 3억 초과 결격 카드
 
 ## Milestone F — Ops/도구(진행)
+
+## Milestone G — Program-based 판정(신규)
+- [ ] 프로그램 단위 ‘모름’ 처리(프로그램별 info_needed) 정책 반영
+- [ ] ProgramId/ProgramResult 도메인 모델 추가 및 규칙 매핑 확장
+- [ ] RulesEngine 분리(프로그램별 C1/C2/C3 적용) 및 우선순위 산출
+- [ ] ResultCard ProgramMatches 섹션 UI 구현(행 템플릿/정렬)
+- [ ] program_* 측정 이벤트 추가 및 대시보드 항목 정의
 - [x] last_verified 단일 소스 유지: docs/docs/RULES_HUG_mapping.yaml:last_verified
 - [x] 동기화 스크립트: `dart run tool/sync_last_verified.dart`
 - [ ] CI에 last_verified 동기화/검증 훅 추가(선택)

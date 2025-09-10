@@ -1,18 +1,19 @@
 # RULES_HUG_v1 — HUG 자격 판정 규칙(초안)
 Status: canonical (Eligibility Rules). Data: RULES_HUG_mapping.yaml
 
-마지막 업데이트: 2025-09-02
+마지막 업데이트: 2025-09-10
 주의: 본 문서는 내부 규정 문서(섹션/키) 기준으로 작성됩니다. 구체 임계값·예외는 내부 문서 값으로만 채웁니다(외부 링크 미사용).
 
 ## 규칙 체계(개요)
-- 평가 순서: 결격 사유 → 필수 충족 요건 → 조건 확인 항목.
-- 불확실 처리: 하나라도 ‘확인불가’이면 최종 결과는 ‘불가(정보 부족)’로 귀결.
-- 출력: 가능 / 불가(정보 부족 포함). 사유 목록(충족/미충족/확인불가), 다음 단계, 마지막 확인일.
+- 평가 순서(프로그램 단위): 결격 사유(C1) → 필수 확인(C2) → 조건/경고(C3).
+- 불확실 처리: 특정 프로그램에 필요한 필드에 ‘모름’이 있으면 그 프로그램만 ‘정보부족’ 처리.
+- 출력: 프로그램별 [가능 | 정보부족 | 결격] + 사유(충족/미충족/확인불가) + 다음 단계 + 마지막 확인일.
 
 ## 데이터 모델(요약)
 - applicant: household_status, marital, dependents, income_type, income_band, employment_months, existing_loans, credit_flags
 - property: type, floor_area_band, region, deposit_band, contract_status, movein_band, encumbrance
-- special: youth, newlyweds, multi_children, low_income
+- special: youth, newlyweds, newborn, damages, favored_6k
+- program: ProgramId(표준/신혼/청년/신생아/피해자), ProgramResult(status, reasons[], next_steps[], citations[])
 
 ## 규칙 카테고리
 
@@ -74,30 +75,44 @@ Status: canonical (Eligibility Rules). Data: RULES_HUG_mapping.yaml
 - pre_contract_warning: “계약 전 상태로 예비판정입니다. 계약 체결 전 필수 확인 사항을 점검하세요.”
 - encumbrance_warning: “등기상 근저당이 있어 주의가 필요합니다. 조건에 따라 불가가 될 수 있습니다.”
 
-## 평가 의사코드(요약)
+## 평가 의사코드(프로그램 단위)
 ```
-function evaluate(input):
-  reasons = []
-  unknown = []
+PROGRAMS = [RENT_DAMAGES, RENT_NEWBORN, RENT_NEWLYWED, RENT_YOUTH, RENT_STANDARD]
 
-  # C1: Disqualifiers
-  for rule in C1:
+function evaluate_all(input):
+  results = []
+  for prog in PROGRAMS:
+    r = evaluate_program(prog, input)
+    results.append({ 'program': prog, 'result': r })
+
+  eligible = [x for x in results if x.result.status == 'eligible']
+  info_needed = [x for x in results if x.result.status == 'info_needed']
+  ineligible = [x for x in results if x.result.status == 'ineligible']
+
+  summary = summarize(eligible, info_needed, ineligible)
+  return { 'summary': summary, 'program_results': results, 'meta': meta() }
+
+function evaluate_program(prog, input):
+  # C1: Disqualifiers first
+  for rule in C1[prog]:
     if rule.trigger(input):
-      return Result(status='불가', tl_dr=make_tldr('결격 사유'), reasons=[rule.message_key], meta=meta())
+      return ProgramResult(status='ineligible', reasons=[rule.message_key], citations=rule.citations)
 
-  # C2: Required confirmations
-  for field in REQUIRED_FIELDS:
+  # C2: Required confirmations (program-specific fields)
+  unknown_fields = []
+  for field in REQUIRED_FIELDS[prog]:
     if is_unknown(input[field]):
-      unknown.append(field)
-  if unknown:
-    return Result(status='불가', tl_dr=make_tldr('정보 부족'), reasons=label_unknowns(unknown), meta=meta())
+      unknown_fields.append(field)
+  if unknown_fields:
+    return ProgramResult(status='info_needed', reasons=label_unknowns(unknown_fields))
 
-  # C3: Warnings
-  for rule in C3:
+  # C3: Conditions/Warnings
+  reasons = []
+  for rule in C3[prog]:
     if rule.trigger(input):
       reasons.append(rule.message_key)
 
-  return Result(status='가능', tl_dr=make_tldr('가능'), reasons=reasons, meta=meta())
+  return ProgramResult(status='eligible', reasons=reasons)
 ```
 
 ## 메타데이터
@@ -107,4 +122,4 @@ function evaluate(input):
 
 ## 변경 이력
 - 2025-09-02: 초기 규칙 체계/메시지 사전/의사코드 작성.
- - 2025-09-02: 매핑 파일 추가(docs/docs/RULES_HUG_mapping.yaml) 및 참조 경로 명시.
+- 2025-09-10: 프로그램 단위 평가 모델로 개정(프로그램별 C1/C2/C3 적용, per-program unknown 처리).

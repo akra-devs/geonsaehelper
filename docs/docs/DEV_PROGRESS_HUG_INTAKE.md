@@ -1,6 +1,6 @@
 # HUG 기반 인테이크/판정 — 진행 현황과 다음 단계
 
-last_updated: 2025-09-08
+last_updated: 2025-09-10
 owner: convo/intake
 
 ## 배경
@@ -66,21 +66,20 @@ owner: convo/intake
   - `docs/docs/HUG_POLICY_DOCS/*` — 소스(참조)
   - `docs/docs/RULES_HUG_mapping.yaml` — 정규화 문서 기준으로 매핑 갱신
 
+## 방향 전환(Program-based)
+- 목표: “어떤 HUG 프로그램이 가능한지”를 프로그램 리스트로 명시(가능/정보부족/결격)
+- 정책 변경: ‘모름’은 프로그램 단위로 적용(필수 필드 모름 → 해당 프로그램만 정보부족)
+- TL;DR: 가능한 프로그램 요약(우선순위/추천 경로) + 프로그램별 상세 섹션
+
 ## 향후 진행 계획 (Next)
-- [ ] 프로그램별 카피 정제(톤/단문):
-  - 가능 TL;DR에 상황별 한 줄 추가(선택): “신혼 경로 우선 검토 권장” 등
-  - 사유 문구를 결과 카드 템플릿(`RESULT_CARD_COPY.md`)에 더 가깝게 다듬기
+- [ ] RulesEngine 리팩터: 프로그램별 평가 구조 도입(ProgramId/ProgramResult)
+- [ ] UI 확장: ResultCard에 ProgramMatches 섹션 추가(설계는 COMPONENT_SPECS 참조)
+- [ ] 카피: RESULT_CARD_COPY에 프로그램 요약/행 템플릿 반영(초안 완료)
+- [ ] 측정: program_* 이벤트 추가(측정 문서 갱신 완료)
 - [ ] 상한/예외 정밀화(잔여):
   - 비수도권 세분(광역시 vs 기타) 필요 시 규칙 추가
   - 우대 항목 추가(추가 우대·취약군) 검토 및 질문 확장(옵션)
-- [ ] Q&A 연동 강화:
-  - 판정 사유의 `Reason.sources` → Q&A 후속 답변에도 선택적으로 삽입(근거 강화)
-  - 판정→Q&A 질문 템플릿 연계(FAQ/다음 단계 링크)
-- [ ] QA/회귀(20 케이스):
-  - 경계값(보증금/면적/연령), 특례 라우팅, 모름 포함, 결격 조합, 지역×보증금 조합
-  - 이벤트 로깅 정상 여부 확인(퍼널/토글/클릭)
-- [ ] 데모/카피 스냅샷 갱신:
-  - `demo_gallery.dart`에 C2/A8/A9/A10/P7 예시 추가(완료), 경계 시나리오 ResultCard 샘플 추가(정보부족/결격)
+- [ ] QA/회귀(20+ 케이스): 경계/특례/모름/결격/지역×보증금 조합
 
 ## 운영/도구 메모
 - last_verified 단일 소스: `docs/docs/RULES_HUG_mapping.yaml:last_verified`
