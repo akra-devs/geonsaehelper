@@ -6,6 +6,7 @@ import '../../conversation/domain/constants.dart';
 import '../../conversation/domain/suggestion.dart';
 import '../../conversation/domain/rule_citations.dart';
 import '../../conversation/domain/question_flow.dart' as qf;
+import '../../conversation/domain/rules_engine.dart' as rules;
 import 'conversation_event.dart';
 
 part 'conversation_bloc.freezed.dart';
@@ -207,6 +208,8 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
   }
 
   void _evaluateAndEmit(Emitter<ConversationState> emit) {
+    // Pre-compute per-program results (ProgramMatches) for display
+    final programMatches = _evaluateProgramMatches();
     // Unknowns
     final unknowns =
         _answers.entries
@@ -235,6 +238,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
           reasons,
           const ['세대주: 정부24 확인', '면적: 등기/건축물대장 확인', '보증금: 계약서 확인'],
           rulesLastVerifiedYmd,
+          programMatches,
         ),
         hasUnknown: true,
         statusKey: 'not_possible_info',
@@ -258,6 +262,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
           ],
           const ['연령 요건 충족 시 재진행'],
           rulesLastVerifiedYmd,
+          programMatches,
         ),
         hasUnknown: false,
         statusKey: 'not_possible_disq',
@@ -281,6 +286,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
           ],
           const ['세대주 전환(전입/혼인 등) 후 재진행'],
           rulesLastVerifiedYmd,
+          programMatches,
         ),
         hasUnknown: false,
         statusKey: 'not_possible_disq',
@@ -304,6 +310,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
           ],
           const ['보유 주택 처분 후 재진행'],
           rulesLastVerifiedYmd,
+          programMatches,
         ),
         hasUnknown: false,
         statusKey: 'not_possible_disq',
@@ -327,6 +334,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
           ],
           const ['신용 상태/거주 형태 확인 후 재시도'],
           rulesLastVerifiedYmd,
+          programMatches,
         ),
         hasUnknown: false,
         statusKey: 'not_possible_disq',
@@ -391,6 +399,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
             ],
             const ['자산 확인 후 조건 충족 가능한 상품 검토'],
             rulesLastVerifiedYmd,
+            programMatches,
           ),
           hasUnknown: false,
           statusKey: 'not_possible_disq',
@@ -418,6 +427,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 ],
                 const ['소득 확인 후 조건 충족 가능한 상품 검토'],
                 rulesLastVerifiedYmd,
+                programMatches,
               ),
               hasUnknown: false,
               statusKey: 'not_possible_disq',
@@ -444,6 +454,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                   ],
                   const ['소득 확인 후 조건 충족 가능한 상품 검토'],
                   rulesLastVerifiedYmd,
+                  programMatches,
                 ),
                 hasUnknown: false,
                 statusKey: 'not_possible_disq',
@@ -464,6 +475,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                   reasons,
                   const ['맞벌이 여부 확인 후 재판정'],
                   rulesLastVerifiedYmd,
+                  programMatches,
                 ),
                 hasUnknown: true,
                 statusKey: 'not_possible_info',
@@ -485,6 +497,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 ],
                 const ['소득 확인 후 조건 충족 가능한 상품 검토'],
                 rulesLastVerifiedYmd,
+                programMatches,
               ),
               hasUnknown: false,
               statusKey: 'not_possible_disq',
@@ -505,6 +518,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 ],
                 const ['소득 확인 후 조건 충족 가능한 상품 검토'],
                 rulesLastVerifiedYmd,
+                programMatches,
               ),
               hasUnknown: false,
               statusKey: 'not_possible_disq',
@@ -529,6 +543,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 ],
                 const ['소득 확인 후 조건 충족 가능한 상품 검토'],
                 rulesLastVerifiedYmd,
+                programMatches,
               ),
               hasUnknown: false,
               statusKey: 'not_possible_disq',
@@ -555,6 +570,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
           ],
           const ['주거용 유형으로 조건 변경 후 재진행'],
           rulesLastVerifiedYmd,
+          programMatches,
         ),
         hasUnknown: false,
         statusKey: 'not_possible_disq',
@@ -578,6 +594,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
           ],
           const ['면적 조건 충족 주택으로 재검토'],
           rulesLastVerifiedYmd,
+          programMatches,
         ),
         hasUnknown: false,
         statusKey: 'not_possible_disq',
@@ -599,6 +616,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
           ],
           const ['면적·입지 조건 충족 주택으로 재검토'],
           rulesLastVerifiedYmd,
+          programMatches,
         ),
         hasUnknown: false,
         statusKey: 'not_possible_disq',
@@ -640,6 +658,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 reasons,
                 const ['보증금: 정확 금액 확인(3~4억 경계)', '계약서 재확인 후 재판정'],
                 rulesLastVerifiedYmd,
+                programMatches,
               ),
               hasUnknown: true,
               statusKey: 'not_possible_info',
@@ -662,6 +681,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 reasons,
                 const ['보증금: 정확 금액 확인(3~5억 경계)', '계약서 재확인 후 재판정'],
                 rulesLastVerifiedYmd,
+                programMatches,
               ),
               hasUnknown: true,
               statusKey: 'not_possible_info',
@@ -683,6 +703,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 ],
                 const ['보증금 조정 또는 타 상품 검토'],
                 rulesLastVerifiedYmd,
+                programMatches,
               ),
               hasUnknown: false,
               statusKey: 'not_possible_disq',
@@ -704,6 +725,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 ],
                 const ['보증금 조정 또는 타 상품 검토'],
                 rulesLastVerifiedYmd,
+                programMatches,
               ),
               hasUnknown: false,
               statusKey: 'not_possible_disq',
@@ -726,6 +748,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               reasons,
               const ['보증금: 정확 금액 확인(1.5~2.0억 경계)', '계약서 재확인 후 재판정'],
               rulesLastVerifiedYmd,
+              programMatches,
             ),
             hasUnknown: true,
             statusKey: 'not_possible_info',
@@ -752,6 +775,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 reasons,
                 const ['보증금: 정확 금액 확인(3~4억 경계)', '계약서 재확인 후 재판정'],
                 rulesLastVerifiedYmd,
+                programMatches,
               ),
               hasUnknown: true,
               statusKey: 'not_possible_info',
@@ -773,6 +797,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
                 ],
                 const ['보증금 조정 또는 타 상품 검토'],
                 rulesLastVerifiedYmd,
+                programMatches,
               ),
               hasUnknown: false,
               statusKey: 'not_possible_disq',
@@ -797,6 +822,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               reasons,
               const ['보증금: 정확 금액 확인(2~3억 경계)', '계약서 재확인 후 재판정'],
               rulesLastVerifiedYmd,
+              programMatches,
             ),
             hasUnknown: true,
             statusKey: 'not_possible_info',
@@ -818,6 +844,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               reasons,
               const ['보증금: 정확 금액 확인(1.5~2.0억 경계)', '계약서 재확인 후 재판정'],
               rulesLastVerifiedYmd,
+              programMatches,
             ),
             hasUnknown: true,
             statusKey: 'not_possible_info',
@@ -878,6 +905,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         const [],
         _buildNextSteps(),
         rulesLastVerifiedYmd,
+        programMatches,
       ),
       hasUnknown: false,
       statusKey: 'possible',
@@ -952,6 +980,29 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     return steps;
   }
 
+  // Compute per-program matches based on current answers.
+  List<ProgramMatch> _evaluateProgramMatches() {
+    final matches = rules.evaluateProgramMatches(_answers);
+    for (int i = 0; i < matches.length; i++) {
+      Analytics.instance.programEvaluated(
+        matches[i].programId.name,
+        _statusKey(matches[i].status),
+      );
+    }
+    return matches;
+  }
+
+  String _statusKey(RulingStatus s) {
+    switch (s) {
+      case RulingStatus.possible:
+        return 'possible';
+      case RulingStatus.notPossibleInfo:
+        return 'not_possible_info';
+      case RulingStatus.notPossibleDisq:
+        return 'not_possible_disq';
+    }
+  }
+
   void _emitResult(
     Emitter<ConversationState> emit,
     ConversationResult result, {
@@ -977,6 +1028,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               overrideReasons,
               result.nextSteps,
               result.lastVerified,
+              result.programMatches,
             );
     emit(
       ConversationState(
