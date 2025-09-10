@@ -41,4 +41,12 @@ class Analytics {
   });
   void nextStepClick(String action) =>
       log('next_step_click', {'action': action});
+
+  // Program-based (planned in measurement; implemented here)
+  void programEvaluated(String programId, String status) =>
+      log('program_evaluated', {'programId': programId, 'status': status});
+  void programShown(String programId, int position) =>
+      log('program_shown', {'programId': programId, 'position': position});
+  void programSelect(String programId, String action) =>
+      log('program_select', {'programId': programId, 'action': action});
 }
