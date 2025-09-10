@@ -139,6 +139,33 @@ class _DemoGalleryState extends State<DemoGallery> {
               '절차: 은행 상담 예약 → 서류 제출 → 심사 → 보증 승인 → 실행',
             ],
             lastVerified: rulesLastVerifiedYmd,
+            programMatches: const [
+              domain.ProgramMatch(
+                programId: domain.ProgramId.RENT_DAMAGES,
+                status: domain.RulingStatus.notPossibleInfo,
+                summary: '보증금 경계(3~5억) 정확 금액 확인',
+              ),
+              domain.ProgramMatch(
+                programId: domain.ProgramId.RENT_NEWBORN,
+                status: domain.RulingStatus.possible,
+                summary: '요건 충족(신생아 특례)',
+              ),
+              domain.ProgramMatch(
+                programId: domain.ProgramId.RENT_NEWLYWED,
+                status: domain.RulingStatus.possible,
+                summary: '요건 충족(신혼 예외 포함)',
+              ),
+              domain.ProgramMatch(
+                programId: domain.ProgramId.RENT_YOUTH,
+                status: domain.RulingStatus.notPossibleInfo,
+                summary: '보증금 경계(1.5~2.0억) 정확 금액 확인',
+              ),
+              domain.ProgramMatch(
+                programId: domain.ProgramId.RENT_STANDARD,
+                status: domain.RulingStatus.possible,
+                summary: '요건 충족(소득/자산/지역·보증금/면적)',
+              ),
+            ],
           ),
           SizedBox(height: spacing.x6),
 

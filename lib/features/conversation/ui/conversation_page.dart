@@ -305,6 +305,7 @@ class _ConversationPageState extends State<ConversationPage> {
                           reasons: state.result!.reasons,
                           nextSteps: state.result!.nextSteps,
                           lastVerified: state.result!.lastVerified,
+                          programMatches: state.result!.programMatches,
                         ),
                       ),
                     );
