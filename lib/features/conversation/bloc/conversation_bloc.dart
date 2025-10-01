@@ -872,12 +872,6 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         Reason('지역 요건/우대: (확인)', ReasonKind.met, RuleCitations.forQid('P2')),
       if (_answers.containsKey('P5'))
         Reason('보증금 상한: (충족)', ReasonKind.met, RuleCitations.forQid('P5')),
-      if (_answers['P1'] == 'no')
-        Reason(
-          '계약/5% 미지급 → 기한 유의',
-          ReasonKind.warning,
-          RuleCitations.forQid('P1'),
-        ),
       if (_answers['S1'] == 'yes')
         Reason(
           '전세피해자 특례 경로 안내 대상',
@@ -1003,8 +997,6 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         return '결격/제한(신용·공공임대)';
       case 'C2':
         return '기존 대출/보증';
-      case 'P1':
-        return '계약 및 5% 지급';
       case 'P2':
         return '지역';
       case 'P3':

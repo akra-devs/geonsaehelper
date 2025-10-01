@@ -79,8 +79,6 @@ class RuleCitations {
         return const [credit];
       case 'C2':
         return const [duplicateLoans];
-      case 'P1':
-        return const [household];
       case 'P2':
         return const [depositUpperBound];
       case 'P3':

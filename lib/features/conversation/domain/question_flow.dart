@@ -166,15 +166,7 @@ const List<QuestionDef> intakeFlow = [
       Choice(value: 'none', text: '없음'),
     ],
   ),
-  // P1. 계약 및 5% 지급
-  QuestionDef(
-    qid: 'P1',
-    label: '임대차계약 체결 및 계약금(5%) 지급을 완료했나요?',
-    choices: [
-      Choice(value: 'yes', text: '예'),
-      Choice(value: 'no', text: '아니오'),
-    ],
-  ),
+  // P1 계약금(5%) 요건은 기본 충족으로 가정하여 질문에서 제외되었습니다.
   // P2. 지역
   QuestionDef(
     qid: 'P2',
