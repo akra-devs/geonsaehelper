@@ -18,6 +18,11 @@ class CitationSchema {
     'HUG_POLICY.md': 'HUG_POLICY_DOCS/HUG_POLICY.md',
   };
 
+  /// User-facing labels for normalized doc IDs.
+  static const Map<String, String> docLabels = {
+    'HUG_POLICY_DOCS/HUG_POLICY.md': 'HUG 정책 기준',
+  };
+
   /// Normalize docId by applying alias mapping.
   static String normalizeDocId(String docId) {
     if (docAliases.containsKey(docId)) return docAliases[docId]!;
@@ -30,5 +35,18 @@ class CitationSchema {
     if (!allowedDocIds.contains(docId)) return false;
     return true;
   }
-}
 
+  /// Produce a human-friendly label for UI chips based on the doc ID.
+  static String displayLabel(String docId) {
+    final normalized = normalizeDocId(docId);
+    final mapped = docLabels[normalized];
+    if (mapped != null) return mapped;
+    final segments = normalized.split('/');
+    final last = segments.isNotEmpty ? segments.last : normalized;
+    final withoutExt = last.replaceFirst(
+      RegExp(r'\.md$', caseSensitive: false),
+      '',
+    );
+    return withoutExt.replaceAll('_', ' ').trim();
+  }
+}

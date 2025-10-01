@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../../features/conversation/domain/citation_schema.dart';
 
 enum ChatRole { user, bot }
 
@@ -78,7 +79,7 @@ class ChatBubble extends StatelessWidget {
                       Chip(
                         key: Key('Chat.Citation.$i'),
                         label: Text(
-                          '${citations[i].docId} • ${citations[i].sectionKey}',
+                          '${CitationSchema.displayLabel(citations[i].docId)} • ${citations[i].sectionKey}',
                           style: Theme.of(context).textTheme.labelSmall,
                         ),
                         visualDensity: const VisualDensity(
