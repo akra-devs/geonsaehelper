@@ -9,22 +9,75 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late Future<ChatRepository> _repositoryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _repositoryFuture = _createRepository();
+  }
+
+  Future<ChatRepository> _createRepository() async {
+    // Check environment variables for forced selection
+    const forceMock = bool.fromEnvironment('FORCE_MOCK_CHAT', defaultValue: false);
+    const forceApi = bool.fromEnvironment('FORCE_API_CHAT', defaultValue: false);
+    const useApiChat = bool.fromEnvironment('USE_API_CHAT', defaultValue: false);
+
+    // Optional override for local debugging; default keeps safe fallback to mock
+    const debugForceApi = bool.fromEnvironment('DEBUG_FORCE_API', defaultValue: false);
+
+    const rawBaseUrl = String.fromEnvironment('CHAT_API_BASE', defaultValue: '');
+    final baseUrl = rawBaseUrl.isEmpty ? null : rawBaseUrl;
+
+    return ChatRepositoryFactory.create(
+      baseUrl: baseUrl,
+      forceMock: forceMock,
+      forceApi: forceApi || useApiChat || debugForceApi,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    const useApi = bool.fromEnvironment('USE_API_CHAT', defaultValue: false);
-    return RepositoryProvider<ChatRepository>(
-      create: (_) => useApi ? ApiChatRepository() : MockChatRepository(),
-      child: MaterialApp(
-        title: '전세자금대출 도우미',
-        theme: buildAppTheme(Brightness.light),
-        darkTheme: buildAppTheme(Brightness.dark),
-        themeMode: ThemeMode.system,
-        scrollBehavior: const _AppScrollBehavior(),
-        home: const SplashPage(),
-      ),
+    return FutureBuilder<ChatRepository>(
+      future: _repositoryFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show loading during health check
+          return MaterialApp(
+            title: '전세자금대출 도우미',
+            theme: buildAppTheme(Brightness.light),
+            darkTheme: buildAppTheme(Brightness.dark),
+            themeMode: ThemeMode.system,
+            home: const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        }
+
+        final repository = snapshot.data ?? MockChatRepository();
+
+        return RepositoryProvider<ChatRepository>(
+          create: (_) => repository,
+          child: MaterialApp(
+            title: '전세자금대출 도우미',
+            theme: buildAppTheme(Brightness.light),
+            darkTheme: buildAppTheme(Brightness.dark),
+            themeMode: ThemeMode.system,
+            scrollBehavior: const _AppScrollBehavior(),
+            home: const SplashPage(),
+          ),
+        );
+      },
     );
   }
 }

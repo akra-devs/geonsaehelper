@@ -8,7 +8,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(dart run build_runner build:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(curl:*)",
+      "Bash(dart:*)",
+      "Bash(netstat:*)",
+      "Bash(ss:*)"
     ],
     "deny": [],
     "ask": []

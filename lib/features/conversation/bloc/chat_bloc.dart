@@ -28,7 +28,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     emit(const ChatState.loading());
     try {
-      await repo.ensureSession();
       final reply = await repo.complete(event.text);
       emit(ChatState.success(reply));
     } catch (e) {
