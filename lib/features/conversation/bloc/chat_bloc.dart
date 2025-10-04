@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../conversation/data/chat_repository.dart';
@@ -30,7 +31,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     try {
       final reply = await repo.complete(event.text);
       emit(ChatState.success(reply));
-    } catch (e) {
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('❌ [chat-bloc] message send failed: $e');
+        debugPrintStack(stackTrace: st);
+      }
       emit(const ChatState.error('네트워크 오류가 발생했습니다. 다시 시도해 주세요.'));
     }
   }

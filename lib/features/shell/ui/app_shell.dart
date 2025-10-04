@@ -1,7 +1,10 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../ui/theme/app_theme.dart';
 import '../../conversation/ui/conversation_page.dart';
 import '../../../common/analytics/analytics.dart';
+import 'package:http/http.dart' as http;
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -75,6 +78,58 @@ class _ChecklistPageState extends State<_ChecklistPage> {
     ],
   };
 
+  bool _healthLoading = false;
+
+  Future<void> _runHealthCheck() async {
+    if (_healthLoading) return;
+    setState(() => _healthLoading = true);
+    final uri = Uri.parse('http://localhost:8080/api/health');
+    const headers = {'Accept': 'application/json'};
+    final started = DateTime.now();
+    debugPrint('🛰️ [health-check] GET $uri');
+    debugPrint('🧾 [health-check] Request headers: ' +
+        headers.entries.map((e) => '${e.key}: ${e.value}').join(', '));
+    try {
+      final response = await http.get(uri, headers: headers).timeout(
+            const Duration(seconds: 5),
+          );
+      final elapsed = DateTime.now().difference(started).inMilliseconds;
+      if (!mounted) return;
+      debugPrint('✅ [health-check] Response ${response.statusCode} (${elapsed}ms)');
+      response.headers.forEach((k, v) {
+        debugPrint('📥 [health-check] $k: $v');
+      });
+      final bodyPreview = response.body.length > 240
+          ? response.body.substring(0, 237) + '...'
+          : response.body;
+      debugPrint('📄 [health-check] Body: $bodyPreview');
+      final status = response.statusCode;
+      final preview = response.body.length > 120
+          ? response.body.substring(0, 117) + '...'
+          : response.body;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Health $status: $preview')),
+      );
+    } catch (e) {
+      debugPrint('❌ [health-check] Failed: $e');
+      if (!mounted) return;
+      var message = 'Health check failed: $e';
+      if (kIsWeb && e is http.ClientException && e.message.contains('Failed to fetch')) {
+        message = '브라우저에서 CORS 정책 때문에 요청이 차단됐어요. 서버에서 Access-Control-Allow-Origin 헤더를 허용해야 합니다.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _healthLoading = false);
+      } else {
+        _healthLoading = false;
+      }
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacing;
@@ -85,6 +140,16 @@ class _ChecklistPageState extends State<_ChecklistPage> {
     );
     return Scaffold(
       appBar: AppBar(title: const Text('서류 체크리스트')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _runHealthCheck,
+        child: _healthLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.health_and_safety),
+      ),
       body: _CenteredBody(
         child: ListView(
           padding: EdgeInsets.symmetric(vertical: spacing.x4),

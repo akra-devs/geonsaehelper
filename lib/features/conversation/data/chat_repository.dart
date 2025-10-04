@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../domain/constants.dart';
 import '../domain/citation_schema.dart';
@@ -34,6 +35,9 @@ class ApiChatRepository implements ChatRepository {
     final candidates = <String>[
       if (overridePath.isNotEmpty) overridePath,
       'api/health',
+      'health',
+      'loan-advisor/health',
+      '../health',
     ];
 
     for (final path in candidates) {
@@ -71,26 +75,41 @@ class ApiChatRepository implements ChatRepository {
     final uri = _resolvePath(streamPath);
     print('🔗 Connecting to: $uri');
 
+    final payload = {
+      'question': userText,
+      'productTypes': productTypes ?? _getDefaultProductTypes(),
+      'topK': 3,
+      'provider': 'OPENAI',
+    };
     final request = http.Request('POST', uri)
       ..headers.addAll({
         'Accept': 'text/event-stream',
         'Content-Type': 'application/json',
       })
-      ..body = jsonEncode({
-        'question': userText,
-        'productTypes': productTypes ?? _getDefaultProductTypes(),
-        'topK': 3,
-        'provider': 'OPENAI',
-      });
+      ..body = jsonEncode(payload);
+    if (kDebugMode) {
+      debugPrint('🛰️ [chat] POST $uri');
+      debugPrint('🧾 [chat] headers: ' + request.headers.entries.map((e) => '${e.key}: ${e.value}').join(', '));
+      debugPrint('📦 [chat] payload: ' + jsonEncode(payload));
+    }
 
     late final http.StreamedResponse streamedResponse;
     try {
       streamedResponse = await _client.send(request);
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [chat] request send failed: $e');
+      }
       throw ChatError('stream request failed ($e)');
     }
 
+    if (kDebugMode) {
+      debugPrint('✅ [chat] response status: ${streamedResponse.statusCode}');
+    }
     if (streamedResponse.statusCode ~/ 100 != 2) {
+      if (kDebugMode) {
+        debugPrint('❌ [chat] non-2xx status, aborting');
+      }
       throw ChatError('stream request failed (${streamedResponse.statusCode})');
     }
 
@@ -101,6 +120,10 @@ class ApiChatRepository implements ChatRepository {
     var isDone = false;
 
     await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
+      if (kDebugMode) {
+        final preview = chunk.length > 160 ? chunk.substring(0, 157) + '...' : chunk;
+        debugPrint('📡 [chat] chunk (${chunk.length} bytes): $preview');
+      }
       final lines = chunk.split('\n');
       for (final rawLine in lines) {
         final line = rawLine.trimRight();
@@ -111,7 +134,14 @@ class ApiChatRepository implements ChatRepository {
         final data = line.substring(sep + 1).trim();
         if (data.isEmpty) continue;
 
+        if (kDebugMode) {
+          debugPrint('🔹 [chat] data line: $data');
+        }
+
         if (data == '[DONE]') {
+          if (kDebugMode) {
+            debugPrint('🏁 [chat] DONE marker received');
+          }
           isDone = true;
           break;
         }
@@ -145,7 +175,10 @@ class ApiChatRepository implements ChatRepository {
           if (chunkLastVerified is String && chunkLastVerified.isNotEmpty) {
             lastVerified = chunkLastVerified;
           }
-        } catch (_) {
+        } catch (err) {
+          if (kDebugMode) {
+            debugPrint('⚠️ [chat] JSON parse failed: $err');
+          }
           // Ignore malformed JSON chunk
         }
       }
@@ -154,7 +187,15 @@ class ApiChatRepository implements ChatRepository {
 
     final replyText = content.toString().trim();
     if (replyText.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('❌ [chat] stream completed without content');
+      }
       throw ChatError('stream produced no content');
+    }
+
+    if (kDebugMode) {
+      debugPrint('✅ [chat] final reply length: ${replyText.length}');
+      debugPrint('📚 [chat] citations count: ${citations.length}');
     }
 
     return BotReply(

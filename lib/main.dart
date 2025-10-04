@@ -32,7 +32,8 @@ class _MyAppState extends State<MyApp> {
     const useApiChat = bool.fromEnvironment('USE_API_CHAT', defaultValue: false);
 
     // Optional override for local debugging; default keeps safe fallback to mock
-    const debugForceApi = bool.fromEnvironment('DEBUG_FORCE_API', defaultValue: false);
+    // Set to true if you always want to use API (bypassing health check)
+    const debugForceApi = bool.fromEnvironment('DEBUG_FORCE_API', defaultValue: true);
 
     const rawBaseUrl = String.fromEnvironment('CHAT_API_BASE', defaultValue: '');
     final baseUrl = rawBaseUrl.isEmpty ? null : rawBaseUrl;
