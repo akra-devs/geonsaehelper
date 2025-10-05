@@ -1,5 +1,5 @@
 {
-  "chatApiBaseUrl": "http://localhost:8080",
+  "chatApiBaseUrl": "http://akradev.duckdns.org:10000",
   "chatStreamPath": "api/loan-advisor/stream",
   "chatHealthPath": "api/health"
 }
