@@ -43,6 +43,7 @@ class QuestionLabels {
     'yes': '예',
     'no': '아니오',
     'unknown': '모름',
+    'none': '해당 없음',
 
     // QS1 - Timeline
     'soon': '2주 이내',
@@ -54,10 +55,11 @@ class QuestionLabels {
     'limit': '한도',
     'docs': '서류/절차',
 
-    // QS3 - Region interest
+    // QS3 - Region interest / P2 - Property region
     'metro': '수도권',
     'metrocity': '광역시',
     'other': '기타',
+    'others': '그 외',
 
     // A1 - Household head
     'household_head': '세대주',
@@ -72,61 +74,55 @@ class QuestionLabels {
     // A4 - Marriage
     'newly7y': '신혼(혼인 7년 이내)',
     'marry_3m_planned': '3개월 내 결혼 예정',
-    'none': '해당 없음',
 
     // A6 - Income
     'inc_le50m': '5천만원 이하',
-    'inc_le60m': '5천~6천만원',
-    'inc_le75m': '6천~7천5백만원',
-    'inc_le130m': '7천5백~1억3천만원',
-    'inc_le200m': '1억3천~2억원',
-    'inc_over': '2억원 초과',
+    'inc_le60m': '6천만원 이하',
+    'inc_le75m': '7천5백만원 이하',
+    'inc_le130m': '1억3천만원 이하',
+    'inc_le200m': '2억원 이하',
+    'inc_over': '초과',
 
     // A7 - Assets
-    'asset_le337m': '3.37억원 이하',
-    'asset_le488': '3.37~4.88억원',
-    'asset_over': '4.88억원 초과',
+    'asset_le337': '3.37억원 이하',
+    'asset_le488': '4.88억원 이하',
+    'asset_over': '초과',
 
     // A9 - Children
-    'child0': '0명',
+    'child0': '없음',
     'child1': '1명',
     'child2': '2명',
     'child3p': '3명 이상',
 
     // A10 - Special eligibility
-    'innov': '도시재생/혁신지구',
-    'redevelop': '재개발 지역',
-    'risky': '준공 후 20년 이상/다가구',
+    'innov': '혁신도시 이전 공공기관 종사자',
+    'redevelop': '타 지역 이주 재개발 구역내 세입자',
+    'risky': '위험건축물 이주지원 대상자',
 
     // C1 - Disqualifications
     'has': '있음',
-    'none_c1': '없음',
 
     // C2 - Existing loans
-    'fund_rent': '전세자금대출(기금)',
-    'bank_rent': '전세자금대출(은행)',
-    'mortgage': '주담대',
-    'none_c2': '없음',
-
-    // P2 - Property region
-    // 'metro': '수도권', // already defined above
-    // 'metrocity': '광역시', // already defined above
-    'others': '기타 지역',
+    'fund_rent': '기금 전세자금대출',
+    'bank_rent': '은행 전세자금대출',
+    'mortgage': '주택담보대출',
 
     // P3 - Property type
-    'apart': '아파트',
-    'row': '연립/다세대',
-    'detach': '단독/다가구',
-    // 'other': '기타', // conflict with QS3
+    'apartment': '아파트',
+    'officetel': '오피스텔(주거)',
+    'multi_family': '다가구',
+    'row_house': '연립·다세대',
+    'studio': '원룸',
 
     // P4 - Area
-    'fa_le85': '85㎡ 이하',
-    'fa_86_100': '86~100㎡',
+    'fa_le60': '60㎡ 이하',
+    'fa_61_85': '61–85㎡',
+    'fa_86_100': '86–100㎡',
     'fa_gt100': '100㎡ 초과',
 
     // P5 - Deposit
     'dep_le2': '2억원 이하',
-    'dep_le3': '2~3억원',
+    'dep_le3': '3억원 이하',
     'dep_gt3': '3억원 초과',
 
     // P6 - Contract status
