@@ -2,14 +2,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../ui/theme/app_theme.dart';
 import '../../conversation/ui/conversation_page.dart';
 import '../../conversation/bloc/conversation_bloc.dart';
 import '../../qna/ui/qna_page.dart';
 import '../../history/ui/history_page.dart';
-import '../../history/domain/assessment_history.dart';
-import '../../history/data/history_repository.dart';
+import '../../history/bloc/history_bloc.dart';
 import '../../../common/analytics/analytics.dart';
 import 'package:http/http.dart' as http;
 
@@ -22,52 +20,28 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _index = 0;
-  HistoryRepository? _historyRepo;
-  bool _repoInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initRepository();
-  }
-
-  Future<void> _initRepository() async {
-    try {
-      print('🔧 [history] Initializing SharedPreferences...');
-      final prefs = await SharedPreferences.getInstance();
-      print('✅ [history] SharedPreferences initialized');
-      setState(() {
-        _historyRepo = LocalHistoryRepository(prefs);
-        _repoInitialized = true;
-      });
-      print('✅ [history] Repository ready');
-    } catch (e, stack) {
-      print('❌ [history] Failed to initialize history repository: $e');
-      print('📍 [history] Stack: $stack');
-      setState(() {
-        _repoInitialized = true; // Continue without history
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    if (!_repoInitialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     final pages = [
       const ConversationPage(),
       const QnAPage(),
-      HistoryPage(repository: _historyRepo ?? _MockHistoryRepository()),
+      const HistoryPage(),
       const _SettingsPage(),
     ];
 
-    // Provide ConversationBloc at AppShell level so it's accessible across tabs
-    return BlocProvider<ConversationBloc>(
-      create: (_) => ConversationBloc(historyRepository: _historyRepo),
+    // Provide both ConversationBloc and HistoryBloc at AppShell level
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<HistoryBloc>(
+          create: (_) => HistoryBloc(),
+        ),
+        BlocProvider<ConversationBloc>(
+          create: (context) => ConversationBloc(
+            historyBloc: context.read<HistoryBloc>(),
+          ),
+        ),
+      ],
       child: BlocBuilder<ConversationBloc, ConversationState>(
         builder: (context, conversationState) {
           // Check if ruling is complete
@@ -292,21 +266,6 @@ class _SectionHeader extends StatelessWidget {
       ],
     );
   }
-}
-
-// Mock repository for fallback when SharedPreferences fails
-class _MockHistoryRepository implements HistoryRepository {
-  @override
-  Future<List<AssessmentHistory>> getAll() async => [];
-
-  @override
-  Future<void> save(AssessmentHistory history) async {}
-
-  @override
-  Future<void> delete(String id) async {}
-
-  @override
-  Future<void> clear() async {}
 }
 
 class _SettingsPage extends StatelessWidget {

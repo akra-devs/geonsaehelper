@@ -1,104 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../ui/theme/app_theme.dart';
 import '../domain/assessment_history.dart';
-import '../data/history_repository.dart';
+import '../bloc/history_bloc.dart';
+import '../bloc/history_event.dart';
+import '../bloc/history_state.dart';
 import '../../conversation/domain/models.dart';
 
-class HistoryPage extends StatefulWidget {
-  final HistoryRepository repository;
-
-  const HistoryPage({super.key, required this.repository});
-
-  @override
-  State<HistoryPage> createState() => _HistoryPageState();
-}
-
-class _HistoryPageState extends State<HistoryPage> {
-  List<AssessmentHistory>? _history;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadHistory();
-  }
-
-  Future<void> _loadHistory() async {
-    setState(() => _loading = true);
-    try {
-      final history = await widget.repository.getAll();
-      if (mounted) {
-        setState(() {
-          _history = history;
-          _loading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('히스토리 로드 실패: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _deleteItem(String id) async {
-    try {
-      await widget.repository.delete(id);
-      await _loadHistory();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('삭제되었습니다')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('삭제 실패: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _clearAll() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('전체 삭제'),
-        content: const Text('모든 히스토리를 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      try {
-        await widget.repository.clear();
-        await _loadHistory();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('전체 삭제되었습니다')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('삭제 실패: $e')),
-          );
-        }
-      }
-    }
-  }
+class HistoryPage extends StatelessWidget {
+  const HistoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -106,40 +17,99 @@ class _HistoryPageState extends State<HistoryPage> {
       appBar: AppBar(
         title: const Text('히스토리'),
         actions: [
-          if (_history != null && _history!.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_sweep),
-              onPressed: _clearAll,
-              tooltip: '전체 삭제',
-            ),
+          BlocBuilder<HistoryBloc, HistoryState>(
+            builder: (context, state) {
+              return state.maybeWhen(
+                loaded: (items) => items.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.delete_sweep),
+                        onPressed: () => _showClearDialog(context),
+                        tooltip: '전체 삭제',
+                      )
+                    : const SizedBox.shrink(),
+                orElse: () => const SizedBox.shrink(),
+              );
+            },
+          ),
         ],
       ),
       body: _CenteredBody(
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _history == null || _history!.isEmpty
-                ? _EmptyHint()
-                : RefreshIndicator(
-                    onRefresh: _loadHistory,
-                    child: ListView.separated(
-                      padding: EdgeInsets.symmetric(
-                        vertical: context.spacing.x4,
-                      ),
-                      itemCount: _history!.length,
-                      separatorBuilder: (_, __) => SizedBox(
-                        height: context.spacing.x3,
-                      ),
-                      itemBuilder: (context, index) {
-                        final item = _history![index];
-                        return _HistoryCard(
-                          history: item,
-                          onDelete: () => _deleteItem(item.id),
-                        );
+        child: BlocBuilder<HistoryBloc, HistoryState>(
+          builder: (context, state) {
+            return state.when(
+              initial: () => const Center(child: Text('초기화 중...')),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              loaded: (items) => items.isEmpty
+                  ? _EmptyHint()
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        context.read<HistoryBloc>().add(const HistoryEvent.load());
                       },
+                      child: ListView.separated(
+                        padding: EdgeInsets.symmetric(
+                          vertical: context.spacing.x4,
+                        ),
+                        itemCount: items.length,
+                        separatorBuilder: (_, __) => SizedBox(
+                          height: context.spacing.x3,
+                        ),
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          return _HistoryCard(
+                            history: item,
+                            onDelete: () {
+                              context
+                                  .read<HistoryBloc>()
+                                  .add(HistoryEvent.delete(item.id));
+                            },
+                          );
+                        },
+                      ),
                     ),
-                  ),
+              error: (message) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(message),
+                    SizedBox(height: context.spacing.x4),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<HistoryBloc>().add(const HistoryEvent.load());
+                      },
+                      child: const Text('다시 시도'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
+  }
+
+  Future<void> _showClearDialog(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('전체 삭제'),
+        content: const Text('모든 히스토리를 삭제하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      context.read<HistoryBloc>().add(const HistoryEvent.clear());
+    }
   }
 }
 
@@ -187,7 +157,7 @@ class _HistoryCard extends StatelessWidget {
                     vertical: spacing.x1,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(corners.sm.toDouble()),
                   ),
                   child: Text(
@@ -250,7 +220,10 @@ class _EmptyHint extends StatelessWidget {
             Icon(
               Icons.history,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant
+                  .withValues(alpha: 0.5),
             ),
             SizedBox(height: context.spacing.x4),
             Text(

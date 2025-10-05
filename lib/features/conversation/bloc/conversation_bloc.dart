@@ -9,7 +9,8 @@ import '../../conversation/domain/question_flow.dart' as qf;
 import '../../conversation/domain/rules_engine.dart' as rules;
 import '../../conversation/domain/copy_templates.dart' as copy;
 import '../../history/domain/assessment_history.dart';
-import '../../history/data/history_repository.dart';
+import '../../history/bloc/history_bloc.dart';
+import '../../history/bloc/history_event.dart';
 import 'conversation_event.dart';
 
 part 'conversation_bloc.freezed.dart';
@@ -36,10 +37,10 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
   int _step = 0;
   final Map<String, String> _answers = {};
   DateTime _phaseStartedAt = DateTime.now();
-  final HistoryRepository? _historyRepository;
+  final HistoryBloc? _historyBloc;
 
-  ConversationBloc({HistoryRepository? historyRepository})
-    : _historyRepository = historyRepository,
+  ConversationBloc({HistoryBloc? historyBloc})
+    : _historyBloc = historyBloc,
       super(
         const ConversationState(
           phase: ConversationPhase.survey,
@@ -981,8 +982,8 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
   }
 
   Future<void> _saveToHistory(ConversationResult result) async {
-    if (_historyRepository == null) {
-      print('⚠️ [history] Repository is null, skipping save');
+    if (_historyBloc == null) {
+      print('⚠️ [history] HistoryBloc is null, skipping save');
       return;
     }
 
@@ -996,12 +997,12 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         responses: Map.from(_answers),
         lastVerified: result.lastVerified,
       );
-      print('💾 [history] Attempting to save: ${history.id} (${history.status})');
-      await _historyRepository.save(history);
-      print('✅ [history] Save completed');
+      print('💾 [conversation-bloc] Saving to history: ${history.id} (${history.status})');
+      _historyBloc.add(HistoryEvent.save(history));
+      print('✅ [conversation-bloc] History save event dispatched');
     } catch (e, stack) {
-      print('❌ [history] Failed to save assessment history: $e');
-      print('📍 [history] Stack: $stack');
+      print('❌ [conversation-bloc] Failed to save assessment history: $e');
+      print('📍 [conversation-bloc] Stack: $stack');
       // Don't throw - history save failure should not block user flow
     }
   }
