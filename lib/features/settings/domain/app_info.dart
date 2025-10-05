@@ -6,7 +6,7 @@ class AppInfo {
   static const String description = 'HUG 전세자금대출 자격 예비판정 및 AI 상담 서비스';
 
   // Contact & Support
-  static const String feedbackEmail = 'feedback@geonsaehelper.com';
+  static const String feedbackEmail = 'chem.en.9273@gmail.com';
   static const String githubRepo = 'https://github.com/yourusername/geonsaehelper';
 
   // External links
