@@ -4,7 +4,7 @@ import 'theme_event.dart';
 import 'theme_state.dart';
 
 class ThemeBloc extends HydratedBloc<ThemeEvent, ThemeState> {
-  ThemeBloc() : super(const ThemeState.system()) {
+  ThemeBloc() : super(const ThemeState(mode: ThemeMode.system)) {
     on<ThemeChanged>(_onThemeChanged);
   }
 
@@ -23,7 +23,7 @@ class ThemeBloc extends HydratedBloc<ThemeEvent, ThemeState> {
       };
       return ThemeState(mode: mode);
     } catch (_) {
-      return const ThemeState.system();
+      return const ThemeState(mode: ThemeMode.system);
     }
   }
 
