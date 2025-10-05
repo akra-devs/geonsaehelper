@@ -7,6 +7,7 @@ import '../bloc/history_bloc.dart';
 import '../bloc/history_event.dart';
 import '../bloc/history_state.dart';
 import '../../conversation/domain/models.dart';
+import 'history_detail_page.dart';
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
@@ -144,64 +145,80 @@ class _HistoryCard extends StatelessWidget {
 
     return Card(
       margin: EdgeInsets.zero,
-      child: Padding(
-        padding: EdgeInsets.all(spacing.x4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: spacing.x3,
-                    vertical: spacing.x1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(corners.sm.toDouble()),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => HistoryDetailPage(history: history),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(corners.md.toDouble()),
+        child: Padding(
+          padding: EdgeInsets.all(spacing.x4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: spacing.x3,
+                      vertical: spacing.x1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(corners.sm.toDouble()),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: onDelete,
-                  iconSize: 20,
-                  tooltip: '삭제',
-                ),
-              ],
-            ),
-            SizedBox(height: spacing.x2),
-            Text(
-              history.tldr,
-              style: theme.textTheme.bodyMedium,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: spacing.x3),
-            Row(
-              children: [
-                Icon(
-                  Icons.access_time,
-                  size: 14,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                SizedBox(width: spacing.x1),
-                Text(
-                  dateFormat.format(history.timestamp),
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: onDelete,
+                    iconSize: 20,
+                    tooltip: '삭제',
+                  ),
+                ],
+              ),
+              SizedBox(height: spacing.x2),
+              Text(
+                history.tldr,
+                style: theme.textTheme.bodyMedium,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: spacing.x3),
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
-                ),
-              ],
-            ),
-          ],
+                  SizedBox(width: spacing.x1),
+                  Text(
+                    dateFormat.format(history.timestamp),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
