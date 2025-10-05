@@ -962,11 +962,21 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               result.lastVerified,
               result.programMatches,
             );
+    // First emit the result
     emit(
       ConversationState(
         phase: ConversationPhase.qna,
         awaitingChoice: false,
         result: r,
+      ),
+    );
+    // Then emit product type selector to show after result card
+    emit(
+      ConversationState(
+        phase: ConversationPhase.qna,
+        awaitingChoice: false,
+        result: r,
+        message: '__SHOW_PRODUCT_SELECTOR__', // Special marker for UI
       ),
     );
   }

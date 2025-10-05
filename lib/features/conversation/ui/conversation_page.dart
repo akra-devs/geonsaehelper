@@ -17,6 +17,7 @@ import '../bloc/conversation_bloc.dart';
 import '../bloc/conversation_event.dart';
 import '../data/chat_models.dart';
 import '../data/chat_repository.dart';
+import '../domain/product_types.dart';
 import 'conversation_item.dart';
 import '../domain/models.dart' as domain;
 import '../domain/suggestion.dart';
@@ -235,7 +236,7 @@ class _ConversationPageState extends State<ConversationPage> {
               BlocListener<ChatBloc, ChatState>(
                 listener: (context, state) {
                   state.maybeWhen(
-                    success: (reply) {
+                    success: (reply, selectedProductType) {
                       if (_typingItemIndex != null) {
                         _replaceTypingWithReply(_typingItemIndex!, reply);
                         Analytics.instance.qnaAnswer(
@@ -247,7 +248,7 @@ class _ConversationPageState extends State<ConversationPage> {
                         _typingItemIndex = null;
                       }
                     },
-                    error: (msg) {
+                    error: (msg, selectedProductType) {
                       if (_typingItemIndex != null) {
                         _replaceTypingWithError(_typingItemIndex!, msg);
                         _typingItemIndex = null;
@@ -270,7 +271,13 @@ class _ConversationPageState extends State<ConversationPage> {
                     _appendUserText(state.userEcho!);
                   }
                   if (state.message != null && state.message!.isNotEmpty) {
-                    _appendBotText(state.message!);
+                    // Check for special marker to show product selector
+                    if (state.message == '__SHOW_PRODUCT_SELECTOR__') {
+                      _items.add(ConversationItem.productTypeSelector());
+                      setState(() {});
+                    } else {
+                      _appendBotText(state.message!);
+                    }
                   }
                   if (state.suggestionReply != null &&
                       state.suggestionReply!.isNotEmpty) {
@@ -364,16 +371,37 @@ class _ConversationPageState extends State<ConversationPage> {
                                   ),
                                 );
                               },
+                              onProductTypeSelected: (productTypeId) {
+                                context.read<ChatBloc>().add(
+                                  ChatEvent.productTypeSelected(productTypeId),
+                                );
+                              },
                             );
                           },
                         ),
                       ),
-                      BlocBuilder<ConversationBloc, ConversationState>(
-                        builder: (context, state) {
-                          return ChatComposer(
-                            controller: _composer,
-                            onSend: () => _onSend(context),
-                            enabled: !state.awaitingChoice,
+                      BlocBuilder<ChatBloc, ChatState>(
+                        builder: (context, chatState) {
+                          final selectedProductType = chatState.mapOrNull(
+                            idle: (s) => s.selectedProductType,
+                            loading: (s) => s.selectedProductType,
+                            success: (s) => s.selectedProductType,
+                            error: (s) => s.selectedProductType,
+                          );
+                          final selectedProductLabel = selectedProductType != null
+                              ? ProductTypes.findById(selectedProductType)?.label
+                              : null;
+
+                          return BlocBuilder<ConversationBloc, ConversationState>(
+                            builder: (context, conversationState) {
+                              return ChatComposer(
+                                controller: _composer,
+                                onSend: () => _onSend(context),
+                                enabled: !conversationState.awaitingChoice,
+                                selectedProductType: selectedProductType,
+                                selectedProductLabel: selectedProductLabel,
+                              );
+                            },
                           );
                         },
                       ),

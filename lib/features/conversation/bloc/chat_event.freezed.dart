@@ -21,32 +21,38 @@ mixin _$ChatEvent {
   TResult when<TResult extends Object?>({
     required TResult Function(String text) messageSent,
     required TResult Function() reset,
+    required TResult Function(String productType) productTypeSelected,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String text)? messageSent,
     TResult? Function()? reset,
+    TResult? Function(String productType)? productTypeSelected,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String text)? messageSent,
     TResult Function()? reset,
+    TResult Function(String productType)? productTypeSelected,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(MessageSent value) messageSent,
     required TResult Function(ChatReset value) reset,
+    required TResult Function(ProductTypeSelected value) productTypeSelected,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(MessageSent value)? messageSent,
     TResult? Function(ChatReset value)? reset,
+    TResult? Function(ProductTypeSelected value)? productTypeSelected,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(MessageSent value)? messageSent,
     TResult Function(ChatReset value)? reset,
+    TResult Function(ProductTypeSelected value)? productTypeSelected,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
 }
@@ -143,6 +149,7 @@ class _$MessageSentImpl implements MessageSent {
   TResult when<TResult extends Object?>({
     required TResult Function(String text) messageSent,
     required TResult Function() reset,
+    required TResult Function(String productType) productTypeSelected,
   }) {
     return messageSent(text);
   }
@@ -152,6 +159,7 @@ class _$MessageSentImpl implements MessageSent {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String text)? messageSent,
     TResult? Function()? reset,
+    TResult? Function(String productType)? productTypeSelected,
   }) {
     return messageSent?.call(text);
   }
@@ -161,6 +169,7 @@ class _$MessageSentImpl implements MessageSent {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String text)? messageSent,
     TResult Function()? reset,
+    TResult Function(String productType)? productTypeSelected,
     required TResult orElse(),
   }) {
     if (messageSent != null) {
@@ -174,6 +183,7 @@ class _$MessageSentImpl implements MessageSent {
   TResult map<TResult extends Object?>({
     required TResult Function(MessageSent value) messageSent,
     required TResult Function(ChatReset value) reset,
+    required TResult Function(ProductTypeSelected value) productTypeSelected,
   }) {
     return messageSent(this);
   }
@@ -183,6 +193,7 @@ class _$MessageSentImpl implements MessageSent {
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(MessageSent value)? messageSent,
     TResult? Function(ChatReset value)? reset,
+    TResult? Function(ProductTypeSelected value)? productTypeSelected,
   }) {
     return messageSent?.call(this);
   }
@@ -192,6 +203,7 @@ class _$MessageSentImpl implements MessageSent {
   TResult maybeMap<TResult extends Object?>({
     TResult Function(MessageSent value)? messageSent,
     TResult Function(ChatReset value)? reset,
+    TResult Function(ProductTypeSelected value)? productTypeSelected,
     required TResult orElse(),
   }) {
     if (messageSent != null) {
@@ -258,6 +270,7 @@ class _$ChatResetImpl implements ChatReset {
   TResult when<TResult extends Object?>({
     required TResult Function(String text) messageSent,
     required TResult Function() reset,
+    required TResult Function(String productType) productTypeSelected,
   }) {
     return reset();
   }
@@ -267,6 +280,7 @@ class _$ChatResetImpl implements ChatReset {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String text)? messageSent,
     TResult? Function()? reset,
+    TResult? Function(String productType)? productTypeSelected,
   }) {
     return reset?.call();
   }
@@ -276,6 +290,7 @@ class _$ChatResetImpl implements ChatReset {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String text)? messageSent,
     TResult Function()? reset,
+    TResult Function(String productType)? productTypeSelected,
     required TResult orElse(),
   }) {
     if (reset != null) {
@@ -289,6 +304,7 @@ class _$ChatResetImpl implements ChatReset {
   TResult map<TResult extends Object?>({
     required TResult Function(MessageSent value) messageSent,
     required TResult Function(ChatReset value) reset,
+    required TResult Function(ProductTypeSelected value) productTypeSelected,
   }) {
     return reset(this);
   }
@@ -298,6 +314,7 @@ class _$ChatResetImpl implements ChatReset {
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(MessageSent value)? messageSent,
     TResult? Function(ChatReset value)? reset,
+    TResult? Function(ProductTypeSelected value)? productTypeSelected,
   }) {
     return reset?.call(this);
   }
@@ -307,6 +324,7 @@ class _$ChatResetImpl implements ChatReset {
   TResult maybeMap<TResult extends Object?>({
     TResult Function(MessageSent value)? messageSent,
     TResult Function(ChatReset value)? reset,
+    TResult Function(ProductTypeSelected value)? productTypeSelected,
     required TResult orElse(),
   }) {
     if (reset != null) {
@@ -318,4 +336,157 @@ class _$ChatResetImpl implements ChatReset {
 
 abstract class ChatReset implements ChatEvent {
   const factory ChatReset() = _$ChatResetImpl;
+}
+
+/// @nodoc
+abstract class _$$ProductTypeSelectedImplCopyWith<$Res> {
+  factory _$$ProductTypeSelectedImplCopyWith(
+    _$ProductTypeSelectedImpl value,
+    $Res Function(_$ProductTypeSelectedImpl) then,
+  ) = __$$ProductTypeSelectedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String productType});
+}
+
+/// @nodoc
+class __$$ProductTypeSelectedImplCopyWithImpl<$Res>
+    extends _$ChatEventCopyWithImpl<$Res, _$ProductTypeSelectedImpl>
+    implements _$$ProductTypeSelectedImplCopyWith<$Res> {
+  __$$ProductTypeSelectedImplCopyWithImpl(
+    _$ProductTypeSelectedImpl _value,
+    $Res Function(_$ProductTypeSelectedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of ChatEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? productType = null}) {
+    return _then(
+      _$ProductTypeSelectedImpl(
+        null == productType
+            ? _value.productType
+            : productType // ignore: cast_nullable_to_non_nullable
+                as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$ProductTypeSelectedImpl implements ProductTypeSelected {
+  const _$ProductTypeSelectedImpl(this.productType);
+
+  @override
+  final String productType;
+
+  @override
+  String toString() {
+    return 'ChatEvent.productTypeSelected(productType: $productType)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ProductTypeSelectedImpl &&
+            (identical(other.productType, productType) ||
+                other.productType == productType));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, productType);
+
+  /// Create a copy of ChatEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ProductTypeSelectedImplCopyWith<_$ProductTypeSelectedImpl> get copyWith =>
+      __$$ProductTypeSelectedImplCopyWithImpl<_$ProductTypeSelectedImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(String text) messageSent,
+    required TResult Function() reset,
+    required TResult Function(String productType) productTypeSelected,
+  }) {
+    return productTypeSelected(productType);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(String text)? messageSent,
+    TResult? Function()? reset,
+    TResult? Function(String productType)? productTypeSelected,
+  }) {
+    return productTypeSelected?.call(productType);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(String text)? messageSent,
+    TResult Function()? reset,
+    TResult Function(String productType)? productTypeSelected,
+    required TResult orElse(),
+  }) {
+    if (productTypeSelected != null) {
+      return productTypeSelected(productType);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(MessageSent value) messageSent,
+    required TResult Function(ChatReset value) reset,
+    required TResult Function(ProductTypeSelected value) productTypeSelected,
+  }) {
+    return productTypeSelected(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(MessageSent value)? messageSent,
+    TResult? Function(ChatReset value)? reset,
+    TResult? Function(ProductTypeSelected value)? productTypeSelected,
+  }) {
+    return productTypeSelected?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(MessageSent value)? messageSent,
+    TResult Function(ChatReset value)? reset,
+    TResult Function(ProductTypeSelected value)? productTypeSelected,
+    required TResult orElse(),
+  }) {
+    if (productTypeSelected != null) {
+      return productTypeSelected(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class ProductTypeSelected implements ChatEvent {
+  const factory ProductTypeSelected(final String productType) =
+      _$ProductTypeSelectedImpl;
+
+  String get productType;
+
+  /// Create a copy of ChatEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ProductTypeSelectedImplCopyWith<_$ProductTypeSelectedImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }

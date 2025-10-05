@@ -6,6 +6,7 @@ import 'chat_bubble.dart';
 import 'progress_inline.dart';
 import 'intake_question.dart';
 import 'suggestions_panel.dart';
+import 'product_type_selector.dart';
 
 /// Widget responsible for rendering different types of conversation items.
 /// Follows single responsibility principle by handling only UI rendering,
@@ -14,12 +15,14 @@ class ConversationItemWidget extends StatelessWidget {
   final ConversationItem item;
   final Function(String qid, String? value)? onChoiceSelected;
   final Function(SuggestionItem suggestion)? onSuggestionTap;
+  final Function(String productTypeId)? onProductTypeSelected;
 
   const ConversationItemWidget({
     super.key,
     required this.item,
     this.onChoiceSelected,
     this.onSuggestionTap,
+    this.onProductTypeSelected,
   });
 
   @override
@@ -47,6 +50,9 @@ class ConversationItemWidget extends StatelessWidget {
 
       case ConversationItemType.suggestions:
         return _buildSuggestions(context, spacing);
+
+      case ConversationItemType.productTypeSelector:
+        return _buildProductTypeSelector(context, spacing);
     }
   }
 
@@ -137,6 +143,22 @@ class ConversationItemWidget extends StatelessWidget {
         child: SuggestionsPanel(
           suggestions: item.suggestions!,
           onTap: onSuggestionTap,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductTypeSelector(BuildContext context, spacing) {
+    return Appear(
+      duration: const Duration(milliseconds: 150),
+      delay: const Duration(milliseconds: 60),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: spacing.x4),
+        child: ProductTypeSelector(
+          selectedProductType: item.selectedProductType,
+          onProductTypeSelected: (productTypeId) {
+            onProductTypeSelected?.call(productTypeId);
+          },
         ),
       ),
     );

@@ -12,6 +12,7 @@ enum ConversationItemType {
   botWidget,
   advertisement,
   suggestions,
+  productTypeSelector,
 }
 
 /// A conversation item that holds data for rendering different types of content
@@ -43,6 +44,9 @@ class ConversationItem {
   // Suggestions data
   final List<SuggestionItem>? suggestions;
 
+  // Product type selector data
+  final String? selectedProductType;
+
   const ConversationItem._({
     required this.type,
     this.text,
@@ -56,6 +60,7 @@ class ConversationItem {
     this.customWidget,
     this.advertisementWidget,
     this.suggestions,
+    this.selectedProductType,
   });
 
   /// Creates a bot message item
@@ -123,6 +128,14 @@ class ConversationItem {
     return ConversationItem._(
       type: ConversationItemType.suggestions,
       suggestions: suggestions,
+    );
+  }
+
+  /// Creates a product type selector item
+  factory ConversationItem.productTypeSelector({String? selectedProductType}) {
+    return ConversationItem._(
+      type: ConversationItemType.productTypeSelector,
+      selectedProductType: selectedProductType,
     );
   }
 }

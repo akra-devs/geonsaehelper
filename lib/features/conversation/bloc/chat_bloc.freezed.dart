@@ -17,26 +17,29 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$ChatState {
+  String? get selectedProductType => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() idle,
-    required TResult Function() loading,
-    required TResult Function(BotReply reply) success,
-    required TResult Function(String message) error,
+    required TResult Function(String? selectedProductType) idle,
+    required TResult Function(String? selectedProductType) loading,
+    required TResult Function(BotReply reply, String? selectedProductType)
+    success,
+    required TResult Function(String message, String? selectedProductType)
+    error,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? idle,
-    TResult? Function()? loading,
-    TResult? Function(BotReply reply)? success,
-    TResult? Function(String message)? error,
+    TResult? Function(String? selectedProductType)? idle,
+    TResult? Function(String? selectedProductType)? loading,
+    TResult? Function(BotReply reply, String? selectedProductType)? success,
+    TResult? Function(String message, String? selectedProductType)? error,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? idle,
-    TResult Function()? loading,
-    TResult Function(BotReply reply)? success,
-    TResult Function(String message)? error,
+    TResult Function(String? selectedProductType)? idle,
+    TResult Function(String? selectedProductType)? loading,
+    TResult Function(BotReply reply, String? selectedProductType)? success,
+    TResult Function(String message, String? selectedProductType)? error,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -61,12 +64,20 @@ mixin _$ChatState {
     TResult Function(_Error value)? error,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
+
+  /// Create a copy of ChatState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $ChatStateCopyWith<ChatState> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
 abstract class $ChatStateCopyWith<$Res> {
   factory $ChatStateCopyWith(ChatState value, $Res Function(ChatState) then) =
       _$ChatStateCopyWithImpl<$Res, ChatState>;
+  @useResult
+  $Res call({String? selectedProductType});
 }
 
 /// @nodoc
@@ -81,14 +92,31 @@ class _$ChatStateCopyWithImpl<$Res, $Val extends ChatState>
 
   /// Create a copy of ChatState
   /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? selectedProductType = freezed}) {
+    return _then(
+      _value.copyWith(
+            selectedProductType:
+                freezed == selectedProductType
+                    ? _value.selectedProductType
+                    : selectedProductType // ignore: cast_nullable_to_non_nullable
+                        as String?,
+          )
+          as $Val,
+    );
+  }
 }
 
 /// @nodoc
-abstract class _$$IdleImplCopyWith<$Res> {
+abstract class _$$IdleImplCopyWith<$Res> implements $ChatStateCopyWith<$Res> {
   factory _$$IdleImplCopyWith(
     _$IdleImpl value,
     $Res Function(_$IdleImpl) then,
   ) = __$$IdleImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String? selectedProductType});
 }
 
 /// @nodoc
@@ -100,60 +128,97 @@ class __$$IdleImplCopyWithImpl<$Res>
 
   /// Create a copy of ChatState
   /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? selectedProductType = freezed}) {
+    return _then(
+      _$IdleImpl(
+        selectedProductType:
+            freezed == selectedProductType
+                ? _value.selectedProductType
+                : selectedProductType // ignore: cast_nullable_to_non_nullable
+                    as String?,
+      ),
+    );
+  }
 }
 
 /// @nodoc
 
-class _$IdleImpl implements _Idle {
-  const _$IdleImpl();
+class _$IdleImpl with DiagnosticableTreeMixin implements _Idle {
+  const _$IdleImpl({this.selectedProductType});
 
   @override
-  String toString() {
-    return 'ChatState.idle()';
+  final String? selectedProductType;
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'ChatState.idle(selectedProductType: $selectedProductType)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'ChatState.idle'))
+      ..add(DiagnosticsProperty('selectedProductType', selectedProductType));
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$IdleImpl);
+        (other.runtimeType == runtimeType &&
+            other is _$IdleImpl &&
+            (identical(other.selectedProductType, selectedProductType) ||
+                other.selectedProductType == selectedProductType));
   }
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, selectedProductType);
+
+  /// Create a copy of ChatState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$IdleImplCopyWith<_$IdleImpl> get copyWith =>
+      __$$IdleImplCopyWithImpl<_$IdleImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() idle,
-    required TResult Function() loading,
-    required TResult Function(BotReply reply) success,
-    required TResult Function(String message) error,
+    required TResult Function(String? selectedProductType) idle,
+    required TResult Function(String? selectedProductType) loading,
+    required TResult Function(BotReply reply, String? selectedProductType)
+    success,
+    required TResult Function(String message, String? selectedProductType)
+    error,
   }) {
-    return idle();
+    return idle(selectedProductType);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? idle,
-    TResult? Function()? loading,
-    TResult? Function(BotReply reply)? success,
-    TResult? Function(String message)? error,
+    TResult? Function(String? selectedProductType)? idle,
+    TResult? Function(String? selectedProductType)? loading,
+    TResult? Function(BotReply reply, String? selectedProductType)? success,
+    TResult? Function(String message, String? selectedProductType)? error,
   }) {
-    return idle?.call();
+    return idle?.call(selectedProductType);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? idle,
-    TResult Function()? loading,
-    TResult Function(BotReply reply)? success,
-    TResult Function(String message)? error,
+    TResult Function(String? selectedProductType)? idle,
+    TResult Function(String? selectedProductType)? loading,
+    TResult Function(BotReply reply, String? selectedProductType)? success,
+    TResult Function(String message, String? selectedProductType)? error,
     required TResult orElse(),
   }) {
     if (idle != null) {
-      return idle();
+      return idle(selectedProductType);
     }
     return orElse();
   }
@@ -197,15 +262,29 @@ class _$IdleImpl implements _Idle {
 }
 
 abstract class _Idle implements ChatState {
-  const factory _Idle() = _$IdleImpl;
+  const factory _Idle({final String? selectedProductType}) = _$IdleImpl;
+
+  @override
+  String? get selectedProductType;
+
+  /// Create a copy of ChatState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$IdleImplCopyWith<_$IdleImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$LoadingImplCopyWith<$Res> {
+abstract class _$$LoadingImplCopyWith<$Res>
+    implements $ChatStateCopyWith<$Res> {
   factory _$$LoadingImplCopyWith(
     _$LoadingImpl value,
     $Res Function(_$LoadingImpl) then,
   ) = __$$LoadingImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String? selectedProductType});
 }
 
 /// @nodoc
@@ -219,60 +298,97 @@ class __$$LoadingImplCopyWithImpl<$Res>
 
   /// Create a copy of ChatState
   /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? selectedProductType = freezed}) {
+    return _then(
+      _$LoadingImpl(
+        selectedProductType:
+            freezed == selectedProductType
+                ? _value.selectedProductType
+                : selectedProductType // ignore: cast_nullable_to_non_nullable
+                    as String?,
+      ),
+    );
+  }
 }
 
 /// @nodoc
 
-class _$LoadingImpl implements _Loading {
-  const _$LoadingImpl();
+class _$LoadingImpl with DiagnosticableTreeMixin implements _Loading {
+  const _$LoadingImpl({this.selectedProductType});
 
   @override
-  String toString() {
-    return 'ChatState.loading()';
+  final String? selectedProductType;
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'ChatState.loading(selectedProductType: $selectedProductType)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'ChatState.loading'))
+      ..add(DiagnosticsProperty('selectedProductType', selectedProductType));
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$LoadingImpl);
+        (other.runtimeType == runtimeType &&
+            other is _$LoadingImpl &&
+            (identical(other.selectedProductType, selectedProductType) ||
+                other.selectedProductType == selectedProductType));
   }
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, selectedProductType);
+
+  /// Create a copy of ChatState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$LoadingImplCopyWith<_$LoadingImpl> get copyWith =>
+      __$$LoadingImplCopyWithImpl<_$LoadingImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() idle,
-    required TResult Function() loading,
-    required TResult Function(BotReply reply) success,
-    required TResult Function(String message) error,
+    required TResult Function(String? selectedProductType) idle,
+    required TResult Function(String? selectedProductType) loading,
+    required TResult Function(BotReply reply, String? selectedProductType)
+    success,
+    required TResult Function(String message, String? selectedProductType)
+    error,
   }) {
-    return loading();
+    return loading(selectedProductType);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? idle,
-    TResult? Function()? loading,
-    TResult? Function(BotReply reply)? success,
-    TResult? Function(String message)? error,
+    TResult? Function(String? selectedProductType)? idle,
+    TResult? Function(String? selectedProductType)? loading,
+    TResult? Function(BotReply reply, String? selectedProductType)? success,
+    TResult? Function(String message, String? selectedProductType)? error,
   }) {
-    return loading?.call();
+    return loading?.call(selectedProductType);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? idle,
-    TResult Function()? loading,
-    TResult Function(BotReply reply)? success,
-    TResult Function(String message)? error,
+    TResult Function(String? selectedProductType)? idle,
+    TResult Function(String? selectedProductType)? loading,
+    TResult Function(BotReply reply, String? selectedProductType)? success,
+    TResult Function(String message, String? selectedProductType)? error,
     required TResult orElse(),
   }) {
     if (loading != null) {
-      return loading();
+      return loading(selectedProductType);
     }
     return orElse();
   }
@@ -316,17 +432,29 @@ class _$LoadingImpl implements _Loading {
 }
 
 abstract class _Loading implements ChatState {
-  const factory _Loading() = _$LoadingImpl;
+  const factory _Loading({final String? selectedProductType}) = _$LoadingImpl;
+
+  @override
+  String? get selectedProductType;
+
+  /// Create a copy of ChatState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$LoadingImplCopyWith<_$LoadingImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$SuccessImplCopyWith<$Res> {
+abstract class _$$SuccessImplCopyWith<$Res>
+    implements $ChatStateCopyWith<$Res> {
   factory _$$SuccessImplCopyWith(
     _$SuccessImpl value,
     $Res Function(_$SuccessImpl) then,
   ) = __$$SuccessImplCopyWithImpl<$Res>;
+  @override
   @useResult
-  $Res call({BotReply reply});
+  $Res call({BotReply reply, String? selectedProductType});
 
   $BotReplyCopyWith<$Res> get reply;
 }
@@ -344,13 +472,18 @@ class __$$SuccessImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? reply = null}) {
+  $Res call({Object? reply = null, Object? selectedProductType = freezed}) {
     return _then(
       _$SuccessImpl(
         null == reply
             ? _value.reply
             : reply // ignore: cast_nullable_to_non_nullable
                 as BotReply,
+        selectedProductType:
+            freezed == selectedProductType
+                ? _value.selectedProductType
+                : selectedProductType // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -368,15 +501,26 @@ class __$$SuccessImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$SuccessImpl implements _Success {
-  const _$SuccessImpl(this.reply);
+class _$SuccessImpl with DiagnosticableTreeMixin implements _Success {
+  const _$SuccessImpl(this.reply, {this.selectedProductType});
 
   @override
   final BotReply reply;
+  @override
+  final String? selectedProductType;
 
   @override
-  String toString() {
-    return 'ChatState.success(reply: $reply)';
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'ChatState.success(reply: $reply, selectedProductType: $selectedProductType)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'ChatState.success'))
+      ..add(DiagnosticsProperty('reply', reply))
+      ..add(DiagnosticsProperty('selectedProductType', selectedProductType));
   }
 
   @override
@@ -384,11 +528,13 @@ class _$SuccessImpl implements _Success {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$SuccessImpl &&
-            (identical(other.reply, reply) || other.reply == reply));
+            (identical(other.reply, reply) || other.reply == reply) &&
+            (identical(other.selectedProductType, selectedProductType) ||
+                other.selectedProductType == selectedProductType));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, reply);
+  int get hashCode => Object.hash(runtimeType, reply, selectedProductType);
 
   /// Create a copy of ChatState
   /// with the given fields replaced by the non-null parameter values.
@@ -401,36 +547,38 @@ class _$SuccessImpl implements _Success {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() idle,
-    required TResult Function() loading,
-    required TResult Function(BotReply reply) success,
-    required TResult Function(String message) error,
+    required TResult Function(String? selectedProductType) idle,
+    required TResult Function(String? selectedProductType) loading,
+    required TResult Function(BotReply reply, String? selectedProductType)
+    success,
+    required TResult Function(String message, String? selectedProductType)
+    error,
   }) {
-    return success(reply);
+    return success(reply, selectedProductType);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? idle,
-    TResult? Function()? loading,
-    TResult? Function(BotReply reply)? success,
-    TResult? Function(String message)? error,
+    TResult? Function(String? selectedProductType)? idle,
+    TResult? Function(String? selectedProductType)? loading,
+    TResult? Function(BotReply reply, String? selectedProductType)? success,
+    TResult? Function(String message, String? selectedProductType)? error,
   }) {
-    return success?.call(reply);
+    return success?.call(reply, selectedProductType);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? idle,
-    TResult Function()? loading,
-    TResult Function(BotReply reply)? success,
-    TResult Function(String message)? error,
+    TResult Function(String? selectedProductType)? idle,
+    TResult Function(String? selectedProductType)? loading,
+    TResult Function(BotReply reply, String? selectedProductType)? success,
+    TResult Function(String message, String? selectedProductType)? error,
     required TResult orElse(),
   }) {
     if (success != null) {
-      return success(reply);
+      return success(reply, selectedProductType);
     }
     return orElse();
   }
@@ -474,25 +622,32 @@ class _$SuccessImpl implements _Success {
 }
 
 abstract class _Success implements ChatState {
-  const factory _Success(final BotReply reply) = _$SuccessImpl;
+  const factory _Success(
+    final BotReply reply, {
+    final String? selectedProductType,
+  }) = _$SuccessImpl;
 
   BotReply get reply;
+  @override
+  String? get selectedProductType;
 
   /// Create a copy of ChatState
   /// with the given fields replaced by the non-null parameter values.
+  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$SuccessImplCopyWith<_$SuccessImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$ErrorImplCopyWith<$Res> {
+abstract class _$$ErrorImplCopyWith<$Res> implements $ChatStateCopyWith<$Res> {
   factory _$$ErrorImplCopyWith(
     _$ErrorImpl value,
     $Res Function(_$ErrorImpl) then,
   ) = __$$ErrorImplCopyWithImpl<$Res>;
+  @override
   @useResult
-  $Res call({String message});
+  $Res call({String message, String? selectedProductType});
 }
 
 /// @nodoc
@@ -508,13 +663,18 @@ class __$$ErrorImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? message = null}) {
+  $Res call({Object? message = null, Object? selectedProductType = freezed}) {
     return _then(
       _$ErrorImpl(
         null == message
             ? _value.message
             : message // ignore: cast_nullable_to_non_nullable
                 as String,
+        selectedProductType:
+            freezed == selectedProductType
+                ? _value.selectedProductType
+                : selectedProductType // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -522,15 +682,26 @@ class __$$ErrorImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$ErrorImpl implements _Error {
-  const _$ErrorImpl(this.message);
+class _$ErrorImpl with DiagnosticableTreeMixin implements _Error {
+  const _$ErrorImpl(this.message, {this.selectedProductType});
 
   @override
   final String message;
+  @override
+  final String? selectedProductType;
 
   @override
-  String toString() {
-    return 'ChatState.error(message: $message)';
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'ChatState.error(message: $message, selectedProductType: $selectedProductType)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'ChatState.error'))
+      ..add(DiagnosticsProperty('message', message))
+      ..add(DiagnosticsProperty('selectedProductType', selectedProductType));
   }
 
   @override
@@ -538,11 +709,13 @@ class _$ErrorImpl implements _Error {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ErrorImpl &&
-            (identical(other.message, message) || other.message == message));
+            (identical(other.message, message) || other.message == message) &&
+            (identical(other.selectedProductType, selectedProductType) ||
+                other.selectedProductType == selectedProductType));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, message);
+  int get hashCode => Object.hash(runtimeType, message, selectedProductType);
 
   /// Create a copy of ChatState
   /// with the given fields replaced by the non-null parameter values.
@@ -555,36 +728,38 @@ class _$ErrorImpl implements _Error {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() idle,
-    required TResult Function() loading,
-    required TResult Function(BotReply reply) success,
-    required TResult Function(String message) error,
+    required TResult Function(String? selectedProductType) idle,
+    required TResult Function(String? selectedProductType) loading,
+    required TResult Function(BotReply reply, String? selectedProductType)
+    success,
+    required TResult Function(String message, String? selectedProductType)
+    error,
   }) {
-    return error(message);
+    return error(message, selectedProductType);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? idle,
-    TResult? Function()? loading,
-    TResult? Function(BotReply reply)? success,
-    TResult? Function(String message)? error,
+    TResult? Function(String? selectedProductType)? idle,
+    TResult? Function(String? selectedProductType)? loading,
+    TResult? Function(BotReply reply, String? selectedProductType)? success,
+    TResult? Function(String message, String? selectedProductType)? error,
   }) {
-    return error?.call(message);
+    return error?.call(message, selectedProductType);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? idle,
-    TResult Function()? loading,
-    TResult Function(BotReply reply)? success,
-    TResult Function(String message)? error,
+    TResult Function(String? selectedProductType)? idle,
+    TResult Function(String? selectedProductType)? loading,
+    TResult Function(BotReply reply, String? selectedProductType)? success,
+    TResult Function(String message, String? selectedProductType)? error,
     required TResult orElse(),
   }) {
     if (error != null) {
-      return error(message);
+      return error(message, selectedProductType);
     }
     return orElse();
   }
@@ -628,12 +803,18 @@ class _$ErrorImpl implements _Error {
 }
 
 abstract class _Error implements ChatState {
-  const factory _Error(final String message) = _$ErrorImpl;
+  const factory _Error(
+    final String message, {
+    final String? selectedProductType,
+  }) = _$ErrorImpl;
 
   String get message;
+  @override
+  String? get selectedProductType;
 
   /// Create a copy of ChatState
   /// with the given fields replaced by the non-null parameter values.
+  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ErrorImplCopyWith<_$ErrorImpl> get copyWith =>
       throw _privateConstructorUsedError;
