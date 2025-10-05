@@ -9,7 +9,7 @@ class ThemeState with _$ThemeState {
     required ThemeMode mode,
   }) = _ThemeState;
 
-  const factory ThemeState.light() = _ThemeLight;
-  const factory ThemeState.dark() = _ThemeDark;
-  const factory ThemeState.system() = _ThemeSystem;
+  factory ThemeState.light() => const ThemeState(mode: ThemeMode.light);
+  factory ThemeState.dark() => const ThemeState(mode: ThemeMode.dark);
+  factory ThemeState.system() => const ThemeState(mode: ThemeMode.system);
 }
