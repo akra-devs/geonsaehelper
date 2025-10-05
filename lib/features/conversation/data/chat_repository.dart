@@ -119,6 +119,10 @@ class ApiChatRepository implements ChatRepository {
     var lastVerified = rulesLastVerifiedYmd;
     var isDone = false;
 
+    // SSE parsing state
+    String? currentEvent;
+    final dataLines = <String>[];
+
     await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
       if (kDebugMode) {
         final preview = chunk.length > 160 ? chunk.substring(0, 157) + '...' : chunk;
@@ -127,59 +131,37 @@ class ApiChatRepository implements ChatRepository {
       final lines = chunk.split('\n');
       for (final rawLine in lines) {
         final line = rawLine.trimRight();
-        if (line.isEmpty || !line.startsWith('data:')) continue;
 
-        final sep = line.indexOf(':');
-        if (sep == -1) continue;
-        final data = line.substring(sep + 1).trim();
-        if (data.isEmpty) continue;
-
-        if (kDebugMode) {
-          debugPrint('🔹 [chat] data line: $data');
+        // Empty line = event boundary, process accumulated data
+        if (line.isEmpty) {
+          if (dataLines.isNotEmpty) {
+            final data = dataLines.join('\n');
+            _processDataBlock(
+              data,
+              currentEvent,
+              content,
+              citations,
+              seenCitations,
+              (v) => lastVerified = v,
+              () => isDone = true,
+            );
+            dataLines.clear();
+            currentEvent = null;
+          }
+          continue;
         }
 
-        if (data == '[DONE]') {
-          if (kDebugMode) {
-            debugPrint('🏁 [chat] DONE marker received');
-          }
-          isDone = true;
-          break;
-        }
+        // Parse SSE field
+        final colonIndex = line.indexOf(':');
+        if (colonIndex == -1) continue;
 
-        try {
-          final json = jsonDecode(data) as Map<String, dynamic>;
-          final chunkContent = json['content'];
-          if (chunkContent is String && chunkContent.isNotEmpty) {
-            content.write(chunkContent);
-          }
+        final field = line.substring(0, colonIndex);
+        final value = line.substring(colonIndex + 1).trim();
 
-          final rawCitations = json['citations'];
-          if (rawCitations is List) {
-            for (final cite in rawCitations.whereType<Map<String, dynamic>>()) {
-              final rawDocId = cite['docId']?.toString() ?? '';
-              final sectionValue = cite.containsKey('sectionKey')
-                  ? cite['sectionKey']
-                  : cite['section'];
-              final sectionKey = sectionValue == null ? '' : sectionValue.toString();
-              if (rawDocId.isEmpty || sectionKey.isEmpty) continue;
-              final normalizedDocId = CitationSchema.normalizeDocId(rawDocId);
-              if (!CitationSchema.isValid(normalizedDocId, sectionKey)) continue;
-              final key = '$normalizedDocId#$sectionKey';
-              if (seenCitations.add(key)) {
-                citations.add(ChatCitation(docId: normalizedDocId, sectionKey: sectionKey));
-              }
-            }
-          }
-
-          final chunkLastVerified = json['lastVerified'];
-          if (chunkLastVerified is String && chunkLastVerified.isNotEmpty) {
-            lastVerified = chunkLastVerified;
-          }
-        } catch (err) {
-          if (kDebugMode) {
-            debugPrint('⚠️ [chat] JSON parse failed: $err');
-          }
-          // Ignore malformed JSON chunk
+        if (field == 'event') {
+          currentEvent = value;
+        } else if (field == 'data') {
+          dataLines.add(value);
         }
       }
       if (isDone) break;
@@ -203,6 +185,67 @@ class ApiChatRepository implements ChatRepository {
       citations: citations,
       lastVerified: lastVerified,
     );
+  }
+
+  void _processDataBlock(
+    String data,
+    String? eventType,
+    StringBuffer content,
+    List<ChatCitation> citations,
+    Set<String> seenCitations,
+    void Function(String) setLastVerified,
+    void Function() markDone,
+  ) {
+    if (data.isEmpty) return;
+
+    if (kDebugMode) {
+      debugPrint('🔹 [chat] processing ${eventType ?? "data"}: $data');
+    }
+
+    if (data == '[DONE]') {
+      if (kDebugMode) {
+        debugPrint('🏁 [chat] DONE marker received');
+      }
+      markDone();
+      return;
+    }
+
+    try {
+      final json = jsonDecode(data) as Map<String, dynamic>;
+
+      final chunkContent = json['content'];
+      if (chunkContent is String && chunkContent.isNotEmpty) {
+        content.write(chunkContent);
+      }
+
+      final rawCitations = json['citations'];
+      if (rawCitations is List) {
+        for (final cite in rawCitations.whereType<Map<String, dynamic>>()) {
+          final rawDocId = cite['docId']?.toString() ?? '';
+          final sectionValue = cite.containsKey('sectionKey')
+              ? cite['sectionKey']
+              : cite['section'];
+          final sectionKey = sectionValue == null ? '' : sectionValue.toString();
+          if (rawDocId.isEmpty || sectionKey.isEmpty) continue;
+          final normalizedDocId = CitationSchema.normalizeDocId(rawDocId);
+          if (!CitationSchema.isValid(normalizedDocId, sectionKey)) continue;
+          final key = '$normalizedDocId#$sectionKey';
+          if (seenCitations.add(key)) {
+            citations.add(ChatCitation(docId: normalizedDocId, sectionKey: sectionKey));
+          }
+        }
+      }
+
+      final chunkLastVerified = json['lastVerified'];
+      if (chunkLastVerified is String && chunkLastVerified.isNotEmpty) {
+        setLastVerified(chunkLastVerified);
+      }
+    } catch (err) {
+      if (kDebugMode) {
+        debugPrint('⚠️ [chat] JSON parse failed: $err');
+      }
+      // Ignore malformed JSON chunk
+    }
   }
 
   List<String> _getDefaultProductTypes() {
