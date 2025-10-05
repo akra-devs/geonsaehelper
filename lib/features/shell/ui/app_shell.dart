@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../ui/theme/app_theme.dart';
 import '../../conversation/ui/conversation_page.dart';
+import '../../conversation/bloc/conversation_bloc.dart';
+import '../../qna/ui/qna_page.dart';
 import '../../../common/analytics/analytics.dart';
 import 'package:http/http.dart' as http;
 
@@ -18,37 +21,63 @@ class _AppShellState extends State<AppShell> {
 
   final _pages = const [
     ConversationPage(),
-    _ChecklistPage(),
+    QnAPage(),
     _HistoryPage(),
     _SettingsPage(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(child: IndexedStack(index: _index, children: _pages)),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) {
-          setState(() => _index = i);
-          final tab = switch (i) {
-            0 => 'start',
-            1 => 'checklist',
-            2 => 'history',
-            _ => 'settings',
-          };
-          Analytics.instance.tabChange(tab);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.play_circle_outline),
-            label: '시작',
+    return BlocBuilder<ConversationBloc, ConversationState>(
+      builder: (context, conversationState) {
+        // Check if ruling is complete
+        final isRulingComplete = conversationState.phase == ConversationPhase.qna &&
+            conversationState.result != null;
+
+        return Scaffold(
+          body: SafeArea(child: IndexedStack(index: _index, children: _pages)),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: (i) {
+              // Prevent access to AI chat tab if ruling not complete
+              if (i == 1 && !isRulingComplete) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('예비판정을 먼저 완료해주세요'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                return;
+              }
+              setState(() => _index = i);
+              final tab = switch (i) {
+                0 => 'start',
+                1 => 'ai_chat',
+                2 => 'history',
+                _ => 'settings',
+              };
+              Analytics.instance.tabChange(tab);
+            },
+            destinations: [
+              const NavigationDestination(
+                icon: Icon(Icons.play_circle_outline),
+                label: '시작',
+              ),
+              NavigationDestination(
+                icon: Icon(
+                  Icons.chat_bubble_outline,
+                  color: isRulingComplete
+                      ? null
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                ),
+                label: 'AI 대화',
+              ),
+              const NavigationDestination(icon: Icon(Icons.history), label: '히스토리'),
+              const NavigationDestination(icon: Icon(Icons.settings), label: '설정'),
+            ],
           ),
-          NavigationDestination(icon: Icon(Icons.fact_check), label: '체크리스트'),
-          NavigationDestination(icon: Icon(Icons.history), label: '히스토리'),
-          NavigationDestination(icon: Icon(Icons.settings), label: '설정'),
-        ],
-      ),
+        );
+      },
     );
   }
 }
