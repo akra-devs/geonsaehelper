@@ -189,40 +189,38 @@ class _ConversationPageState extends State<ConversationPage> {
                   appBar: AppBar(title: const Text('대화형 예비판정')),
                   body: SafeArea(
                     child: _CenteredContent(
-                      child: Expanded(
-                        child: ListView.builder(
-                          controller: _scroll,
-                          padding: EdgeInsets.only(
-                            top: spacing.x4,
-                            bottom: spacing.x4,
-                          ),
-                          itemCount: _items.length,
-                          itemBuilder: (context, index) {
-                            final item = _items[index];
-                            return ConversationItemWidget(
-                              item: item,
-                              onChoiceSelected: (qid, value) {
-                                // Handle choice selection with Bloc logic
-                                _handleChoiceSelection(context, qid, value);
-                              },
-                              onSuggestionTap: (s) {
-                                // Find suggestion ID by label
-                                final suggestion = SuggestionActions.list
-                                    .firstWhere(
-                                      (action) => action.label == s.label,
-                                      orElse:
-                                          () =>
-                                              SuggestionActions.limitEstimation,
-                                    );
-                                context.read<ConversationBloc>().add(
-                                  ConversationEvent.suggestionSelected(
-                                    suggestion.id,
-                                  ),
-                                );
-                              },
-                            );
-                          },
+                      child: ListView.builder(
+                        controller: _scroll,
+                        padding: EdgeInsets.only(
+                          top: spacing.x4,
+                          bottom: spacing.x4,
                         ),
+                        itemCount: _items.length,
+                        itemBuilder: (context, index) {
+                          final item = _items[index];
+                          return ConversationItemWidget(
+                            item: item,
+                            onChoiceSelected: (qid, value) {
+                              // Handle choice selection with Bloc logic
+                              _handleChoiceSelection(context, qid, value);
+                            },
+                            onSuggestionTap: (s) {
+                              // Find suggestion ID by label
+                              final suggestion = SuggestionActions.list
+                                  .firstWhere(
+                                    (action) => action.label == s.label,
+                                    orElse:
+                                        () =>
+                                            SuggestionActions.limitEstimation,
+                                  );
+                              context.read<ConversationBloc>().add(
+                                ConversationEvent.suggestionSelected(
+                                  suggestion.id,
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
                     ),
                   ),
