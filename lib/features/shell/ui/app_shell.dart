@@ -28,56 +28,60 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ConversationBloc, ConversationState>(
-      builder: (context, conversationState) {
-        // Check if ruling is complete
-        final isRulingComplete = conversationState.phase == ConversationPhase.qna &&
-            conversationState.result != null;
+    // Provide ConversationBloc at AppShell level so it's accessible across tabs
+    return BlocProvider<ConversationBloc>(
+      create: (_) => ConversationBloc(),
+      child: BlocBuilder<ConversationBloc, ConversationState>(
+        builder: (context, conversationState) {
+          // Check if ruling is complete
+          final isRulingComplete = conversationState.phase == ConversationPhase.qna &&
+              conversationState.result != null;
 
-        return Scaffold(
-          body: SafeArea(child: IndexedStack(index: _index, children: _pages)),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _index,
-            onDestinationSelected: (i) {
-              // Prevent access to AI chat tab if ruling not complete
-              if (i == 1 && !isRulingComplete) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('예비판정을 먼저 완료해주세요'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-                return;
-              }
-              setState(() => _index = i);
-              final tab = switch (i) {
-                0 => 'start',
-                1 => 'ai_chat',
-                2 => 'history',
-                _ => 'settings',
-              };
-              Analytics.instance.tabChange(tab);
-            },
-            destinations: [
-              const NavigationDestination(
-                icon: Icon(Icons.play_circle_outline),
-                label: '시작',
-              ),
-              NavigationDestination(
-                icon: Icon(
-                  Icons.chat_bubble_outline,
-                  color: isRulingComplete
-                      ? null
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+          return Scaffold(
+            body: SafeArea(child: IndexedStack(index: _index, children: _pages)),
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: _index,
+              onDestinationSelected: (i) {
+                // Prevent access to AI chat tab if ruling not complete
+                if (i == 1 && !isRulingComplete) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('예비판정을 먼저 완료해주세요'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                  return;
+                }
+                setState(() => _index = i);
+                final tab = switch (i) {
+                  0 => 'start',
+                  1 => 'ai_chat',
+                  2 => 'history',
+                  _ => 'settings',
+                };
+                Analytics.instance.tabChange(tab);
+              },
+              destinations: [
+                const NavigationDestination(
+                  icon: Icon(Icons.play_circle_outline),
+                  label: '시작',
                 ),
-                label: 'AI 대화',
-              ),
-              const NavigationDestination(icon: Icon(Icons.history), label: '히스토리'),
-              const NavigationDestination(icon: Icon(Icons.settings), label: '설정'),
-            ],
-          ),
-        );
-      },
+                NavigationDestination(
+                  icon: Icon(
+                    Icons.chat_bubble_outline,
+                    color: isRulingComplete
+                        ? null
+                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                  ),
+                  label: 'AI 대화',
+                ),
+                const NavigationDestination(icon: Icon(Icons.history), label: '히스토리'),
+                const NavigationDestination(icon: Icon(Icons.settings), label: '설정'),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

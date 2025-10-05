@@ -214,13 +214,8 @@ class _ConversationPageState extends State<ConversationPage> {
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacing;
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<ChatBloc>(
-          create: (ctx) => ChatBloc(RepositoryProvider.of<ChatRepository>(ctx)),
-        ),
-        BlocProvider<ConversationBloc>(create: (_) => ConversationBloc()),
-      ],
+    return BlocProvider<ChatBloc>(
+      create: (ctx) => ChatBloc(RepositoryProvider.of<ChatRepository>(ctx)),
       child: Builder(
         builder: (innerCtx) {
           if (!_hasStarted) {
