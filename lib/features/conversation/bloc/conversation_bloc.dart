@@ -8,6 +8,8 @@ import '../../conversation/domain/rule_citations.dart';
 import '../../conversation/domain/question_flow.dart' as qf;
 import '../../conversation/domain/rules_engine.dart' as rules;
 import '../../conversation/domain/copy_templates.dart' as copy;
+import '../../history/domain/assessment_history.dart';
+import '../../history/data/history_repository.dart';
 import 'conversation_event.dart';
 
 part 'conversation_bloc.freezed.dart';
@@ -34,9 +36,11 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
   int _step = 0;
   final Map<String, String> _answers = {};
   DateTime _phaseStartedAt = DateTime.now();
+  final HistoryRepository? _historyRepository;
 
-  ConversationBloc()
-    : super(
+  ConversationBloc({HistoryRepository? historyRepository})
+    : _historyRepository = historyRepository,
+      super(
         const ConversationState(
           phase: ConversationPhase.survey,
           awaitingChoice: false,
@@ -962,6 +966,10 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               result.lastVerified,
               result.programMatches,
             );
+
+    // Save to history
+    _saveToHistory(r);
+
     // Emit result and move to Q&A phase
     emit(
       ConversationState(
@@ -970,6 +978,25 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         result: r,
       ),
     );
+  }
+
+  Future<void> _saveToHistory(ConversationResult result) async {
+    if (_historyRepository == null) return;
+
+    try {
+      final history = AssessmentHistory(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        timestamp: DateTime.now(),
+        status: result.status,
+        tldr: result.tldr,
+        responses: Map.from(_answers),
+        lastVerified: result.lastVerified,
+      );
+      await _historyRepository.save(history);
+    } catch (e) {
+      print('❌ Failed to save assessment history: $e');
+      // Don't throw - history save failure should not block user flow
+    }
   }
 
   String _unknownLabel(String qid) {
