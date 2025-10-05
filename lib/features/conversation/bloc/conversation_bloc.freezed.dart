@@ -27,7 +27,9 @@ mixin _$ConversationState {
       throw _privateConstructorUsedError; // optional user message to echo in UI
   String? get suggestionReply =>
       throw _privateConstructorUsedError; // optional bot reply from suggestion
-  bool get resetTriggered => throw _privateConstructorUsedError;
+  bool get resetTriggered =>
+      throw _privateConstructorUsedError; // flag to trigger UI reset
+  bool get showProductSelector => throw _privateConstructorUsedError;
 
   /// Create a copy of ConversationState
   /// with the given fields replaced by the non-null parameter values.
@@ -52,6 +54,7 @@ abstract class $ConversationStateCopyWith<$Res> {
     String? userEcho,
     String? suggestionReply,
     bool resetTriggered,
+    bool showProductSelector,
   });
 }
 
@@ -78,6 +81,7 @@ class _$ConversationStateCopyWithImpl<$Res, $Val extends ConversationState>
     Object? userEcho = freezed,
     Object? suggestionReply = freezed,
     Object? resetTriggered = null,
+    Object? showProductSelector = null,
   }) {
     return _then(
       _value.copyWith(
@@ -121,6 +125,11 @@ class _$ConversationStateCopyWithImpl<$Res, $Val extends ConversationState>
                     ? _value.resetTriggered
                     : resetTriggered // ignore: cast_nullable_to_non_nullable
                         as bool,
+            showProductSelector:
+                null == showProductSelector
+                    ? _value.showProductSelector
+                    : showProductSelector // ignore: cast_nullable_to_non_nullable
+                        as bool,
           )
           as $Val,
     );
@@ -145,6 +154,7 @@ abstract class _$$ConversationStateImplCopyWith<$Res>
     String? userEcho,
     String? suggestionReply,
     bool resetTriggered,
+    bool showProductSelector,
   });
 }
 
@@ -170,6 +180,7 @@ class __$$ConversationStateImplCopyWithImpl<$Res>
     Object? userEcho = freezed,
     Object? suggestionReply = freezed,
     Object? resetTriggered = null,
+    Object? showProductSelector = null,
   }) {
     return _then(
       _$ConversationStateImpl(
@@ -213,6 +224,11 @@ class __$$ConversationStateImplCopyWithImpl<$Res>
                 ? _value.resetTriggered
                 : resetTriggered // ignore: cast_nullable_to_non_nullable
                     as bool,
+        showProductSelector:
+            null == showProductSelector
+                ? _value.showProductSelector
+                : showProductSelector // ignore: cast_nullable_to_non_nullable
+                    as bool,
       ),
     );
   }
@@ -230,6 +246,7 @@ class _$ConversationStateImpl implements _ConversationState {
     this.userEcho,
     this.suggestionReply,
     this.resetTriggered = false,
+    this.showProductSelector = false,
   });
 
   @override
@@ -252,10 +269,14 @@ class _$ConversationStateImpl implements _ConversationState {
   @override
   @JsonKey()
   final bool resetTriggered;
+  // flag to trigger UI reset
+  @override
+  @JsonKey()
+  final bool showProductSelector;
 
   @override
   String toString() {
-    return 'ConversationState(phase: $phase, awaitingChoice: $awaitingChoice, question: $question, result: $result, message: $message, userEcho: $userEcho, suggestionReply: $suggestionReply, resetTriggered: $resetTriggered)';
+    return 'ConversationState(phase: $phase, awaitingChoice: $awaitingChoice, question: $question, result: $result, message: $message, userEcho: $userEcho, suggestionReply: $suggestionReply, resetTriggered: $resetTriggered, showProductSelector: $showProductSelector)';
   }
 
   @override
@@ -275,7 +296,9 @@ class _$ConversationStateImpl implements _ConversationState {
             (identical(other.suggestionReply, suggestionReply) ||
                 other.suggestionReply == suggestionReply) &&
             (identical(other.resetTriggered, resetTriggered) ||
-                other.resetTriggered == resetTriggered));
+                other.resetTriggered == resetTriggered) &&
+            (identical(other.showProductSelector, showProductSelector) ||
+                other.showProductSelector == showProductSelector));
   }
 
   @override
@@ -289,6 +312,7 @@ class _$ConversationStateImpl implements _ConversationState {
     userEcho,
     suggestionReply,
     resetTriggered,
+    showProductSelector,
   );
 
   /// Create a copy of ConversationState
@@ -313,6 +337,7 @@ abstract class _ConversationState implements ConversationState {
     final String? userEcho,
     final String? suggestionReply,
     final bool resetTriggered,
+    final bool showProductSelector,
   }) = _$ConversationStateImpl;
 
   @override
@@ -330,7 +355,9 @@ abstract class _ConversationState implements ConversationState {
   @override
   String? get suggestionReply; // optional bot reply from suggestion
   @override
-  bool get resetTriggered;
+  bool get resetTriggered; // flag to trigger UI reset
+  @override
+  bool get showProductSelector;
 
   /// Create a copy of ConversationState
   /// with the given fields replaced by the non-null parameter values.

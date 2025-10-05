@@ -271,13 +271,7 @@ class _ConversationPageState extends State<ConversationPage> {
                     _appendUserText(state.userEcho!);
                   }
                   if (state.message != null && state.message!.isNotEmpty) {
-                    // Check for special marker to show product selector
-                    if (state.message == '__SHOW_PRODUCT_SELECTOR__') {
-                      _items.add(ConversationItem.productTypeSelector());
-                      setState(() {});
-                    } else {
-                      _appendBotText(state.message!);
-                    }
+                    _appendBotText(state.message!);
                   }
                   if (state.suggestionReply != null &&
                       state.suggestionReply!.isNotEmpty) {
@@ -328,6 +322,11 @@ class _ConversationPageState extends State<ConversationPage> {
                       ),
                     );
                     setState(() {});
+                    // Show product selector after result if flag is set
+                    if (state.showProductSelector) {
+                      _items.add(ConversationItem.productTypeSelector());
+                      setState(() {});
+                    }
                     _showSuggestionsAndAds();
                   }
                   _scheduleScroll();

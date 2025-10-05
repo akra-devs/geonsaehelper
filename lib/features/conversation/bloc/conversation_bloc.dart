@@ -27,6 +27,7 @@ class ConversationState with _$ConversationState {
     String? userEcho, // optional user message to echo in UI
     String? suggestionReply, // optional bot reply from suggestion
     @Default(false) bool resetTriggered, // flag to trigger UI reset
+    @Default(false) bool showProductSelector, // flag to show product type selector
   }) = _ConversationState;
 }
 
@@ -962,21 +963,13 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
               result.lastVerified,
               result.programMatches,
             );
-    // First emit the result
+    // Emit result with showProductSelector flag
     emit(
       ConversationState(
         phase: ConversationPhase.qna,
         awaitingChoice: false,
         result: r,
-      ),
-    );
-    // Then emit product type selector to show after result card
-    emit(
-      ConversationState(
-        phase: ConversationPhase.qna,
-        awaitingChoice: false,
-        result: r,
-        message: '__SHOW_PRODUCT_SELECTOR__', // Special marker for UI
+        showProductSelector: true,
       ),
     );
   }
