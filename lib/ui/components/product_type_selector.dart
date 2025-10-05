@@ -26,11 +26,11 @@ class ProductTypeSelector extends StatelessWidget {
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: spacing.x4,
-            vertical: spacing.x3,
+            vertical: spacing.x2,
           ),
           child: Text(
             '어떤 대출 상품에 대해 궁금하신가요?',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -40,10 +40,10 @@ class ProductTypeSelector extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(horizontal: spacing.x4),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: spacing.x3,
-            mainAxisSpacing: spacing.x3,
-            childAspectRatio: 2.2,
+            crossAxisCount: 3,
+            crossAxisSpacing: spacing.x2,
+            mainAxisSpacing: spacing.x2,
+            childAspectRatio: 2.5,
           ),
           itemCount: ProductTypes.all.length,
           itemBuilder: (context, index) {
@@ -52,7 +52,7 @@ class ProductTypeSelector extends StatelessWidget {
 
             return InkWell(
               onTap: () => onProductTypeSelected(product.id),
-              borderRadius: BorderRadius.circular(corners.md),
+              borderRadius: BorderRadius.circular(corners.sm),
               child: Container(
                 decoration: BoxDecoration(
                   color: isSelected
@@ -62,38 +62,27 @@ class ProductTypeSelector extends StatelessWidget {
                     color: isSelected
                         ? colors.primary
                         : colors.outline.withValues(alpha: 0.3),
-                    width: isSelected ? 2 : 1,
+                    width: isSelected ? 1.5 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(corners.md),
+                  borderRadius: BorderRadius.circular(corners.sm),
                 ),
-                padding: EdgeInsets.all(spacing.x3),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.label,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected
-                            ? colors.onPrimaryContainer
-                            : colors.onSurface,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                padding: EdgeInsets.symmetric(
+                  horizontal: spacing.x2,
+                  vertical: spacing.x1,
+                ),
+                child: Center(
+                  child: Text(
+                    product.label,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? colors.onPrimaryContainer
+                          : colors.onSurface,
                     ),
-                    SizedBox(height: spacing.x1),
-                    Text(
-                      product.description,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: isSelected
-                            ? colors.onPrimaryContainer.withValues(alpha: 0.8)
-                            : colors.onSurfaceVariant,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             );
