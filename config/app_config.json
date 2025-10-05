@@ -1,0 +1,5 @@
+{
+  "chatApiBaseUrl": "http://localhost:8080",
+  "chatStreamPath": "api/loan-advisor/stream",
+  "chatHealthPath": "api/health"
+}

@@ -9,6 +9,7 @@ import 'features/conversation/data/chat_repository.dart';
 import 'features/settings/bloc/theme_bloc.dart' as features;
 import 'features/settings/bloc/theme_state.dart' as features;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'common/config/remote_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +41,10 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<ChatRepository> _createRepository() async {
-    // Check environment variables for forced selection
+    // 1. Try to load remote config from GitHub
+    final remoteConfig = await RemoteConfigLoader().load();
+
+    // 2. Check environment variables for forced selection
     const forceMock = bool.fromEnvironment('FORCE_MOCK_CHAT', defaultValue: false);
     const forceApi = bool.fromEnvironment('FORCE_API_CHAT', defaultValue: false);
     const useApiChat = bool.fromEnvironment('USE_API_CHAT', defaultValue: false);
@@ -49,8 +53,11 @@ class _MyAppState extends State<MyApp> {
     // Set to true if you always want to use API (bypassing health check)
     const debugForceApi = bool.fromEnvironment('DEBUG_FORCE_API', defaultValue: true);
 
+    // 3. Prefer environment variable, then remote config, then fallback
     const rawBaseUrl = String.fromEnvironment('CHAT_API_BASE', defaultValue: '');
-    final baseUrl = rawBaseUrl.isEmpty ? null : rawBaseUrl;
+    final baseUrl = rawBaseUrl.isEmpty ? remoteConfig.chatApiBaseUrl : rawBaseUrl;
+
+    print('🎯 Using API base URL: $baseUrl');
 
     return ChatRepositoryFactory.create(
       baseUrl: baseUrl,
