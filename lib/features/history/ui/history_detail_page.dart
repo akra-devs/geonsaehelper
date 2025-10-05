@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../ui/theme/app_theme.dart';
 import '../domain/assessment_history.dart';
+import '../domain/question_labels.dart';
 import '../../conversation/domain/models.dart';
 
 class HistoryDetailPage extends StatelessWidget {
@@ -132,10 +133,10 @@ class HistoryDetailPage extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                width: 60,
+                              Expanded(
+                                flex: 2,
                                 child: Text(
-                                  entry.key,
+                                  QuestionLabels.getQuestionLabel(entry.key),
                                   style: theme.textTheme.labelMedium?.copyWith(
                                     color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.bold,
@@ -144,8 +145,9 @@ class HistoryDetailPage extends StatelessWidget {
                               ),
                               SizedBox(width: spacing.x3),
                               Expanded(
+                                flex: 3,
                                 child: Text(
-                                  _formatAnswerValue(entry.value),
+                                  QuestionLabels.getAnswerText(entry.value),
                                   style: theme.textTheme.bodyMedium,
                                 ),
                               ),
@@ -196,14 +198,6 @@ class HistoryDetailPage extends StatelessWidget {
       RulingStatus.notPossibleInfo => Icons.info,
       RulingStatus.notPossibleDisq => Icons.cancel,
     };
-  }
-
-  String _formatAnswerValue(String value) {
-    // Format common answer values for better readability
-    if (value == 'yes') return '예';
-    if (value == 'no') return '아니오';
-    if (value == 'unknown') return '모름';
-    return value;
   }
 }
 
