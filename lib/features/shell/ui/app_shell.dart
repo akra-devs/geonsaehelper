@@ -8,6 +8,8 @@ import '../../conversation/bloc/conversation_bloc.dart';
 import '../../qna/ui/qna_page.dart';
 import '../../history/ui/history_page.dart';
 import '../../history/bloc/history_bloc.dart';
+import '../../settings/ui/settings_page.dart';
+import '../../settings/bloc/theme_bloc.dart';
 import '../../../common/analytics/analytics.dart';
 import 'package:http/http.dart' as http;
 
@@ -27,12 +29,15 @@ class _AppShellState extends State<AppShell> {
       const ConversationPage(),
       const QnAPage(),
       const HistoryPage(),
-      const _SettingsPage(),
+      const SettingsPage(),
     ];
 
-    // Provide both ConversationBloc and HistoryBloc at AppShell level
+    // Provide ConversationBloc, HistoryBloc, and ThemeBloc at AppShell level
     return MultiBlocProvider(
       providers: [
+        BlocProvider<ThemeBloc>(
+          create: (_) => ThemeBloc(),
+        ),
         BlocProvider<HistoryBloc>(
           create: (_) => HistoryBloc(),
         ),
@@ -264,20 +269,6 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(height: 6),
         LinearProgressIndicator(value: value, minHeight: 4),
       ],
-    );
-  }
-}
-
-class _SettingsPage extends StatelessWidget {
-  const _SettingsPage();
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('설정')),
-      body: ListView(
-        padding: EdgeInsets.symmetric(vertical: context.spacing.x4),
-        children: const [_EmptyHint(text: '테마/데이터/고지 설정이 여기에 표시됩니다.')],
-      ),
     );
   }
 }

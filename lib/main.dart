@@ -6,6 +6,8 @@ import 'package:path_provider/path_provider.dart';
 import 'ui/theme/app_theme.dart';
 import 'features/splash/ui/splash_page.dart';
 import 'features/conversation/data/chat_repository.dart';
+import 'features/settings/bloc/theme_bloc.dart' as features;
+import 'features/settings/bloc/theme_state.dart' as features;
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
@@ -81,13 +83,20 @@ class _MyAppState extends State<MyApp> {
 
         return RepositoryProvider<ChatRepository>(
           create: (_) => repository,
-          child: MaterialApp(
-            title: '전세자금대출 도우미',
-            theme: buildAppTheme(Brightness.light),
-            darkTheme: buildAppTheme(Brightness.dark),
-            themeMode: ThemeMode.system,
-            scrollBehavior: const _AppScrollBehavior(),
-            home: const SplashPage(),
+          child: BlocProvider(
+            create: (_) => features.ThemeBloc(),
+            child: BlocBuilder<features.ThemeBloc, features.ThemeState>(
+              builder: (context, themeState) {
+                return MaterialApp(
+                  title: '전세자금대출 도우미',
+                  theme: buildAppTheme(Brightness.light),
+                  darkTheme: buildAppTheme(Brightness.dark),
+                  themeMode: themeState.mode,
+                  scrollBehavior: const _AppScrollBehavior(),
+                  home: const SplashPage(),
+                );
+              },
+            ),
           ),
         );
       },
