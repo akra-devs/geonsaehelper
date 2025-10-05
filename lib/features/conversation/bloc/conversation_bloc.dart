@@ -100,10 +100,10 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     if (suggestion == null) return;
 
     // Emit echo-only state to prevent duplicate question rendering
+    // Keep result intact so AI chat tab remains enabled
     emit(
       state.copyWith(
         question: null, // Prevent duplicate question rendering
-        result: null, // Clear result as well
         message: null,
         userEcho: suggestion.label,
         suggestionReply: suggestion.botReply,
