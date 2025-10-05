@@ -1,27 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../common/analytics/analytics.dart';
 import '../../../ui/components/ad_slot.dart';
-import '../../../ui/components/chat_bubble.dart';
-import '../../../ui/components/chat_composer.dart';
 import '../../../ui/components/conversation_item_widget.dart';
 import '../../../ui/components/result_card.dart';
 import '../../../ui/components/program_help_sheet.dart';
 import '../../../ui/components/suggestions_panel.dart';
-import '../../../ui/components/typing_indicator.dart';
 import '../../../ui/theme/app_theme.dart';
-import '../bloc/chat_bloc.dart';
-import '../bloc/chat_event.dart';
 import '../bloc/conversation_bloc.dart';
 import '../bloc/conversation_event.dart';
-import '../data/chat_models.dart';
-import '../data/chat_repository.dart';
-import '../domain/product_types.dart';
 import 'conversation_item.dart';
 import '../domain/models.dart' as domain;
 import '../domain/suggestion.dart';
-import '../domain/constants.dart';
 
 class ConversationPage extends StatefulWidget {
   const ConversationPage({super.key});
@@ -32,13 +22,8 @@ class ConversationPage extends StatefulWidget {
 
 class _ConversationPageState extends State<ConversationPage> {
   final List<ConversationItem> _items = [];
-  final TextEditingController _composer = TextEditingController();
   final ScrollController _scroll = ScrollController();
-  int? _typingItemIndex;
   bool _hasStarted = false;
-  domain.ConversationResult? _lastResult; // for Q&A citations fallback
-
-  // No local constants; business logic lives in Cubit.
 
   @override
   void initState() {
@@ -51,7 +36,6 @@ class _ConversationPageState extends State<ConversationPage> {
 
   @override
   void dispose() {
-    _composer.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -117,41 +101,6 @@ class _ConversationPageState extends State<ConversationPage> {
     _scheduleScroll();
   }
 
-  // Derive up to 3 citations from the latest ruling reasons
-  List<Citation> _deriveCitationsFromResult(domain.ConversationResult? result) {
-    if (result == null) return const [];
-    // Priority: unmet > unknown > warning > met
-    int prio(domain.ReasonKind k) {
-      switch (k) {
-        case domain.ReasonKind.unmet:
-          return 0;
-        case domain.ReasonKind.unknown:
-          return 1;
-        case domain.ReasonKind.warning:
-          return 2;
-        case domain.ReasonKind.met:
-          return 3;
-      }
-    }
-
-    final pairs = <String>{};
-    final collected = <Citation>[];
-    final sorted = List<domain.Reason>.from(result.reasons)
-      ..sort((a, b) => prio(a.kind).compareTo(prio(b.kind)));
-    for (final r in sorted) {
-      final srcs = r.sources ?? const [];
-      for (final s in srcs) {
-        final key = '${s.docId}#${s.sectionKey}';
-        if (pairs.add(key)) {
-          collected.add(Citation(s.docId, s.sectionKey));
-          if (collected.length >= 3) return collected;
-        }
-      }
-      if (collected.length >= 3) break;
-    }
-    return collected;
-  }
-
   void _scheduleScroll() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -168,92 +117,18 @@ class _ConversationPageState extends State<ConversationPage> {
     });
   }
 
-  void _onSend(BuildContext ctx) {
-    final text = _composer.text.trim();
-    if (text.isEmpty) return;
-    _composer.clear();
-    _appendUserText(text);
-    Analytics.instance.qnaAsk('free', text.length);
-    // Show typing indicator and request completion via Bloc
-    _typingItemIndex = _showTyping();
-    ctx.read<ChatBloc>().add(ChatEvent.messageSent(text));
-  }
-
-  int _showTyping() {
-    _items.add(ConversationItem.botWidget(const TypingIndicator()));
-    _typingItemIndex = _items.length - 1;
-    setState(() {});
-    _scheduleScroll();
-    return _typingItemIndex!;
-  }
-
-  void _replaceTypingWithReply(int typingIndex, BotReply reply) {
-    // Convert model citations to UI component citations
-    var cites =
-        reply.citations.map((c) => Citation(c.docId, c.sectionKey)).toList();
-    // Fallback: if server provided no citations, derive from last ruling
-    if (cites.isEmpty) {
-      final derived = _deriveCitationsFromResult(_lastResult);
-      if (derived.isNotEmpty) cites = derived;
-    }
-    _items[typingIndex] = ConversationItem.botWidget(
-      ChatBubble(role: ChatRole.bot, content: reply.content, citations: cites),
-    );
-    setState(() {});
-    _scheduleScroll();
-  }
-
-  void _replaceTypingWithError(int typingIndex, String message) {
-    _items[typingIndex] = ConversationItem.botWidget(
-      ChatBubble(role: ChatRole.bot, content: message),
-    );
-    setState(() {});
-    _scheduleScroll();
-  }
-
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacing;
-    return BlocProvider<ChatBloc>(
-      create: (ctx) => ChatBloc(RepositoryProvider.of<ChatRepository>(ctx)),
-      child: Builder(
-        builder: (innerCtx) {
-          if (!_hasStarted) {
-            _hasStarted = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              innerCtx.read<ConversationBloc>().add(
-                const ConversationEvent.started(),
-              );
-            });
-          }
-          return MultiBlocListener(
-            listeners: [
-              BlocListener<ChatBloc, ChatState>(
-                listener: (context, state) {
-                  state.maybeWhen(
-                    success: (reply, selectedProductType) {
-                      if (_typingItemIndex != null) {
-                        _replaceTypingWithReply(_typingItemIndex!, reply);
-                        Analytics.instance.qnaAnswer(
-                          true,
-                          reply.lastVerified.isEmpty
-                              ? rulesLastVerifiedYmd
-                              : reply.lastVerified,
-                        );
-                        _typingItemIndex = null;
-                      }
-                    },
-                    error: (msg, selectedProductType) {
-                      if (_typingItemIndex != null) {
-                        _replaceTypingWithError(_typingItemIndex!, msg);
-                        _typingItemIndex = null;
-                      }
-                    },
-                    orElse: () {},
-                  );
-                },
-              ),
-              BlocListener<ConversationBloc, ConversationState>(
+    if (!_hasStarted) {
+      _hasStarted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<ConversationBloc>().add(
+          const ConversationEvent.started(),
+        );
+      });
+    }
+    return BlocListener<ConversationBloc, ConversationState>(
                 listener: (context, state) {
                   // Handle reset trigger
                   if (state.resetTriggered) {
@@ -270,17 +145,7 @@ class _ConversationPageState extends State<ConversationPage> {
                   }
                   if (state.suggestionReply != null &&
                       state.suggestionReply!.isNotEmpty) {
-                    final cites = _deriveCitationsFromResult(state.result);
-                    _items.add(
-                      ConversationItem.botWidget(
-                        ChatBubble(
-                          role: ChatRole.bot,
-                          content: state.suggestionReply!,
-                          citations: cites,
-                        ),
-                      ),
-                    );
-                    setState(() {});
+                    _appendBotText(state.suggestionReply!);
                   }
                   if (state.question != null) {
                     _appendQuestion(
@@ -293,7 +158,6 @@ class _ConversationPageState extends State<ConversationPage> {
                     );
                   }
                   if (state.result != null) {
-                    _lastResult = state.result; // keep for Q&A citation fallback
                     _items.add(
                       ConversationItem.result(
                         ResultCard(
@@ -317,24 +181,15 @@ class _ConversationPageState extends State<ConversationPage> {
                       ),
                     );
                     setState(() {});
-                    // Show product selector after result if flag is set
-                    if (state.showProductSelector) {
-                      _items.add(ConversationItem.productTypeSelector());
-                      setState(() {});
-                    }
                     _showSuggestionsAndAds();
                   }
                   _scheduleScroll();
                 },
-              ),
-            ],
-            child: Scaffold(
-              appBar: AppBar(title: const Text('대화형 예비판정')),
-              body: SafeArea(
-                child: _CenteredContent(
-                  child: Column(
-                    children: [
-                      Expanded(
+                child: Scaffold(
+                  appBar: AppBar(title: const Text('대화형 예비판정')),
+                  body: SafeArea(
+                    child: _CenteredContent(
+                      child: Expanded(
                         child: ListView.builder(
                           controller: _scroll,
                           padding: EdgeInsets.only(
@@ -365,49 +220,14 @@ class _ConversationPageState extends State<ConversationPage> {
                                   ),
                                 );
                               },
-                              onProductTypeSelected: (productTypeId) {
-                                context.read<ChatBloc>().add(
-                                  ChatEvent.productTypeSelected(productTypeId),
-                                );
-                              },
                             );
                           },
                         ),
                       ),
-                      BlocBuilder<ChatBloc, ChatState>(
-                        builder: (context, chatState) {
-                          final selectedProductType = chatState.mapOrNull(
-                            idle: (s) => s.selectedProductType,
-                            loading: (s) => s.selectedProductType,
-                            success: (s) => s.selectedProductType,
-                            error: (s) => s.selectedProductType,
-                          );
-                          final selectedProductLabel = selectedProductType != null
-                              ? ProductTypes.findById(selectedProductType)?.label
-                              : null;
-
-                          return BlocBuilder<ConversationBloc, ConversationState>(
-                            builder: (context, conversationState) {
-                              return ChatComposer(
-                                controller: _composer,
-                                onSend: () => _onSend(context),
-                                enabled: !conversationState.awaitingChoice,
-                                selectedProductType: selectedProductType,
-                                selectedProductLabel: selectedProductLabel,
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
+            );
   }
 
   // Question flow is provided by ConversationCubit.
