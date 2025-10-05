@@ -36,14 +36,22 @@ class LocalHistoryRepository implements HistoryRepository {
 
   @override
   Future<void> save(AssessmentHistory history) async {
-    final current = await getAll();
-    current.insert(0, history); // Add to front
+    try {
+      final current = await getAll();
+      current.insert(0, history); // Add to front
 
-    // Keep only recent 50 entries
-    final toSave = current.take(50).toList();
+      // Keep only recent 50 entries
+      final toSave = current.take(50).toList();
 
-    final json = jsonEncode(toSave.map((e) => e.toJson()).toList());
-    await _prefs.setString(_key, json);
+      final json = jsonEncode(toSave.map((e) => e.toJson()).toList());
+      print('💾 [history] Saving ${toSave.length} entries (${json.length} bytes)');
+      final success = await _prefs.setString(_key, json);
+      print(success ? '✅ [history] Saved successfully' : '❌ [history] Save failed');
+    } catch (e, stack) {
+      print('❌ [history] Save error: $e');
+      print('📍 [history] Stack: $stack');
+      rethrow;
+    }
   }
 
   @override

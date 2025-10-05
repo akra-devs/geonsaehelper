@@ -33,13 +33,17 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _initRepository() async {
     try {
+      print('🔧 [history] Initializing SharedPreferences...');
       final prefs = await SharedPreferences.getInstance();
+      print('✅ [history] SharedPreferences initialized');
       setState(() {
         _historyRepo = LocalHistoryRepository(prefs);
         _repoInitialized = true;
       });
-    } catch (e) {
-      print('❌ Failed to initialize history repository: $e');
+      print('✅ [history] Repository ready');
+    } catch (e, stack) {
+      print('❌ [history] Failed to initialize history repository: $e');
+      print('📍 [history] Stack: $stack');
       setState(() {
         _repoInitialized = true; // Continue without history
       });

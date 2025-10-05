@@ -12,7 +12,8 @@
       "Bash(curl:*)",
       "Bash(dart:*)",
       "Bash(netstat:*)",
-      "Bash(ss:*)"
+      "Bash(ss:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

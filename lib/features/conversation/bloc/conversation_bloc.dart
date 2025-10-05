@@ -981,20 +981,27 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
   }
 
   Future<void> _saveToHistory(ConversationResult result) async {
-    if (_historyRepository == null) return;
+    if (_historyRepository == null) {
+      print('⚠️ [history] Repository is null, skipping save');
+      return;
+    }
 
     try {
+      final now = DateTime.now();
       final history = AssessmentHistory(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        timestamp: DateTime.now(),
+        id: now.millisecondsSinceEpoch.toString(),
+        timestamp: now,
         status: result.status,
         tldr: result.tldr,
         responses: Map.from(_answers),
         lastVerified: result.lastVerified,
       );
+      print('💾 [history] Attempting to save: ${history.id} (${history.status})');
       await _historyRepository.save(history);
-    } catch (e) {
-      print('❌ Failed to save assessment history: $e');
+      print('✅ [history] Save completed');
+    } catch (e, stack) {
+      print('❌ [history] Failed to save assessment history: $e');
+      print('📍 [history] Stack: $stack');
       // Don't throw - history save failure should not block user flow
     }
   }
