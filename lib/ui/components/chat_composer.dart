@@ -26,7 +26,7 @@ class ChatComposer extends StatelessWidget {
     // Determine hint text based on product selection
     String hintText;
     if (!enabled) {
-      hintText = '선택지에서 답변해 주세요';
+      hintText = 'AI 응답을 기다리는 중입니다…';
     } else if (selectedProductType == null) {
       hintText = '먼저 상품을 선택해주세요';
     } else {
@@ -96,7 +96,9 @@ class ChatComposer extends StatelessWidget {
                     icon: Icon(
                       Icons.send,
                       color:
-                          isFullyEnabled ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                          isFullyEnabled
+                              ? cs.onPrimaryContainer
+                              : cs.onSurfaceVariant,
                     ),
                     tooltip: '보내기',
                   ),

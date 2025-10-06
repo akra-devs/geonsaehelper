@@ -82,13 +82,21 @@ class _QnAPageState extends State<QnAPage> {
   }
 
   void _onSend(BuildContext ctx) {
+    final bloc = ctx.read<ChatBloc>();
+    final isWaiting = bloc.state.maybeWhen(
+      loading: (_) => true,
+      orElse: () => false,
+    );
+    if (isWaiting) {
+      return;
+    }
     final text = _composer.text.trim();
     if (text.isEmpty) return;
     _composer.clear();
     _appendUserText(text);
     Analytics.instance.qnaAsk('free', text.length);
     _typingItemIndex = _showTyping();
-    ctx.read<ChatBloc>().add(ChatEvent.messageSent(text));
+    bloc.add(ChatEvent.messageSent(text));
   }
 
   @override
@@ -197,11 +205,15 @@ class _QnAPageState extends State<QnAPage> {
                                     selectedProductType,
                                   )?.label
                                   : null;
+                          final isSending = chatState.maybeWhen(
+                            loading: (_) => true,
+                            orElse: () => false,
+                          );
 
                           return ChatComposer(
                             controller: _composer,
                             onSend: () => _onSend(context),
-                            enabled: true,
+                            enabled: !isSending,
                             selectedProductType: selectedProductType,
                             selectedProductLabel: selectedProductLabel,
                           );
