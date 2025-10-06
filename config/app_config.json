@@ -1,5 +1,5 @@
 {
-  "chatApiBaseUrl": "http://akradev.duckdns.org:10000",
+  "chatApiBaseUrl": "https://akradev.duckdns.org/geonsaehelper-ai",
   "chatStreamPath": "api/loan-advisor/stream",
   "chatHealthPath": "api/health"
 }
