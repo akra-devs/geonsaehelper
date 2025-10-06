@@ -6,7 +6,11 @@ import '../domain/citation_schema.dart';
 import 'chat_models.dart';
 
 abstract class ChatRepository {
-  Future<BotReply> complete(String userText, {List<String>? productTypes});
+  Future<BotReply> complete(
+    String userText, {
+    List<String>? productTypes,
+    Map<String, String>? userContext,
+  });
   Future<bool> isHealthy();
 }
 
@@ -31,7 +35,10 @@ class ApiChatRepository implements ChatRepository {
 
   @override
   Future<bool> isHealthy() async {
-    const overridePath = String.fromEnvironment('CHAT_HEALTH_PATH', defaultValue: '');
+    const overridePath = String.fromEnvironment(
+      'CHAT_HEALTH_PATH',
+      defaultValue: '',
+    );
     final candidates = <String>[
       if (overridePath.isNotEmpty) overridePath,
       'api/health',
@@ -42,17 +49,13 @@ class ApiChatRepository implements ChatRepository {
 
     for (final path in candidates) {
       final isAbsolute = path.contains('://');
-      final normalizedPath = isAbsolute || !path.startsWith('/')
-          ? path
-          : path.substring(1);
+      final normalizedPath =
+          isAbsolute || !path.startsWith('/') ? path : path.substring(1);
       final uri = isAbsolute ? Uri.parse(path) : _resolvePath(normalizedPath);
       print('🔍 Health check URL: $uri');
       try {
         final response = await _client
-            .get(
-              uri,
-              headers: {'Accept': 'application/json'},
-            )
+            .get(uri, headers: {'Accept': 'application/json'})
             .timeout(const Duration(seconds: 10));
         print('✅ Health check response: ${response.statusCode}');
         if (response.statusCode == 200) {
@@ -67,7 +70,11 @@ class ApiChatRepository implements ChatRepository {
   }
 
   @override
-  Future<BotReply> complete(String userText, {List<String>? productTypes}) async {
+  Future<BotReply> complete(
+    String userText, {
+    List<String>? productTypes,
+    Map<String, String>? userContext,
+  }) async {
     const streamPath = String.fromEnvironment(
       'CHAT_STREAM_PATH',
       defaultValue: 'api/loan-advisor/stream',
@@ -75,21 +82,29 @@ class ApiChatRepository implements ChatRepository {
     final uri = _resolvePath(streamPath);
     print('🔗 Connecting to: $uri');
 
-    final payload = {
+    final payload = <String, dynamic>{
       'question': userText,
       'productTypes': productTypes ?? _getDefaultProductTypes(),
       'topK': 3,
       'provider': 'OPENAI',
+      if (userContext != null && userContext.isNotEmpty)
+        'userContext': userContext,
     };
-    final request = http.Request('POST', uri)
-      ..headers.addAll({
-        'Accept': 'text/event-stream',
-        'Content-Type': 'application/json',
-      })
-      ..body = jsonEncode(payload);
+    final request =
+        http.Request('POST', uri)
+          ..headers.addAll({
+            'Accept': 'text/event-stream',
+            'Content-Type': 'application/json',
+          })
+          ..body = jsonEncode(payload);
     if (kDebugMode) {
       debugPrint('🛰️ [chat] POST $uri');
-      debugPrint('🧾 [chat] headers: ' + request.headers.entries.map((e) => '${e.key}: ${e.value}').join(', '));
+      debugPrint(
+        '🧾 [chat] headers: ' +
+            request.headers.entries
+                .map((e) => '${e.key}: ${e.value}')
+                .join(', '),
+      );
       debugPrint('📦 [chat] payload: ' + jsonEncode(payload));
     }
 
@@ -125,7 +140,8 @@ class ApiChatRepository implements ChatRepository {
 
     await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
       if (kDebugMode) {
-        final preview = chunk.length > 160 ? chunk.substring(0, 157) + '...' : chunk;
+        final preview =
+            chunk.length > 160 ? chunk.substring(0, 157) + '...' : chunk;
         debugPrint('📡 [chat] chunk (${chunk.length} bytes): $preview');
       }
       final lines = chunk.split('\n');
@@ -222,16 +238,20 @@ class ApiChatRepository implements ChatRepository {
       if (rawCitations is List) {
         for (final cite in rawCitations.whereType<Map<String, dynamic>>()) {
           final rawDocId = cite['docId']?.toString() ?? '';
-          final sectionValue = cite.containsKey('sectionKey')
-              ? cite['sectionKey']
-              : cite['section'];
-          final sectionKey = sectionValue == null ? '' : sectionValue.toString();
+          final sectionValue =
+              cite.containsKey('sectionKey')
+                  ? cite['sectionKey']
+                  : cite['section'];
+          final sectionKey =
+              sectionValue == null ? '' : sectionValue.toString();
           if (rawDocId.isEmpty || sectionKey.isEmpty) continue;
           final normalizedDocId = CitationSchema.normalizeDocId(rawDocId);
           if (!CitationSchema.isValid(normalizedDocId, sectionKey)) continue;
           final key = '$normalizedDocId#$sectionKey';
           if (seenCitations.add(key)) {
-            citations.add(ChatCitation(docId: normalizedDocId, sectionKey: sectionKey));
+            citations.add(
+              ChatCitation(docId: normalizedDocId, sectionKey: sectionKey),
+            );
           }
         }
       }
@@ -252,9 +272,9 @@ class ApiChatRepository implements ChatRepository {
     return [
       'RENT_STANDARD',
       'RENT_NEWLYWED',
-      'RENT_YOUTH',
-      'RENT_NEWBORN',
-      'RENT_DAMAGES',
+      'RENT_YOUTH_BEOTIMMOK',
+      'RENT_NEWBORN_SPECIAL',
+      'RENT_DAMAGES_STANDARD',
       'RENT_DAMAGES_PRIORITY',
     ];
   }
@@ -269,7 +289,11 @@ class MockChatRepository implements ChatRepository {
   Future<bool> isHealthy() async => true; // Mock is always "healthy"
 
   @override
-  Future<BotReply> complete(String userText, {List<String>? productTypes}) async {
+  Future<BotReply> complete(
+    String userText, {
+    List<String>? productTypes,
+    Map<String, String>? userContext,
+  }) async {
     await Future.delayed(const Duration(milliseconds: 400));
     return BotReply(
       content:
@@ -315,9 +339,10 @@ class ChatRepositoryFactory {
       return apiRepo;
     } else {
       print('🔄 API server not available, falling back to MockChatRepository');
-      print('💡 To force API usage: flutter run --dart-define=FORCE_API_CHAT=true');
+      print(
+        '💡 To force API usage: flutter run --dart-define=FORCE_API_CHAT=true',
+      );
       return MockChatRepository();
     }
   }
 }
-

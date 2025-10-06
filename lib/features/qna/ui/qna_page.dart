@@ -13,6 +13,7 @@ import '../../conversation/data/chat_models.dart';
 import '../../conversation/data/chat_repository.dart';
 import '../../conversation/domain/constants.dart';
 import '../../conversation/domain/product_types.dart';
+import '../../history/bloc/history_bloc.dart';
 
 /// QnA-only page for AI chat after ruling completion
 class QnAPage extends StatefulWidget {
@@ -94,7 +95,11 @@ class _QnAPageState extends State<QnAPage> {
   Widget build(BuildContext context) {
     final spacing = context.spacing;
     return BlocProvider<ChatBloc>(
-      create: (ctx) => ChatBloc(RepositoryProvider.of<ChatRepository>(ctx)),
+      create:
+          (ctx) => ChatBloc(
+            repo: RepositoryProvider.of<ChatRepository>(ctx),
+            historyBloc: ctx.read<HistoryBloc>(),
+          ),
       child: Builder(
         builder: (innerCtx) {
           return BlocListener<ChatBloc, ChatState>(
@@ -142,8 +147,8 @@ class _QnAPageState extends State<QnAPage> {
                               selectedProductType: selectedProductType,
                               onProductTypeSelected: (productTypeId) {
                                 context.read<ChatBloc>().add(
-                                      ChatEvent.productTypeSelected(productTypeId),
-                                    );
+                                  ChatEvent.productTypeSelected(productTypeId),
+                                );
                               },
                             ),
                           );
@@ -166,12 +171,13 @@ class _QnAPageState extends State<QnAPage> {
                             final item = _items[index];
                             return Padding(
                               padding: EdgeInsets.only(bottom: spacing.x3),
-                              child: item.isUser
-                                  ? ChatBubble(
-                                      role: ChatRole.user,
-                                      content: item.text ?? '',
-                                    )
-                                  : item.widget!,
+                              child:
+                                  item.isUser
+                                      ? ChatBubble(
+                                        role: ChatRole.user,
+                                        content: item.text ?? '',
+                                      )
+                                      : item.widget!,
                             );
                           },
                         ),
@@ -185,9 +191,12 @@ class _QnAPageState extends State<QnAPage> {
                             success: (s) => s.selectedProductType,
                             error: (s) => s.selectedProductType,
                           );
-                          final selectedProductLabel = selectedProductType != null
-                              ? ProductTypes.findById(selectedProductType)?.label
-                              : null;
+                          final selectedProductLabel =
+                              selectedProductType != null
+                                  ? ProductTypes.findById(
+                                    selectedProductType,
+                                  )?.label
+                                  : null;
 
                           return ChatComposer(
                             controller: _composer,
@@ -215,11 +224,7 @@ class _ChatItem {
   final String? text;
   final Widget? widget;
 
-  const _ChatItem._({
-    required this.isUser,
-    this.text,
-    this.widget,
-  });
+  const _ChatItem._({required this.isUser, this.text, this.widget});
 
   factory _ChatItem.user(String text) => _ChatItem._(isUser: true, text: text);
   factory _ChatItem.bot(Widget widget) =>

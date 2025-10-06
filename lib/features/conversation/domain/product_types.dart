@@ -26,19 +26,19 @@ class ProductTypes {
   );
 
   static const rentYouth = ProductType(
-    id: 'RENT_YOUTH',
+    id: 'RENT_YOUTH_BEOTIMMOK',
     label: '청년 전세자금',
     description: '만 19~34세 청년 대상',
   );
 
   static const rentNewborn = ProductType(
-    id: 'RENT_NEWBORN',
+    id: 'RENT_NEWBORN_SPECIAL',
     label: '신생아 특례 버팀목',
     description: '2년 내 출생아 가구 대상',
   );
 
   static const rentDamages = ProductType(
-    id: 'RENT_DAMAGES',
+    id: 'RENT_DAMAGES_STANDARD',
     label: '전세피해 임차인 전세자금',
     description: '전세사기 피해자 지원',
   );
