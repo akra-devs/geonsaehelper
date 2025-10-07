@@ -1,6 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+const Color _snow = Color(0xFFF9F7F7);
+const Color _mist = Color(0xFFDBE2EF);
+const Color _sky = Color(0xFF3F72AF);
+const Color _navy = Color(0xFF112D4E);
+
+Color _mix(Color a, Color b, double t) => Color.lerp(a, b, t)!;
+
+ColorScheme _buildWinterScheme(Brightness brightness) {
+  final seed = ColorScheme.fromSeed(seedColor: _sky, brightness: brightness);
+
+  if (brightness == Brightness.light) {
+    final slate = _mix(_navy, _sky, 0.35);
+    final frost = _mix(_mist, _snow, 0.55);
+    final paleSky = _mix(_sky, _mist, 0.35);
+    return seed.copyWith(
+      primary: _sky,
+      onPrimary: _snow,
+      primaryContainer: _mist,
+      onPrimaryContainer: _navy,
+      secondary: _navy,
+      onSecondary: _snow,
+      secondaryContainer: _mix(_navy, _mist, 0.25),
+      onSecondaryContainer: _snow,
+      tertiary: slate,
+      onTertiary: _snow,
+      tertiaryContainer: _mix(_mist, _sky, 0.5),
+      onTertiaryContainer: _navy,
+      background: _snow,
+      onBackground: _navy,
+      surface: _snow,
+      onSurface: _navy,
+      surfaceTint: _sky,
+      surfaceVariant: _mist,
+      onSurfaceVariant: slate,
+      outline: _mix(_navy, _mist, 0.6),
+      outlineVariant: frost,
+      shadow: Colors.black,
+      inverseSurface: _navy,
+      inverseOnSurface: _mist,
+      inversePrimary: paleSky,
+    );
+  }
+
+  final deepNavy = _mix(_navy, Colors.black, 0.15);
+  final midnight = _mix(_navy, Colors.black, 0.35);
+  final moonlight = _mix(_mist, _snow, 0.7);
+  final steel = _mix(_sky, _navy, 0.45);
+  return seed.copyWith(
+    primary: moonlight,
+    onPrimary: _navy,
+    primaryContainer: _sky,
+    onPrimaryContainer: _snow,
+    secondary: _mist,
+    onSecondary: _navy,
+    secondaryContainer: _mix(_sky, _mist, 0.25),
+    onSecondaryContainer: _navy,
+    tertiary: steel,
+    onTertiary: moonlight,
+    tertiaryContainer: _mix(_sky, _navy, 0.6),
+    onTertiaryContainer: _mist,
+    background: midnight,
+    onBackground: moonlight,
+    surface: deepNavy,
+    onSurface: moonlight,
+    surfaceTint: moonlight,
+    surfaceVariant: _mix(_navy, _sky, 0.35),
+    onSurfaceVariant: _mix(_mist, _snow, 0.85),
+    outline: _mix(_sky, _navy, 0.55),
+    outlineVariant: _mix(_navy, Colors.black, 0.3),
+    shadow: Colors.black,
+    inverseSurface: moonlight,
+    inverseOnSurface: _navy,
+    inversePrimary: _sky,
+  );
+}
+
 @immutable
 class Spacing extends ThemeExtension<Spacing> {
   final double x1; // 4
@@ -54,14 +130,18 @@ class Corners extends ThemeExtension<Corners> {
 }
 
 ThemeData buildAppTheme(Brightness brightness) {
-  // 브랜드 포인트 컬러: 크림
-  const cream = Color(0xFFF4E6C1);
-  final scheme = ColorScheme.fromSeed(seedColor: cream, brightness: brightness);
-  final base = ThemeData(colorScheme: scheme, useMaterial3: true);
+  final scheme = _buildWinterScheme(brightness);
+  final base = ThemeData(
+    colorScheme: scheme,
+    useMaterial3: true,
+    scaffoldBackgroundColor: scheme.background,
+  );
   final corners = const Corners();
   final interText = GoogleFonts.interTextTheme(base.textTheme);
   final isDark = brightness == Brightness.dark;
   return base.copyWith(
+    colorScheme: scheme,
+    scaffoldBackgroundColor: scheme.background,
     textTheme: interText.copyWith(
       titleLarge: base.textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.w700,
@@ -75,6 +155,8 @@ ThemeData buildAppTheme(Brightness brightness) {
     appBarTheme: base.appBarTheme.copyWith(
       centerTitle: true,
       scrolledUnderElevation: 0,
+      backgroundColor: scheme.surface,
+      foregroundColor: scheme.onSurface,
       surfaceTintColor: Colors.transparent,
     ),
     cardTheme: base.cardTheme.copyWith(
@@ -92,7 +174,7 @@ ThemeData buildAppTheme(Brightness brightness) {
     ),
     navigationBarTheme: base.navigationBarTheme.copyWith(
       height: 64,
-      indicatorColor: scheme.primaryContainer.withAlpha(153),
+      indicatorColor: scheme.secondaryContainer.withOpacity(0.35),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       backgroundColor: scheme.surface,
       surfaceTintColor: Colors.transparent,
@@ -104,8 +186,8 @@ ThemeData buildAppTheme(Brightness brightness) {
         vertical: 8,
       ),
       side: BorderSide(color: scheme.outlineVariant),
-      selectedColor: scheme.primaryContainer,
-      backgroundColor: scheme.surfaceContainerHighest,
+      selectedColor: scheme.secondaryContainer,
+      backgroundColor: _mix(scheme.surface, scheme.surfaceVariant, 0.5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       showCheckmark: false,
     ),
