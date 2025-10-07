@@ -102,6 +102,7 @@ class _QnAPageState extends State<QnAPage> {
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacing;
+    final headerHeight = spacing.x10 * 6;
     return BlocProvider<ChatBloc>(
       create:
           (ctx) => ChatBloc(
@@ -140,57 +141,76 @@ class _QnAPageState extends State<QnAPage> {
                 child: _CenteredContent(
                   child: Column(
                     children: [
-                      // Product type selector at top
-                      BlocBuilder<ChatBloc, ChatState>(
-                        builder: (context, state) {
-                          final selectedProductType = state.mapOrNull(
-                            idle: (s) => s.selectedProductType,
-                            loading: (s) => s.selectedProductType,
-                            success: (s) => s.selectedProductType,
-                            error: (s) => s.selectedProductType,
-                          );
-                          return Padding(
-                            padding: EdgeInsets.only(top: spacing.x3),
-                            child: ProductTypeSelector(
-                              selectedProductType: selectedProductType,
-                              onProductTypeSelected: (productTypeId) {
-                                context.read<ChatBloc>().add(
-                                  ChatEvent.productTypeSelected(productTypeId),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                      Divider(
-                        height: spacing.x4,
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                      // Chat history
                       Expanded(
-                        child: ListView.builder(
+                        child: CustomScrollView(
                           controller: _scroll,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: spacing.x4,
-                            vertical: spacing.x3,
-                          ),
-                          itemCount: _items.length,
-                          itemBuilder: (context, index) {
-                            final item = _items[index];
-                            return Padding(
-                              padding: EdgeInsets.only(bottom: spacing.x3),
-                              child:
-                                  item.isUser
-                                      ? ChatBubble(
-                                        role: ChatRole.user,
-                                        content: item.text ?? '',
-                                      )
-                                      : item.widget!,
-                            );
-                          },
+                          slivers: [
+                            SliverPersistentHeader(
+                              pinned: true,
+                              delegate: _ProductTypeHeaderDelegate(
+                                height: headerHeight,
+                                childBuilder: (ctx) => BlocBuilder<ChatBloc, ChatState>(
+                                  builder: (context, state) {
+                                    final selectedProductType = state.mapOrNull(
+                                      idle: (s) => s.selectedProductType,
+                                      loading: (s) => s.selectedProductType,
+                                      success: (s) => s.selectedProductType,
+                                      error: (s) => s.selectedProductType,
+                                    );
+                                    return ProductTypeSelector(
+                                      selectedProductType: selectedProductType,
+                                      onProductTypeSelected: (productTypeId) {
+                                        context
+                                            .read<ChatBloc>()
+                                            .add(ChatEvent.productTypeSelected(productTypeId));
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            SliverToBoxAdapter(
+                              child: Builder(
+                                builder: (dividerContext) => Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: spacing.x4),
+                                  child: Divider(
+                                    height: spacing.x4,
+                                    color: Theme.of(dividerContext).colorScheme.outlineVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SliverPadding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: spacing.x4,
+                                vertical: spacing.x3,
+                              ),
+                              sliver: SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final item = _items[index];
+                                    return Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom: index == _items.length - 1 ? 0 : spacing.x3,
+                                      ),
+                                      child: item.isUser
+                                          ? ChatBubble(
+                                              role: ChatRole.user,
+                                              content: item.text ?? '',
+                                            )
+                                          : item.widget!,
+                                    );
+                                  },
+                                  childCount: _items.length,
+                                ),
+                              ),
+                            ),
+                            SliverToBoxAdapter(
+                              child: SizedBox(height: spacing.x3),
+                            ),
+                          ],
                         ),
                       ),
-                      // Composer
                       BlocBuilder<ChatBloc, ChatState>(
                         builder: (context, chatState) {
                           final selectedProductType = chatState.mapOrNull(
@@ -261,4 +281,63 @@ class _CenteredContent extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ProductTypeHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _ProductTypeHeaderDelegate({
+    required this.height,
+    required this.childBuilder,
+  });
+
+  final double height;
+  final WidgetBuilder childBuilder;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    final spacing = context.spacing;
+    final showShadow = overlapsContent || shrinkOffset > 0;
+    return SizedBox.expand(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+          boxShadow: showShadow
+              ? [
+                  BoxShadow(
+                    color: scheme.shadow.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : const [],
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            spacing.x4,
+            spacing.x3,
+            spacing.x4,
+            spacing.x2,
+          ),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: childBuilder(context),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _ProductTypeHeaderDelegate oldDelegate) => true;
 }
