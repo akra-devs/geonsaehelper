@@ -39,7 +39,7 @@ ColorScheme _buildWinterScheme(Brightness brightness) {
       outlineVariant: frost,
       shadow: Colors.black,
       inverseSurface: _navy,
-      inverseOnSurface: _mist,
+      onInverseSurface: _mist,
       inversePrimary: paleSky,
     );
   }
@@ -72,7 +72,7 @@ ColorScheme _buildWinterScheme(Brightness brightness) {
     outlineVariant: _mix(_navy, Colors.black, 0.3),
     shadow: Colors.black,
     inverseSurface: moonlight,
-    inverseOnSurface: _navy,
+    onInverseSurface: _navy,
     inversePrimary: _sky,
   );
 }
