@@ -131,12 +131,19 @@ class _ConversationPageState extends State<ConversationPage> {
             .map((action) => SuggestionItem(action.label, action.botReply))
             .toList();
 
-    _items.add(ConversationItem.suggestions(suggestionItems));
-    _items.add(
-      ConversationItem.advertisement(
-        const AdSlot(placement: AdPlacement.resultBottom),
-      ),
-    );
+    setState(() {
+      _items.add(
+        ConversationItem.botMessage(
+          'AI 상담으로 이어가 볼까요? 바로 아래 추천을 누르거나 궁금한 내용을 직접 질문해 주세요.',
+        ),
+      );
+      _items.add(ConversationItem.suggestions(suggestionItems));
+      _items.add(
+        ConversationItem.advertisement(
+          const AdSlot(placement: AdPlacement.resultBottom),
+        ),
+      );
+    });
     _scheduleScroll();
   }
 
