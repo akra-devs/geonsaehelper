@@ -180,7 +180,7 @@ class ConversationItemWidget extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.access_time, size: 18, color: color),
+            Icon(item.infoIcon ?? Icons.info_outline, size: 18, color: color),
             SizedBox(width: spacing.x2),
             Expanded(
               child: Text(

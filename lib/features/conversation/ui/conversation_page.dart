@@ -146,6 +146,12 @@ class _ConversationPageState extends State<ConversationPage> {
           const AdSlot(placement: AdPlacement.resultBottom),
         ),
       );
+      _items.add(
+        ConversationItem.infoNotice(
+          'AI 상담에서 후속 질문으로 더 자세히 확인해 보세요.',
+          icon: Icons.smart_toy_outlined,
+        ),
+      );
     });
     _scheduleScroll();
   }

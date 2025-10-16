@@ -35,6 +35,7 @@ class ConversationItem {
   final bool? isSurvey;
   final String? sectionLabel;
   final IconData? sectionIcon;
+  final IconData? infoIcon;
 
   // Result data
   final ResultCard? resultCard;
@@ -62,6 +63,7 @@ class ConversationItem {
     this.isSurvey,
     this.sectionLabel,
     this.sectionIcon,
+    this.infoIcon,
     this.resultCard,
     this.customWidget,
     this.advertisementWidget,
@@ -105,10 +107,14 @@ class ConversationItem {
     );
   }
 
-  factory ConversationItem.infoNotice(String text) {
+  factory ConversationItem.infoNotice(
+    String text, {
+    IconData icon = Icons.access_time,
+  }) {
     return ConversationItem._(
       type: ConversationItemType.infoNotice,
       text: text,
+      infoIcon: icon,
     );
   }
 
