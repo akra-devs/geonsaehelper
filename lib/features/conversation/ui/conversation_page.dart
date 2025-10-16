@@ -30,7 +30,11 @@ class _ConversationPageState extends State<ConversationPage> {
     super.initState();
     // Kick off with greeting + first question
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _appendBotText('예비판정을 바로 시작할게요. 아래 질문에 답해 주세요.');
+      _appendBotText('환영합니다! 예비판정에 필요한 핵심 정보만 순서대로 확인해 볼게요.');
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (!mounted) return;
+        _appendBotText('총 12문 내외이며 예상 소요 시간은 약 2분입니다.');
+      });
     });
   }
 
