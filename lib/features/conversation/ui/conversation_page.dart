@@ -14,7 +14,9 @@ import '../domain/models.dart' as domain;
 import '../domain/suggestion.dart';
 
 class ConversationPage extends StatefulWidget {
-  const ConversationPage({super.key});
+  const ConversationPage({super.key, this.onOpenQna});
+
+  final VoidCallback? onOpenQna;
 
   @override
   State<ConversationPage> createState() => _ConversationPageState();
@@ -31,6 +33,7 @@ class _ConversationPageState extends State<ConversationPage> {
   final ScrollController _scroll = ScrollController();
   bool _hasStarted = false;
   String? _currentSectionKey;
+  bool _showQnaFab = false;
 
   static const Map<String, _QuestionSection> _sections = {
     'applicant': _QuestionSection('신청인 정보', Icons.person_outline),
@@ -58,6 +61,19 @@ class _ConversationPageState extends State<ConversationPage> {
   void _appendInfoNotice(String text) {
     setState(() => _items.add(ConversationItem.infoNotice(text)));
     _scheduleScroll();
+  }
+
+  void _handleAiFabPressed() {
+    if (widget.onOpenQna != null) {
+      widget.onOpenQna!();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('AI 상담 탭으로 전환 기능이 아직 연결되지 않았어요.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _appendQuestion(
@@ -124,11 +140,6 @@ class _ConversationPageState extends State<ConversationPage> {
             .toList();
 
     setState(() {
-      _items.add(
-        ConversationItem.botMessage(
-          'AI 상담으로 이어가 볼까요? 바로 아래 추천을 누르거나 궁금한 내용을 직접 질문해 주세요.',
-        ),
-      );
       _items.add(ConversationItem.suggestions(suggestionItems));
       _items.add(
         ConversationItem.advertisement(
@@ -162,7 +173,7 @@ class _ConversationPageState extends State<ConversationPage> {
       _hasStarted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _appendBotText('환영합니다! 예비판정에 필요한 핵심 정보만 순서대로 확인해 볼게요.');
-        _appendInfoNotice('총 12문 내외이며 예상 소요 시간은 약 2분입니다.');
+        _appendInfoNotice('예상 소요는 약 2분(12문 내외)입니다.');
         context.read<ConversationBloc>().add(
           const ConversationEvent.started(),
         );
@@ -175,6 +186,7 @@ class _ConversationPageState extends State<ConversationPage> {
                     _items.clear();
                     _currentSectionKey = null;
                     _hasStarted = false;
+                    _showQnaFab = false;
                     setState(() {});
                     return;
                   }
@@ -200,29 +212,31 @@ class _ConversationPageState extends State<ConversationPage> {
                     );
                   }
                   if (state.result != null) {
-                    _items.add(
-                      ConversationItem.result(
-                        ResultCard(
-                          status: state.result!.status,
-                          tldr: state.result!.tldr,
-                          reasons: state.result!.reasons,
-                          nextSteps: state.result!.nextSteps,
-                          lastVerified: state.result!.lastVerified,
-                          programMatches: state.result!.programMatches,
-                          onProgramHelp: (pid) {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (ctx) => ProgramHelpSheet(
-                                programId: pid,
-                                lastVerified: state.result!.lastVerified,
-                              ),
-                            );
-                          },
+                    setState(() {
+                      _items.add(
+                        ConversationItem.result(
+                          ResultCard(
+                            status: state.result!.status,
+                            tldr: state.result!.tldr,
+                            reasons: state.result!.reasons,
+                            nextSteps: state.result!.nextSteps,
+                            lastVerified: state.result!.lastVerified,
+                            programMatches: state.result!.programMatches,
+                            onProgramHelp: (pid) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (ctx) => ProgramHelpSheet(
+                                  programId: pid,
+                                  lastVerified: state.result!.lastVerified,
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                    );
-                    setState(() {});
+                      );
+                      _showQnaFab = true;
+                    });
                     _showSuggestionsAndAds();
                   }
                   _scheduleScroll();
@@ -263,6 +277,31 @@ class _ConversationPageState extends State<ConversationPage> {
                             },
                           );
                         },
+                      ),
+                    ),
+                  ),
+                  floatingActionButtonLocation:
+                      FloatingActionButtonLocation.endFloat,
+                  floatingActionButton: IgnorePointer(
+                    ignoring: !_showQnaFab,
+                    child: AnimatedSlide(
+                      offset: _showQnaFab ? Offset.zero : const Offset(0, 1.2),
+                      duration: const Duration(milliseconds: 240),
+                      curve: Curves.easeOutCubic,
+                      child: AnimatedOpacity(
+                        opacity: _showQnaFab ? 1 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: AnimatedScale(
+                          scale: _showQnaFab ? 1 : 0.9,
+                          duration: const Duration(milliseconds: 240),
+                          curve: Curves.easeOutBack,
+                          child: FloatingActionButton.extended(
+                            heroTag: 'ai-chat-fab',
+                            onPressed: _handleAiFabPressed,
+                            icon: const Icon(Icons.smart_toy_outlined),
+                            label: const Text('AI 상담 열기'),
+                          ),
+                        ),
                       ),
                     ),
                   ),

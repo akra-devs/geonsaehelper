@@ -24,13 +24,6 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      const ConversationPage(),
-      const QnAPage(),
-      const HistoryPage(),
-      const SettingsPage(),
-    ];
-
     // Provide ConversationBloc and HistoryBloc at AppShell level
     return MultiBlocProvider(
       providers: [
@@ -47,6 +40,29 @@ class _AppShellState extends State<AppShell> {
           final isRulingComplete =
               conversationState.phase == ConversationPhase.qna &&
               conversationState.result != null;
+
+          final conversationPage = ConversationPage(
+            onOpenQna: () {
+              if (!isRulingComplete) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('예비판정을 먼저 완료해주세요'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                return;
+              }
+              setState(() => _index = 1);
+              Analytics.instance.tabChange('ai_chat');
+            },
+          );
+
+          final pages = [
+            conversationPage,
+            const QnAPage(),
+            const HistoryPage(),
+            const SettingsPage(),
+          ];
 
           return Scaffold(
             body: SafeArea(child: IndexedStack(index: _index, children: pages)),
