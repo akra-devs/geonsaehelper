@@ -8,6 +8,7 @@ enum ConversationItemType {
   botMessage,
   userMessage,
   intakeQuestion,
+  infoNotice,
   sectionHeader,
   result,
   botWidget,
@@ -101,6 +102,13 @@ class ConversationItem {
       questionIndex: index,
       totalQuestions: total,
       isSurvey: isSurvey,
+    );
+  }
+
+  factory ConversationItem.infoNotice(String text) {
+    return ConversationItem._(
+      type: ConversationItemType.infoNotice,
+      text: text,
     );
   }
 

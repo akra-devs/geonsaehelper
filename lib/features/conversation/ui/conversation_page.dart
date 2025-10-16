@@ -40,19 +40,6 @@ class _ConversationPageState extends State<ConversationPage> {
   };
 
   @override
-  void initState() {
-    super.initState();
-    // Kick off with greeting + first question
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _appendBotText('환영합니다! 예비판정에 필요한 핵심 정보만 순서대로 확인해 볼게요.');
-      Future.delayed(const Duration(milliseconds: 400), () {
-        if (!mounted) return;
-        _appendBotText('총 12문 내외이며 예상 소요 시간은 약 2분입니다.');
-      });
-    });
-  }
-
-  @override
   void dispose() {
     _scroll.dispose();
     super.dispose();
@@ -65,6 +52,11 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _appendUserText(String text) {
     setState(() => _items.add(ConversationItem.userMessage(text)));
+    _scheduleScroll();
+  }
+
+  void _appendInfoNotice(String text) {
+    setState(() => _items.add(ConversationItem.infoNotice(text)));
     _scheduleScroll();
   }
 
@@ -169,6 +161,8 @@ class _ConversationPageState extends State<ConversationPage> {
     if (!_hasStarted) {
       _hasStarted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        _appendBotText('환영합니다! 예비판정에 필요한 핵심 정보만 순서대로 확인해 볼게요.');
+        _appendInfoNotice('총 12문 내외이며 예상 소요 시간은 약 2분입니다.');
         context.read<ConversationBloc>().add(
           const ConversationEvent.started(),
         );
@@ -180,6 +174,7 @@ class _ConversationPageState extends State<ConversationPage> {
                   if (state.resetTriggered) {
                     _items.clear();
                     _currentSectionKey = null;
+                    _hasStarted = false;
                     setState(() {});
                     return;
                   }
