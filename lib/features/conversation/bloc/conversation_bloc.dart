@@ -15,7 +15,7 @@ import 'conversation_event.dart';
 
 part 'conversation_bloc.freezed.dart';
 
-enum ConversationPhase { survey, intake, qna }
+enum ConversationPhase { intake, qna }
 
 // ConversationQuestion and ConversationResult moved to domain models.
 
@@ -43,7 +43,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     : _historyBloc = historyBloc,
       super(
         const ConversationState(
-          phase: ConversationPhase.survey,
+          phase: ConversationPhase.intake,
           awaitingChoice: false,
         ),
       ) {
@@ -54,8 +54,11 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
   }
 
   void _onStarted(ConversationStarted event, Emitter<ConversationState> emit) {
+    _step = 0;
+    _answers.clear();
     _phaseStartedAt = DateTime.now();
-    _emitQuestion(emit, phase: ConversationPhase.survey, step: 0);
+    Analytics.instance.intakeStart();
+    _emitQuestion(emit, step: 0);
   }
 
   void _onChoiceSelected(
@@ -125,7 +128,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     _phaseStartedAt = DateTime.now();
     emit(
       const ConversationState(
-        phase: ConversationPhase.survey,
+        phase: ConversationPhase.intake,
         awaitingChoice: false,
         resetTriggered: true,
       ),
@@ -133,46 +136,24 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
   }
 
   void _answer(Emitter<ConversationState> emit, String qid, String value) {
-    final phase = state.phase;
+    if (state.phase != ConversationPhase.intake) {
+      return;
+    }
     _answers[qid] = value;
-    final nextStep = _findNextAskableStep(phase, _step);
+    final nextStep = _findNextAskableStep(_step);
     if (nextStep != -1) {
       _step = nextStep;
-      _emitQuestion(emit, phase: phase, step: _step);
+      _emitQuestion(emit, step: _step);
     } else {
-      if (phase == ConversationPhase.survey) {
-        final surveyDuration =
-            DateTime.now().difference(_phaseStartedAt).inMilliseconds;
-        Analytics.instance.quickSurveyComplete(
-          qf.surveyFlow.length,
-          surveyDuration,
-        );
-        // Transition to intake
-        _step = 0;
-        _phaseStartedAt = DateTime.now();
-        emit(
-          const ConversationState(
-            phase: ConversationPhase.intake,
-            awaitingChoice: false,
-            message: '감사합니다. 답변을 반영해 예비판정을 시작할게요.',
-          ),
-        );
-        Analytics.instance.intakeStart();
-        // Next question (intake)
-        _emitQuestion(emit, phase: ConversationPhase.intake, step: 0);
-      } else {
-        _evaluateAndEmit(emit);
-      }
+      _evaluateAndEmit(emit);
     }
   }
 
   void _emitQuestion(
     Emitter<ConversationState> emit, {
-    required ConversationPhase phase,
     required int step,
   }) {
-    final list =
-        phase == ConversationPhase.survey ? qf.surveyFlow : qf.intakeFlow;
+    final list = qf.intakeFlow;
     final q = list[step];
     final cq = ConversationQuestion(
       qid: q.qid,
@@ -180,9 +161,15 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
       choices: q.choices,
       index: step + 1,
       total: list.length,
-      isSurvey: phase == ConversationPhase.survey,
+      isSurvey: false,
     );
-    emit(ConversationState(phase: phase, awaitingChoice: true, question: cq));
+    emit(
+      ConversationState(
+        phase: ConversationPhase.intake,
+        awaitingChoice: true,
+        question: cq,
+      ),
+    );
   }
 
   // Branch visibility rules
@@ -204,9 +191,8 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     return true;
   }
 
-  int _findNextAskableStep(ConversationPhase phase, int fromExclusive) {
-    final list =
-        phase == ConversationPhase.survey ? qf.surveyFlow : qf.intakeFlow;
+  int _findNextAskableStep(int fromExclusive) {
+    final list = qf.intakeFlow;
     for (int i = fromExclusive + 1; i < list.length; i++) {
       if (_shouldAsk(list[i].qid)) return i;
     }
@@ -219,10 +205,7 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
     // Unknowns
     final unknowns =
         _answers.entries
-            .where(
-              (e) =>
-                  e.value == conversationUnknownValue && !_isSurveyQid(e.key),
-            )
+            .where((e) => e.value == conversationUnknownValue)
             .map((e) => e.key)
             .toList();
     final anyProgramPossible =
@@ -1053,6 +1036,4 @@ class ConversationBloc extends Bloc<ConversationEvent, ConversationState> {
         return qid;
     }
   }
-
-  bool _isSurveyQid(String qid) => qid.startsWith('QS');
 }

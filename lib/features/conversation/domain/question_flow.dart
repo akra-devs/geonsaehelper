@@ -11,37 +11,6 @@ class QuestionDef {
   });
 }
 
-// Quick survey flow (QS1..)
-const List<QuestionDef> surveyFlow = [
-  QuestionDef(
-    qid: 'QS1',
-    label: '언제까지 준비가 필요하신가요?',
-    choices: [
-      Choice(value: 'soon', text: '2주 이내'),
-      Choice(value: 'month1', text: '1개월 이내'),
-      Choice(value: 'flex', text: '유연함'),
-    ],
-  ),
-  QuestionDef(
-    qid: 'QS2',
-    label: '어떤 정보가 가장 궁금하신가요?',
-    choices: [
-      Choice(value: 'elig', text: '자격'),
-      Choice(value: 'limit', text: '한도'),
-      Choice(value: 'docs', text: '서류/절차'),
-    ],
-  ),
-  QuestionDef(
-    qid: 'QS3',
-    label: '주 관심 지역을 선택해 주세요.',
-    choices: [
-      Choice(value: 'metro', text: '수도권'),
-      Choice(value: 'metrocity', text: '광역시'),
-      Choice(value: 'other', text: '기타'),
-    ],
-  ),
-];
-
 // Intake flow (A1..S1) — HUG 기반 12문(모두 '모름' 제공)
 const List<QuestionDef> intakeFlow = [
   // A1. 세대주 상태

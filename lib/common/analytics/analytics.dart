@@ -12,8 +12,6 @@ class Analytics {
 
   // Helpers (optional sugar)
   void tabChange(String tab) => log('tab_change', {'tab': tab});
-  void quickSurveyComplete(int count, int durationMs) =>
-      log('quick_survey_complete', {'count': count, 'duration_ms': durationMs});
   void intakeStart() => log('intake_start', {});
   void intakeAnswer(String qid, String answer, bool isUnknown) => log(
     'intake_answer',

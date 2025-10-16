@@ -30,7 +30,7 @@ class _ConversationPageState extends State<ConversationPage> {
     super.initState();
     // Kick off with greeting + first question
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _appendBotText('간단 조사를 통해 맞춤 안내를 준비할게요. 이후 예비판정을 진행합니다.');
+      _appendBotText('예비판정을 바로 시작할게요. 아래 질문에 답해 주세요.');
     });
   }
 
