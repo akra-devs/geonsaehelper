@@ -39,6 +39,9 @@ class ConversationItemWidget extends StatelessWidget {
       case ConversationItemType.intakeQuestion:
         return _buildIntakeQuestion(context, spacing);
 
+      case ConversationItemType.sectionHeader:
+        return _buildSectionHeader(context, spacing);
+
       case ConversationItemType.result:
         return _buildResult(context, spacing);
 
@@ -147,6 +150,43 @@ class ConversationItemWidget extends StatelessWidget {
         child: SuggestionsPanel(
           suggestions: item.suggestions!,
           onTap: onSuggestionTap,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, spacing) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.primary;
+    return Appear(
+      duration: const Duration(milliseconds: 180),
+      delay: const Duration(milliseconds: 20),
+      offsetY: 16,
+      child: Padding(
+        padding: EdgeInsets.only(top: spacing.x2, bottom: spacing.x2),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(spacing.x1),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(spacing.x2),
+              ),
+              child: Icon(
+                item.sectionIcon ?? Icons.label_outline,
+                size: 18,
+                color: color,
+              ),
+            ),
+            SizedBox(width: spacing.x2),
+            Text(
+              item.sectionLabel ?? '',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

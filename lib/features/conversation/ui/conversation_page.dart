@@ -20,10 +20,24 @@ class ConversationPage extends StatefulWidget {
   State<ConversationPage> createState() => _ConversationPageState();
 }
 
+class _QuestionSection {
+  final String label;
+  final IconData icon;
+  const _QuestionSection(this.label, this.icon);
+}
+
 class _ConversationPageState extends State<ConversationPage> {
   final List<ConversationItem> _items = [];
   final ScrollController _scroll = ScrollController();
   bool _hasStarted = false;
+  String? _currentSectionKey;
+
+  static const Map<String, _QuestionSection> _sections = {
+    'applicant': _QuestionSection('신청인 정보', Icons.person_outline),
+    'eligibility': _QuestionSection('자격 제한 확인', Icons.fact_check),
+    'property': _QuestionSection('주택 정보', Icons.home_outlined),
+    'special': _QuestionSection('특례·피해자 정보', Icons.support_agent),
+  };
 
   @override
   void initState() {
@@ -63,6 +77,19 @@ class _ConversationPageState extends State<ConversationPage> {
     bool isSurvey = false,
   }) {
     setState(() {
+      final sectionKey = _sectionKeyFor(qid);
+      if (sectionKey != null && sectionKey != _currentSectionKey) {
+        final section = _sections[sectionKey];
+        if (section != null) {
+          _currentSectionKey = sectionKey;
+          _items.add(
+            ConversationItem.sectionHeader(
+              label: section.label,
+              icon: section.icon,
+            ),
+          );
+        }
+      }
       _items.add(
         ConversationItem.intakeQuestion(
           questionId: qid,
@@ -76,6 +103,14 @@ class _ConversationPageState extends State<ConversationPage> {
       // Choice state managed by ConversationCubit
     });
     _scheduleScroll();
+  }
+
+  String? _sectionKeyFor(String qid) {
+    if (qid.startsWith('A')) return 'applicant';
+    if (qid.startsWith('C')) return 'eligibility';
+    if (qid.startsWith('P')) return 'property';
+    if (qid.startsWith('S')) return 'special';
+    return null;
   }
 
   void _handleChoiceSelection(BuildContext ctx, String qid, String? value) {
@@ -137,6 +172,7 @@ class _ConversationPageState extends State<ConversationPage> {
                   // Handle reset trigger
                   if (state.resetTriggered) {
                     _items.clear();
+                    _currentSectionKey = null;
                     setState(() {});
                     return;
                   }

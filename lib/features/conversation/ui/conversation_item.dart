@@ -8,6 +8,7 @@ enum ConversationItemType {
   botMessage,
   userMessage,
   intakeQuestion,
+  sectionHeader,
   result,
   botWidget,
   advertisement,
@@ -31,6 +32,8 @@ class ConversationItem {
   final int? questionIndex;
   final int? totalQuestions;
   final bool? isSurvey;
+  final String? sectionLabel;
+  final IconData? sectionIcon;
 
   // Result data
   final ResultCard? resultCard;
@@ -56,6 +59,8 @@ class ConversationItem {
     this.questionIndex,
     this.totalQuestions,
     this.isSurvey,
+    this.sectionLabel,
+    this.sectionIcon,
     this.resultCard,
     this.customWidget,
     this.advertisementWidget,
@@ -96,6 +101,17 @@ class ConversationItem {
       questionIndex: index,
       totalQuestions: total,
       isSurvey: isSurvey,
+    );
+  }
+
+  factory ConversationItem.sectionHeader({
+    required String label,
+    required IconData icon,
+  }) {
+    return ConversationItem._(
+      type: ConversationItemType.sectionHeader,
+      sectionLabel: label,
+      sectionIcon: icon,
     );
   }
 
