@@ -106,6 +106,10 @@ class ConversationItemWidget extends StatelessWidget {
 
   Widget _buildResult(BuildContext context, spacing) {
     return Appear(
+      duration: const Duration(milliseconds: 260),
+      delay: const Duration(milliseconds: 80),
+      curve: Curves.easeOutCubic,
+      offsetY: 24,
       child: Padding(
         padding: EdgeInsets.only(bottom: spacing.x4),
         child: item.resultCard!,
